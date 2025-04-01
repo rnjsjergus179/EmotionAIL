@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>3D 캐릭터 HUD 인터페이스</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; overflow: hidden; }
+    #right-hud, #left-hud {
+      position: absolute; top: 10px; padding: 10px;
+      background: rgba(255,255,255,0.8); border-radius: 5px; z-index: 10;
+    }
+    #right-hud { right: 10px; width: 300px; }
+    #left-hud { left: 10px; width: 200px; }
+    #speech-bubble {
+      position: absolute; background: white; padding: 5px 10px;
+      border-radius: 10px; font-size: 12px; display: none; z-index: 10;
+      white-space: pre-line;
+    }
+    #chat-log {
+      height: 100px; overflow-y: scroll; border: 1px solid #ccc;
+      padding: 5px; margin-top: 10px;
+    }
+    #canvas {
+      position: absolute; width: 100%; height: 100%;
+    }
+  </style>
+  <script src="https://apis.google.com/js/api.js"></script>
+</head>
+<body>
+  <div id="right-hud">
+    <h3>채팅창</h3>
+    <div id="chat-log"></div>
+    <input type="text" id="chat-input" placeholder="채팅 입력..." />
+  </div>
+  <div id="left-hud">
+    <h3>일정</h3>
+    <button id="signin-button">Google Calendar에 로그인</button>
+    <div id="calendar-events"></div>
+  </div>
+  <div id="speech-bubble"></div>
+  <canvas id="canvas"></canvas>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script>
+    // 전역 날씨 변수
+    let currentWeather = "";
+    
+    // 기본 Three.js 설정
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas'), alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    camera.position.set(5, 5, 10);
+    camera.lookAt(0, 0, 0);
+    
+    // 조명 설정
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(5, 10, 7).normalize();
+    scene.add(directionalLight);
+    scene.add(new THREE.AmbientLight(0x333333));
+    
+    // 태양 객체
+    const sunMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0xffcc00, 
+      emissive: 0xff9900, 
+      transparent: true, 
+      opacity: 0 
+    });
+    const sun = new THREE.Mesh(new THREE.SphereGeometry(1.5, 64, 64), sunMaterial);
+    scene.add(sun);
+    
+    // 달 객체
+    const moonMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0xcccccc, 
+      emissive: 0x222222, 
+      transparent: true, 
+      opacity: 1 
+    });
+    const moon = new THREE.Mesh(new THREE.SphereGeometry(1.2, 64, 64), moonMaterial);
+    scene.add(moon);
+    
+    // 별, 반딧불 생성
+    const stars = [], fireflies = [];
+    for (let i = 0; i < 100; i++) {
+      const star = new THREE.Mesh(
+        new THREE.SphereGeometry(0.03, 8, 8),
+        new THREE.MeshBasicMaterial({ color: 0xffffff })
+      );
+      star.position.set((Math.random()-0.5)*50, (Math.random()-0.5)*30, -10);
+      scene.add(star);
+      stars.push(star);
+    }
+    for (let i = 0; i < 30; i++) {
+      const firefly = new THREE.Mesh(
+        new THREE.SphereGeometry(0.05, 8, 8),
+        new THREE.MeshBasicMaterial({ color: 0xffff99 })
+      );
+      firefly.position.set((Math.random()-0.5)*20, (Math.random()-0.5)*10, -5);
+      scene.add(firefly);
+      fireflies.push(firefly);
+    }
+    
+    // 고해상도 콩크리트 바닥 (Y = -2)
+    const floorGeometry = new THREE.PlaneGeometry(200, 200, 128, 128);
+    const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 1, metalness: 0 });
+    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    floor.rotation.x = -Math.PI/2;
+    floor.position.y = -2;
+    scene.add(floor);
+    
+    // 배경 그룹 (빌딩, 집) – 고정 배치
+    const backgroundGroup = new THREE.Group();
+    scene.add(backgroundGroup);
+    
+    function createBuilding(width, height, depth, color) {
+      const geometry = new THREE.BoxGeometry(width, height, depth);
+      const material = new THREE.MeshStandardMaterial({ color: color, roughness: 0.7, metalness: 0.1 });
+      return new THREE.Mesh(geometry, material);
+    }
+    function createHouse(width, height, depth, baseColor, roofColor) {
+      const houseGroup = new THREE.Group();
+      const baseGeometry = new THREE.BoxGeometry(width, height, depth);
+      const baseMaterial = new THREE.MeshStandardMaterial({ color: baseColor, roughness: 0.8 });
+      const base = new THREE.Mesh(baseGeometry, baseMaterial);
+      base.position.y = -2 + height/2;
+      houseGroup.add(base);
+      
+      const roofGeometry = new THREE.ConeGeometry(width * 0.8, height * 0.6, 4);
+      const roofMaterial = new THREE.MeshStandardMaterial({ color: roofColor, roughness: 0.8 });
+      const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+      roof.position.y = -2 + height + (height * 0.6)/2;
+      roof.rotation.y = Math.PI/4;
+      houseGroup.add(roof);
+      
+      return houseGroup;
+    }
+    // 빌딩: 5열×2행 (X: -20, -10, 0, 10, 20 / Z: -15, -25)
+    for (let i = 0; i < 10; i++) {
+      const width = Math.random() * 2 + 2;
+      const height = Math.random() * 10 + 10;
+      const depth = Math.random() * 2 + 2;
+      const building = createBuilding(width, height, depth, 0x555555);
+      const col = i % 5;
+      const row = Math.floor(i / 5);
+      const x = -20 + col * 10;
+      const z = -15 - row * 10;
+      building.position.set(x, -2 + height/2, z);
+      backgroundGroup.add(building);
+    }
+    // 집: 1행 (X: -10, 0, 10, 20, 30 / Z: -5 → 캐릭터 뒤쪽)
+    for (let i = 0; i < 5; i++) {
+      const width = Math.random() * 2 + 3;
+      const height = Math.random() * 2 + 3;
+      const depth = Math.random() * 2 + 3;
+      const house = createHouse(width, height, depth, 0xa0522d, 0x8b0000);
+      const x = -10 + i * 10;
+      const z = -5;
+      house.position.set(x, 0, z);
+      backgroundGroup.add(house);
+    }
+    
+    // 단일 가로등: 캐릭터 바로 옆에 배치 (바닥 고정)
+    function createStreetlight() {
+      const lightGroup = new THREE.Group();
+      const pole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.1, 0.1, 4, 8),
+        new THREE.MeshBasicMaterial({ color: 0x333333 })
+      );
+      pole.position.y = 2;
+      lightGroup.add(pole);
+      const lamp = new THREE.Mesh(
+        new THREE.SphereGeometry(0.2, 8, 8),
+        new THREE.MeshBasicMaterial({ color: 0xffcc00 })
+      );
+      lamp.position.y = 4.2;
+      lightGroup.add(lamp);
+      const lampLight = new THREE.PointLight(0xffcc00, 1, 10);
+      lampLight.position.set(0, 4.2, 0);
+      lightGroup.add(lampLight);
+      return lightGroup;
+    }
+    const characterStreetlight = createStreetlight();
+    // 캐릭터 바로 옆에 배치 (캐릭터 위치 기준 X+1, 바닥 고정 Y=-2, Z 동일)
+    characterStreetlight.position.set(1, -2, 0);
+    scene.add(characterStreetlight);
+    
+    let rainGroup = new THREE.Group();
+    scene.add(rainGroup);
+    function initRain() {
+      const rainCount = 1000;
+      const rainGeometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(rainCount * 3);
+      for (let i = 0; i < rainCount; i++) {
+        positions[i*3] = Math.random() * 100 - 50;
+        positions[i*3+1] = Math.random() * 50;
+        positions[i*3+2] = Math.random() * 100 - 50;
+      }
+      rainGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const rainMaterial = new THREE.PointsMaterial({ color: 0xaaaaee, size: 0.1, transparent: true, opacity: 0.6 });
+      const rainParticles = new THREE.Points(rainGeometry, rainMaterial);
+      rainGroup.add(rainParticles);
+    }
+    initRain();
+    rainGroup.visible = false;
+    
+    let houseCloudGroup = new THREE.Group();
+    function createHouseCloud() {
+      const cloud = new THREE.Group();
+      const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 });
+      const sphere1 = new THREE.Mesh(new THREE.SphereGeometry(2, 32, 32), cloudMat);
+      sphere1.position.set(0, 0, 0);
+      const sphere2 = new THREE.Mesh(new THREE.SphereGeometry(1.8, 32, 32), cloudMat);
+      sphere2.position.set(2.2, 0.7, 0);
+      const sphere3 = new THREE.Mesh(new THREE.SphereGeometry(2.1, 32, 32), cloudMat);
+      sphere3.position.set(-2.2, 0.5, 0);
+      cloud.add(sphere1, sphere2, sphere3);
+      cloud.userData.initialPos = cloud.position.clone();
+      return cloud;
+    }
+    const singleCloud = createHouseCloud();
+    houseCloudGroup.add(singleCloud);
+    houseCloudGroup.position.set(0, 5, -10);
+    scene.add(houseCloudGroup);
+    function updateHouseClouds() {
+      singleCloud.position.x += 0.02;
+      if(singleCloud.position.x > 5) { singleCloud.position.x = -5; }
+    }
+    
+    let lightningLight = new THREE.PointLight(0xffffff, 0, 500);
+    lightningLight.position.set(0, 50, 0);
+    scene.add(lightningLight);
+    
+    function updateWeatherEffects() {
+      if(currentWeather.indexOf("비") !== -1 || currentWeather.indexOf("소나기") !== -1) {
+        rainGroup.visible = true;
+      } else {
+        rainGroup.visible = false;
+      }
+      if(currentWeather.indexOf("구름") !== -1) {
+        houseCloudGroup.visible = true;
+      } else {
+        houseCloudGroup.visible = false;
+      }
+    }
+    
+    const characterGroup = new THREE.Group();
+    const charBody = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 1.5, 0.5),
+      new THREE.MeshStandardMaterial({ color: 0x00cc66 })
+    );
+    const head = new THREE.Mesh(
+      new THREE.SphereGeometry(0.5, 32, 32),
+      new THREE.MeshStandardMaterial({ color: 0xffcc66 })
+    );
+    head.position.y = 1.2;
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    const leftEye = new THREE.Mesh(new THREE.SphereGeometry(0.07, 16, 16), eyeMat);
+    const rightEye = new THREE.Mesh(new THREE.SphereGeometry(0.07, 16, 16), eyeMat);
+    leftEye.position.set(-0.2, 1.3, 0.45);
+    rightEye.position.set(0.2, 1.3, 0.45);
+    const mouth = new THREE.Mesh(
+      new THREE.BoxGeometry(0.2, 0.05, 0.05),
+      new THREE.MeshStandardMaterial({ color: 0xff3366 })
+    );
+    mouth.position.set(0, 1.1, 0.51);
+    const leftBrow = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.05, 0.05), eyeMat);
+    const rightBrow = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.05, 0.05), eyeMat);
+    leftBrow.position.set(-0.2, 1.45, 0.45);
+    rightBrow.position.set(0.2, 1.45, 0.45);
+    const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1, 0.2), charBody.material);
+    const rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1, 0.2), charBody.material);
+    leftArm.position.set(-0.7, 0.4, 0);
+    rightArm.position.set(0.7, 0.4, 0);
+    const legMat = new THREE.MeshStandardMaterial({ color: 0x3366cc });
+    const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1, 0.3), legMat);
+    const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1, 0.3), legMat);
+    leftLeg.position.set(-0.35, -1, 0);
+    rightLeg.position.set(0.35, -1, 0);
+    characterGroup.add(charBody, head, leftEye, rightEye, mouth, leftBrow, rightBrow, leftArm, rightArm, leftLeg, rightLeg);
+    characterGroup.position.y = -1;
+    scene.add(characterGroup);
+    
+    const characterLight = new THREE.PointLight(0xffee88, 1, 15);
+    scene.add(characterLight);
+    
+    const bubble = document.getElementById('speech-bubble');
+    function updateBubblePosition() {
+      const headPos = new THREE.Vector3();
+      head.getWorldPosition(headPos);
+      const screenPos = headPos.project(camera);
+      bubble.style.left = `${(screenPos.x * 0.5 + 0.5) * window.innerWidth}px`;
+      bubble.style.top = `${(1 - (screenPos.y * 0.5 + 0.5)) * window.innerHeight - 50}px`;
+    }
+    function showSpeechBubbleInChunks(text, chunkSize = 15, delay = 3000) {
+      const chunks = [];
+      for (let i = 0; i < text.length; i += chunkSize) {
+        chunks.push(text.slice(i, i + chunkSize));
+      }
+      let index = 0;
+      function showNextChunk() {
+        if (index < chunks.length) {
+          bubble.textContent = chunks[index];
+          bubble.style.display = 'block';
+          index++;
+          setTimeout(showNextChunk, delay);
+        } else {
+          setTimeout(() => bubble.style.display = 'none', 3000);
+        }
+      }
+      showNextChunk();
+    }
+    
+    function initGoogleClient() {
+      gapi.load('client:auth2', () => {
+        gapi.client.init({
+          apiKey: 'AIzaSyB8pM-pqoUADNl1bqPVHGdcnaPiVhr3Y1k',
+          clientId: '350335050372-i5pujbbto3ruc24vsapsk72hl3lhd6rc.apps.googleusercontent.com',
+          discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
+          scope: "https://www.googleapis.com/auth/calendar.readonly"
+        }).then(() => {
+          return gapi.auth2.getAuthInstance().signIn();
+        }).then(() => {
+          listUpcomingEvents();
+        }).catch(error => {
+          console.error('구글 캘린더 초기화 오류:', error);
+        });
+      });
+    }
+    function listUpcomingEvents() {
+      gapi.client.calendar.events.list({
+        'calendarId': 'primary',
+        'timeMin': (new Date()).toISOString(),
+        'showDeleted': false,
+        'singleEvents': true,
+        'maxResults': 10,
+        'orderBy': 'startTime'
+      }).then(response => {
+        const events = response.result.items;
+        const calendarDiv = document.getElementById('calendar-events');
+        calendarDiv.innerHTML = '<h4>다가오는 일정:</h4>';
+        if (events.length > 0) {
+          events.forEach(event => {
+            const start = event.start.dateTime || event.start.date;
+            calendarDiv.innerHTML += `<p>${start} - ${event.summary}</p>`;
+          });
+        } else {
+          calendarDiv.innerHTML += '<p>다가오는 일정이 없습니다.</p>';
+        }
+      }).catch(error => {
+        console.error('일정 가져오기 오류:', error);
+      });
+    }
+    async function getTodayEvents() {
+      if (!gapi.auth2.getAuthInstance().isSignedIn.get()) {
+        return 'Google Calendar에 로그인해주세요.';
+      }
+      const now = new Date();
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1).toISOString();
+      try {
+        const response = await gapi.client.calendar.events.list({
+          'calendarId': 'primary',
+          'timeMin': startOfDay,
+          'timeMax': endOfDay,
+          'showDeleted': false,
+          'singleEvents': true,
+          'orderBy': 'startTime'
+        });
+        const events = response.result.items;
+        if (events.length > 0) {
+          return events.map(event => {
+            const start = event.start.dateTime || event.start.date;
+            return `${start} - ${event.summary}`;
+          }).join('\n');
+        } else {
+          return '오늘은 일정이 없습니다.';
+        }
+      } catch (error) {
+        console.error('오늘의 일정 가져오기 오류:', error);
+        return '일정을 가져올 수 없습니다.';
+      }
+    }
+    
+    async function getWeather() {
+      const apiKey = '9948482fc88fa1f5b6ad5d3e0872aaad';
+      const city = 'Seoul';
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric&lang=ko`;
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        const weather = data.weather[0].description;
+        currentWeather = weather;
+        updateWeatherEffects();
+        return `${weather}, ${data.main.temp}°C`;
+      } catch (error) {
+        console.error('날씨 정보 가져오기 오류:', error);
+        return '날씨 정보를 가져올 수 없습니다.';
+      }
+    }
+    
+    // sendChat() 함수 수정: 음성 출력 기능 제거, 그리고 "캐릭터 넌누구야", "너는 누구니", "넌 누군데" 등을 인식하여 응답
+    async function sendChat() {
+      const input = document.getElementById('chat-input').value.trim();
+      let response = "";
+      const lowerInput = input.toLowerCase();
+      
+      if (lowerInput.includes("안녕")) {
+        response = "안녕하세요, 주인님! 오늘 기분은 어떠세요?";
+        characterGroup.children[7].rotation.z = Math.PI/4;
+        setTimeout(() => { characterGroup.children[7].rotation.z = 0; }, 1000);
+      }
+      else if (lowerInput.includes("춤춰")) {
+        response = "춤출게요!";
+        const danceInterval = setInterval(() => {
+          characterGroup.children[7].rotation.z = Math.sin(Date.now() * 0.01) * Math.PI/4;
+          head.rotation.y = Math.sin(Date.now() * 0.01) * Math.PI/8;
+        }, 50);
+        setTimeout(() => {
+          clearInterval(danceInterval);
+          characterGroup.children[7].rotation.z = 0;
+          head.rotation.y = 0;
+        }, 3000);
+      }
+      else if ((lowerInput.includes("일정") || lowerInput.includes("캘린더")) &&
+               (lowerInput.includes("알려") || lowerInput.includes("보여") || lowerInput.includes("알아봐"))) {
+        const events = await getTodayEvents();
+        response = `오늘 일정:\n${events}`;
+      }
+      else if (lowerInput.includes("일정")) {
+        const events = await getTodayEvents();
+        response = `오늘 일정:\n${events}`;
+      }
+      else if (lowerInput.includes("사용방법") || lowerInput.includes("사용법")) {
+        response =
+`Google Calendar 사용방법 안내:
+
+1. 왼쪽의 "Google Calendar에 로그인" 버튼을 클릭하세요.
+2. Google 계정으로 로그인하면 캘린더와 연동됩니다.
+3. 로그인 후, 왼쪽 '일정' 섹션에 오늘 및 다가오는 일정이 표시됩니다.
+4. "오늘 일정 알려줘"라고 입력하면 오늘 일정이 캐릭터 말풍선에 출력됩니다.
+5. 추가 일정 관리는 Google Calendar 웹/앱에서 진행하실 수 있습니다.
+궁금하신 점 있으시면 언제든 말씀해주세요!`;
+      }
+      else if (lowerInput.includes("날씨") && (lowerInput.includes("알려") || lowerInput.includes("어때"))) {
+        const weather = await getWeather();
+        response = `현재 날씨는 ${weather}입니다.`;
+      }
+      // 캐릭터 정체성 관련 다양한 표현 처리
+      else if (lowerInput.includes("캐릭터 넌누구야") ||
+               lowerInput.includes("너는 누구니") ||
+               lowerInput.includes("넌 누군데")) {
+        response = "저는 당신의 개인 비서입니다.";
+      }
+      else {
+        response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
+      }
+      
+      // 채팅창 말풍선에 응답 출력 (음성 출력 기능은 제거됨)
+      showSpeechBubbleInChunks(response);
+      document.getElementById('chat-input').value = '';
+    }
+    
+    document.getElementById('chat-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { sendChat(); }
+    });
+    document.getElementById('signin-button').addEventListener('click', initGoogleClient);
+    
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      updateBubblePosition();
+      const now = new Date();
+      
+      const headWorldPos = new THREE.Vector3();
+      head.getWorldPosition(headWorldPos);
+      const orbitCenter = headWorldPos.clone().add(new THREE.Vector3(0, 2, 0));
+      
+      const totalMin = now.getHours() * 60 + now.getMinutes();
+      const angle = (totalMin / 1440) * Math.PI * 2;
+      const radius = 3;
+      
+      const sunPos = new THREE.Vector3(
+        orbitCenter.x + Math.cos(angle) * radius,
+        orbitCenter.y + Math.sin(angle) * radius,
+        orbitCenter.z
+      );
+      sun.position.copy(sunPos);
+      
+      const moonAngle = angle + Math.PI;
+      const moonPos = new THREE.Vector3(
+        orbitCenter.x + Math.cos(moonAngle) * radius,
+        orbitCenter.y + Math.sin(moonAngle) * radius,
+        orbitCenter.z
+      );
+      moon.position.copy(moonPos);
+      
+      const t = now.getHours() + now.getMinutes()/60;
+      let sunOpacity = 0, moonOpacity = 0;
+      if (t < 6) {
+        sunOpacity = 0; moonOpacity = 1;
+      } else if (t < 7) {
+        let factor = (t - 6);
+        sunOpacity = factor; moonOpacity = 1 - factor;
+      } else if (t < 17) {
+        sunOpacity = 1; moonOpacity = 0;
+      } else if (t < 18) {
+        let factor = (t - 17);
+        sunOpacity = 1 - factor; moonOpacity = factor;
+      } else {
+        sunOpacity = 0; moonOpacity = 1;
+      }
+      sun.material.opacity = sunOpacity;
+      moon.material.opacity = moonOpacity;
+      
+      const isDay = t >= 7 && t < 17;
+      scene.background = new THREE.Color(isDay ? 0x87CEEB : 0x000033);
+      stars.forEach(s => s.visible = !isDay);
+      fireflies.forEach(f => f.visible = !isDay);
+      
+      // 단일 가로등(캐릭터 옆) 램프 불빛 아침/낮에는 꺼지고 밤에만 켜짐
+      characterStreetlight.traverse(child => {
+        if(child instanceof THREE.PointLight) {
+          child.intensity = isDay ? 0 : 1;
+        }
+      });
+      characterLight.position.copy(characterGroup.position).add(new THREE.Vector3(0, 5, 0));
+      characterLight.intensity = isDay ? 0 : 1;
+      
+      // 캐릭터 항상 서 있는 상태 (Y = -1, 회전 X = 0)
+      characterGroup.position.y = -1;
+      characterGroup.rotation.x = 0;
+      
+      if(rainGroup.visible) {
+        const rainPoints = rainGroup.children[0];
+        const positions = rainPoints.geometry.attributes.position.array;
+        for (let i = 0; i < positions.length; i += 3) {
+          positions[i+1] -= 0.5;
+          if (positions[i+1] < 0) { positions[i+1] = Math.random() * 50 + 20; }
+        }
+        rainPoints.geometry.attributes.position.needsUpdate = true;
+      }
+      
+      if(currentWeather.indexOf("번개") !== -1 || currentWeather.indexOf("뇌우") !== -1) {
+        if(Math.random() < 0.001) {
+          lightningLight.intensity = 5;
+          setTimeout(() => { lightningLight.intensity = 0; }, 100);
+        }
+      }
+      
+      updateHouseClouds();
+      
+      // 캐릭터 옆 단일 가로등 위치 업데이트 (캐릭터 위치 기준, X offset 1)
+      characterStreetlight.position.set(
+        characterGroup.position.x + 1,
+        -2,
+        characterGroup.position.z
+      );
+      
+      renderer.render(scene, camera);
+    }
+    animate();
+    
+    window.addEventListener('load', () => {
+      showSpeechBubbleInChunks('환영합니다 개인 AI비서입니다 무엇을 도와드릴까요');
+    });
+    
+    function updateHouseClouds() {
+      houseCloudGroup.children.forEach(cloud => {
+        cloud.position.x += 0.02;
+        if(cloud.position.x > 5) { cloud.position.x = -5; }
+      });
+    }
+    
+    setInterval(() => {
+      const now = new Date();
+      if(now.getHours() === 8 && now.getMinutes() === 0) {
+        showSpeechBubbleInChunks('주인님, 일어날 시간이에요!');
+      } else if(now.getHours() === 12 && now.getMinutes() === 0) {
+        showSpeechBubbleInChunks('식사하실 시간이에요!');
+      } else if(now.getHours() === 22 && now.getMinutes() === 0) {
+        showSpeechBubbleInChunks('주무실 시간이에요 zzzz');
+      }
+    }, 60000);
+  </script>
+</body>
+</html>
