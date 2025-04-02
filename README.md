@@ -4,40 +4,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>3D 캐릭터 HUD, 달력, 이메일 알림 & 말풍선 채팅</title>
+  <title>3D 캐릭터 HUD, 달력, 이메일 알림 & 말풍선 채팅 with Google 로그인</title>
+  <!-- Google Sign-In 라이브러리 (클라이언트 ID를 실제 값으로 교체) -->
+  <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
+  <script src="https://apis.google.com/js/platform.js" async defer></script>
   <style>
-    body {
-      margin: 0; font-family: Arial, sans-serif; overflow: hidden;
-    }
+    body { margin: 0; font-family: Arial, sans-serif; overflow: hidden; }
     /* 오른쪽 HUD: 채팅창, 이메일 알림, 사용자 프로필 및 사용자 목록 */
     #right-hud {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      padding: 10px;
-      background: rgba(255,255,255,0.8);
-      border-radius: 5px;
-      z-index: 20;
+      position: absolute; top: 10px; right: 10px; padding: 10px;
+      background: rgba(255,255,255,0.8); border-radius: 5px; z-index: 20;
       width: 300px;
     }
     /* 왼쪽 HUD: 달력 UI */
     #left-hud {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      padding: 10px;
-      background: rgba(255,255,255,0.9);
-      border-radius: 5px;
-      z-index: 20;
-      width: 320px;
-      max-height: 90vh;
-      overflow-y: auto;
+      position: absolute; top: 10px; left: 10px; padding: 10px;
+      background: rgba(255,255,255,0.9); border-radius: 5px; z-index: 20;
+      width: 320px; max-height: 90vh; overflow-y: auto;
     }
     /* 달력 UI 스타일 */
     #calendar-container { margin-top: 10px; }
-    #calendar-header {
-      display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;
-    }
+    #calendar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
     #calendar-header button { padding: 2px 6px; font-size: 12px; }
     #month-year-label { font-weight: bold; font-size: 14px; }
     #year-select { font-size: 12px; padding: 2px; margin-left: 5px; }
@@ -50,49 +37,27 @@
     }
     #calendar-grid div:hover { background: #f0f0f0; }
     .day-number { position: absolute; top: 2px; left: 2px; font-weight: bold; }
-    .event {
-      margin-top: 18px; font-size: 10px; color: #333;
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
+    .event { margin-top: 18px; font-size: 10px; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     /* 채팅 로그 */
-    #chat-log {
-      height: 100px; overflow-y: scroll; border: 1px solid #ccc;
-      padding: 5px; margin-top: 10px;
-    }
+    #chat-log { height: 100px; overflow-y: scroll; border: 1px solid #ccc; padding: 5px; margin-top: 10px; }
     /* 채팅 입력 영역 */
-    #chat-input-area {
-      display: flex; margin-top: 10px;
-    }
+    #chat-input-area { display: flex; margin-top: 10px; }
     #chat-input { flex: 1; padding: 5px; font-size: 14px; }
     #send-chat-button { padding: 5px 10px; font-size: 14px; margin-left: 5px; }
     /* 사용자 프로필 영역 */
-    #user-profile {
-      margin-top: 10px; border-top: 1px solid #ccc; padding-top: 10px;
-    }
-    #user-email-profile, #other-email-input {
-      width: calc(100% - 70px); padding: 5px; font-size: 14px;
-    }
-    #save-profile-button { padding: 5px 10px; font-size: 14px; margin-left: 5px; }
+    #user-profile { margin-top: 10px; border-top: 1px solid #ccc; padding-top: 10px; }
+    /* 구글 로그인 버튼 영역 */
+    #google-signin { margin-bottom: 10px; }
     /* 사용자 목록 영역 */
     #user-list {
       margin-top: 10px; border-top: 1px solid #ccc; padding-top: 10px;
     }
-    #user-select {
-      width: 100%; height: 100px; padding: 5px; font-size: 14px;
-    }
-    #send-selected-button {
-      width: 100%; margin-top: 5px; padding: 5px 10px; font-size: 14px;
-    }
+    #user-select { width: 100%; height: 100px; padding: 5px; font-size: 14px; }
+    #send-selected-button { width: 100%; margin-top: 5px; padding: 5px 10px; font-size: 14px; }
     /* 새 사용자 추가 */
-    #add-user {
-      margin-top: 10px;
-    }
-    #new-user-email {
-      width: calc(100% - 70px); padding: 5px; font-size: 14px;
-    }
-    #add-user-button {
-      padding: 5px 10px; font-size: 14px; margin-left: 5px;
-    }
+    #add-user { margin-top: 10px; }
+    #new-user-email { width: calc(100% - 70px); padding: 5px; font-size: 14px; }
+    #add-user-button { padding: 5px 10px; font-size: 14px; margin-left: 5px; }
     /* 3D 캔버스 */
     #canvas { position: absolute; width: 100%; height: 100%; z-index: 1; }
     /* 말풍선 스타일 */
@@ -102,43 +67,36 @@
       white-space: pre-line; pointer-events: none;
     }
   </style>
-
-  <!-- EmailJS 라이브러리 -->
-  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
-  <!-- Three.js 라이브러리 -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script>
     // EmailJS 초기화 (Public Key, 실제 값으로 수정)
     (function() {
       emailjs.init("3YFtNo1im0qkWpUDE");
     })();
 
-    // 전역 변수: 사용자 목록 및 내/상대방 이메일 저장
-    let userList = []; // 배열로 사용자 이메일을 관리
+    // 전역 변수: 구글 로그인 후 받아온 이메일, 사용자 목록 등
     let userProfileEmail = "";
-    let otherProfileEmail = "";
+    let userList = []; // 선택 가능한 사용자 목록 (이메일 배열)
 
-    // 내 이메일 저장 (자동 저장 및 목록 추가)
-    function saveUserProfile() {
-      const emailInput = document.getElementById("user-email-profile").value.trim();
-      if (emailInput) {
-        userProfileEmail = emailInput;
-        addUser(emailInput);
-        alert("내 이메일이 저장되었습니다: " + userProfileEmail);
-      } else {
-        alert("내 이메일을 입력해주세요.");
-      }
+    // Google Sign-In 성공 시 호출되는 함수
+    function onSignIn(googleUser) {
+      // GoogleUser 객체에서 기본 프로필 정보를 가져옵니다.
+      const profile = googleUser.getBasicProfile();
+      userProfileEmail = profile.getEmail();
+      alert("Google 로그인 성공! 이메일: " + userProfileEmail);
+      addUser(userProfileEmail);
+      updateUserListUI();
     }
-    // 상대방 이메일 저장 (자동 저장, onchange 이벤트로 호출)
-    function saveOtherProfile() {
-      const otherInput = document.getElementById("other-email-input").value.trim();
-      if (otherInput) {
-        otherProfileEmail = otherInput;
-        addUser(otherInput);
-        // 자동 저장되므로 별도의 알림 없이 저장
-      }
+
+    // Sign out 함수 (원할 경우)
+    function signOut() {
+      const auth2 = gapi.auth2.getAuthInstance();
+      auth2.signOut().then(() => {
+        alert("사용자가 로그아웃했습니다.");
+        userProfileEmail = "";
+      });
     }
-    // 사용자 목록에 이메일 추가
+
+    // 사용자 목록에 이메일 추가 (중복 방지)
     function addUser(email) {
       if (email && !userList.includes(email)) {
         userList.push(email);
@@ -156,7 +114,7 @@
         select.appendChild(option);
       });
     }
-    // 새 사용자 추가 (입력 필드에서 직접 추가)
+    // 새 사용자 추가 (수동 입력)
     function addNewUser() {
       const newUserEmail = document.getElementById("new-user-email").value.trim();
       if (newUserEmail) {
@@ -165,6 +123,24 @@
       } else {
         alert("새 사용자 이메일을 입력해주세요.");
       }
+    }
+    // EmailJS를 이용한 기본 이메일 전송 (내 이메일로 자동 전송)
+    function sendEmailPush() {
+      if (!userProfileEmail) {
+        alert("먼저 Google 로그인을 해주세요.");
+        return;
+      }
+      const templateParams = {
+        to_email: userProfileEmail,
+        subject: "푸시 알림 (내게)",
+        message: "이것은 내게 전송된 이메일 알림입니다."
+      };
+      emailjs.send("171514115990-llkmtm1154n", "template_lmj91jt", templateParams)
+        .then(function(response) {
+          alert("내 이메일로 전송되었습니다!");
+        }, function(error) {
+          alert("이메일 전송 실패: " + JSON.stringify(error));
+        });
     }
     // 선택된 사용자들에게 이메일 전송
     function sendEmailToSelectedUsers() {
@@ -181,7 +157,6 @@
           subject: "푸시 알림",
           message: "이것은 이메일 알림입니다."
         };
-        // 실제 EmailJS 설정 값으로 변경 (예: "171514115990-llkmtm1154n", "template_lmj91jt")
         emailjs.send("171514115990-llkmtm1154n", "template_lmj91jt", templateParams)
           .then(function(response) {
             console.log(`이메일이 ${email}에게 전송되었습니다!`);
@@ -191,40 +166,6 @@
       });
       alert("선택된 사용자에게 이메일 전송 시도 완료");
     }
-    // 기본 이메일 전송: 내 이메일과 상대방 이메일 모두에게 전송
-    function sendEmailPush() {
-      const emailToSend = userProfileEmail || document.getElementById('user-email-profile').value.trim();
-      const otherEmailToSend = otherProfileEmail || document.getElementById('other-email-input').value.trim();
-      if (!emailToSend || !otherEmailToSend) {
-        alert("내 이메일과 상대방 이메일 모두 입력해주세요.");
-        return;
-      }
-      // 내 이메일 전송
-      const templateParamsUser = {
-        to_email: emailToSend,
-        subject: "푸시 알림 (내게)",
-        message: "이것은 내게 전송된 이메일 알림입니다."
-      };
-      emailjs.send("171514115990-llkmtm1154n", "template_lmj91jt", templateParamsUser)
-        .then(function(response) {
-          alert("내 이메일로 전송되었습니다!");
-        }, function(error) {
-          alert("내 이메일 전송 실패: " + JSON.stringify(error));
-        });
-      // 상대방 이메일 전송
-      const templateParamsOther = {
-        to_email: otherEmailToSend,
-        subject: "푸시 알림 (상대방에게)",
-        message: "이것은 상대방에게 전송된 이메일 알림입니다."
-      };
-      emailjs.send("171514115990-llkmtm1154n", "template_lmj91jt", templateParamsOther)
-        .then(function(response) {
-          console.log("상대방 이메일 전송 성공");
-        }, function(error) {
-          console.log("상대방 이메일 전송 실패: " + JSON.stringify(error));
-        });
-    }
-
     // 말풍선 관련 함수
     function updateBubblePosition() {
       const bubble = document.getElementById('speech-bubble');
@@ -256,27 +197,22 @@
   </script>
 </head>
 <body>
-  <!-- 오른쪽 HUD: 채팅, 이메일 알림, 사용자 프로필 및 사용자 목록 -->
+  <!-- Google Sign-In 버튼 (소비자 입장에서는 간편하게 로그인) -->
+  <div id="google-signin">
+    <div class="g-signin2" data-onsuccess="onSignIn"></div>
+  </div>
+
+  <!-- 오른쪽 HUD: 채팅, 이메일 알림, 사용자 목록 -->
   <div id="right-hud">
     <h3>채팅창</h3>
     <div id="chat-log"></div>
-    <!-- 채팅 입력 영역 -->
     <div id="chat-input-area">
       <input type="text" id="chat-input" placeholder="채팅 입력..." />
       <button id="send-chat-button" onclick="sendChat()">전송</button>
     </div>
     <br/>
-    <!-- 사용자 프로필 영역 (내 이메일, 상대방 이메일 자동 저장) -->
-    <div id="user-profile">
-      <h4>내 이메일 설정</h4>
-      <input type="email" id="user-email-profile" placeholder="내 이메일 입력" style="width: calc(100% - 70px); padding: 5px;" />
-      <button id="save-profile-button" onclick="saveUserProfile()">저장</button>
-      <h4>상대방 이메일 설정</h4>
-      <input type="email" id="other-email-input" placeholder="상대방 이메일 입력" style="width: calc(100% - 70px); padding: 5px;" onchange="saveOtherProfile()" />
-    </div>
-    <br/>
-    <!-- 기본 이메일 전송 버튼 (내/상대방 모두에게 전송) -->
-    <button onclick="sendEmailPush()" style="width: 100%; padding: 5px;">이메일 알림 보내기</button>
+    <!-- 기본 이메일 전송 버튼 (Google 로그인 후 자동 저장된 내 이메일 사용) -->
+    <button onclick="sendEmailPush()" style="width: 100%; padding: 5px;">내 이메일로 알림 보내기</button>
     <hr/>
     <!-- 사용자 목록 영역 -->
     <div id="user-list">
@@ -517,9 +453,7 @@
     /* ====================================
        채팅 관련 함수
     ==================================== */
-    async function getWeather() {
-      return "맑음";
-    }
+    async function getWeather() { return "맑음"; }
     function appendToChatLog(message) {
       const chatLog = document.getElementById("chat-log");
       chatLog.innerHTML += "<div>" + message + "</div>";
@@ -558,9 +492,7 @@
           head.rotation.y = 0;
         }, 3000);
       }
-      else {
-        response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
-      }
+      else { response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?"; }
       appendToChatLog("사용자: " + input);
       appendToChatLog("캐릭터: " + response);
       showSpeechBubbleInChunks(response);
