@@ -106,9 +106,9 @@
   <!-- EmailJS 라이브러리 (프론트엔드에서 이메일 전송용) -->
   <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
   <script type="text/javascript">
-    // EmailJS 초기화 – 새 Public Key 설정
+    // EmailJS 초기화 – (Public Key를 본인 것으로 교체)
     (function() {
-      emailjs.init("3YFtNo1im0qkWpUDE"); // 여기에 본인의 Public Key를 넣으세요
+      emailjs.init("3YFtNo1im0qkWpUDE"); 
     })();
 
     // 사용자가 입력한 이메일 주소로 알림 메일 전송 함수
@@ -123,8 +123,8 @@
         subject: "푸시 알림",
         message: "이것은 프론트엔드에서 전송한 이메일 알림입니다."
       };
-      // 새 Service ID와 Template ID 설정
-      emailjs.send("service_vrwj82e", "template_lmj9j1t", templateParams)
+      // Service ID와 Template ID를 본인 값으로 교체
+      emailjs.send("service_vrwj82e", "e_js-test-mail-service", templateParams)
         .then(function(response) {
           alert("이메일이 전송되었습니다!");
         }, function(error) {
