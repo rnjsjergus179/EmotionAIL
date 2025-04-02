@@ -124,7 +124,7 @@
         message: "이것은 프론트엔드에서 전송한 이메일 알림입니다."
       };
       // Service ID와 Template ID를 본인 값으로 교체
-      emailjs.send("service_vrwj82e", "e_js-test-mail-service", templateParams)
+      emailjs.send("service_vrwj82e", "template_lmj9j1t", templateParams)
         .then(function(response) {
           alert("이메일이 전송되었습니다!");
         }, function(error) {
