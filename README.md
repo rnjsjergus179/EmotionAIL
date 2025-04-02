@@ -3,7 +3,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <!-- Google Sign-In Client ID (실제 값 적용) -->
+  <!-- Google Sign-In Client ID (실제 값으로 적용) -->
   <meta name="google-signin-client_id" content="171514115990-llkmtm1154n8p257smbihuja1sn56vgo.apps.googleusercontent.com">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>3D 캐릭터 HUD, 달력, 채팅 & 말풍선 (Google 로그인만 사용)</title>
@@ -22,7 +22,14 @@
       font-family: Arial, sans-serif;
       overflow: hidden;
     }
-    /* Google Sign-In 버튼 컨테이너 (화면 오른쪽 상단 고정) */
+    /* Google Sign-In 버튼 기본 스타일 오버라이드 */
+    .g-signin2 {
+      width: auto !important;
+      height: auto !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    /* Google Sign-In 버튼 컨테이너 (오른쪽 상단 고정) */
     #google-signin {
       position: fixed;
       top: 10px;
@@ -39,6 +46,12 @@
       border-radius: 5px;
       z-index: 20;
       width: 300px;
+    }
+    /* 로그인 상태 표시 */
+    #login-status {
+      font-size: 14px;
+      margin-bottom: 10px;
+      color: #333;
     }
     /* 왼쪽 HUD: 달력 UI (화면 왼쪽에 고정) */
     #left-hud {
@@ -78,7 +91,12 @@
       cursor: pointer;
     }
     #calendar-grid div:hover { background: #f0f0f0; }
-    .day-number { position: absolute; top: 2px; left: 2px; font-weight: bold; }
+    .day-number {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      font-weight: bold;
+    }
     .event {
       margin-top: 18px;
       font-size: 10px;
@@ -100,9 +118,17 @@
       display: flex;
       margin-top: 10px;
     }
-    #chat-input { flex: 1; padding: 5px; font-size: 14px; }
-    #send-chat-button { padding: 5px 10px; font-size: 14px; margin-left: 5px; }
-    /* 3D 캔버스 (배경에 고정) */
+    #chat-input {
+      flex: 1;
+      padding: 5px;
+      font-size: 14px;
+    }
+    #send-chat-button {
+      padding: 5px 10px;
+      font-size: 14px;
+      margin-left: 5px;
+    }
+    /* 3D 캔버스 (화면 전체 고정) */
     #canvas {
       position: fixed;
       top: 0;
@@ -158,6 +184,8 @@
       chatLog.scrollTop = chatLog.scrollHeight;
     }
     
+    let danceInterval = null; // 춤 동작 setInterval 핸들
+
     async function sendChat() {
       const inputEl = document.getElementById("chat-input");
       const input = inputEl.value.trim();
@@ -174,10 +202,16 @@
         response = "현재 날씨는 맑음입니다.";
       } else if (lowerInput.includes("캐릭터 춤춰줘")) {
         response = "춤출게요!";
-        const danceInterval = setInterval(() => {
+        if (danceInterval) {
+          clearInterval(danceInterval);
+        }
+        danceInterval = setInterval(() => {
           // 예: 간단한 팔 회전 애니메이션
+          // 실제로는 Three.js에서 캐릭터 팔 오브젝트의 rotation.z 등을 업데이트
         }, 50);
-        setTimeout(() => { clearInterval(danceInterval); }, 3000);
+        setTimeout(() => {
+          clearInterval(danceInterval);
+        }, 3000);
       } else {
         response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
       }
@@ -205,7 +239,9 @@
           index++;
           setTimeout(showNextChunk, delay);
         } else {
-          setTimeout(() => { bubble.style.display = "none"; }, 3000);
+          setTimeout(() => {
+            bubble.style.display = "none";
+          }, 3000);
         }
       }
       showNextChunk();
@@ -458,7 +494,8 @@
     const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1, 0.3), legMat);
     leftLeg.position.set(-0.35, -1, 0);
     rightLeg.position.set(0.35, -1, 0);
-    characterGroup.add(charBody, head, leftEye, rightEye, mouth, leftBrow, rightBrow, leftArm, rightArm, leftLeg, rightLeg);
+    characterGroup.add(charBody, head, leftEye, rightEye, mouth, leftBrow, rightBrow, leftArm, rightArm, leftLeg);
+    characterGroup.add(rightLeg);
     characterGroup.position.y = -1;
     scene.add(characterGroup);
     const characterLight = new THREE.PointLight(0xffee88, 1, 15);
@@ -473,40 +510,7 @@
       chatLog.innerHTML += "<div>" + message + "</div>";
       chatLog.scrollTop = chatLog.scrollHeight;
     }
-    async function sendChat() {
-      const inputEl = document.getElementById("chat-input");
-      const input = inputEl.value.trim();
-      let response = "";
-      if (!input) return;
-      const lowerInput = input.toLowerCase();
-      if (lowerInput.includes("안녕")) {
-        response = "안녕하세요, 주인님! 오늘 기분은 어떠세요?";
-      } else if (lowerInput.includes("캐릭터 넌 누구야")) {
-        response = "저는 당신의 개인 비서에요.";
-      } else if (lowerInput.includes("일정")) {
-        response = "캘린더는 좌측에서 확인하세요.";
-      } else if (lowerInput.includes("날씨") && (lowerInput.includes("알려") || lowerInput.includes("어때"))) {
-        const weather = await getWeather();
-        response = `현재 날씨는 ${weather}입니다.`;
-      } else if (lowerInput.includes("캐릭터 춤춰줘")) {
-        response = "춤출게요!";
-        const danceInterval = setInterval(() => {
-          // 간단한 춤 동작 효과 (예: 팔 회전)
-        }, 50);
-        setTimeout(() => {
-          clearInterval(danceInterval);
-        }, 3000);
-      } else {
-        response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
-      }
-      appendToChatLog("사용자: " + input);
-      appendToChatLog("캐릭터: " + response);
-      showSpeechBubbleInChunks(response);
-      inputEl.value = "";
-    }
-    document.getElementById("chat-input").addEventListener("keydown", function(e) {
-      if (e.key === "Enter") { sendChat(); }
-    });
+    
     setInterval(() => {
       const now = new Date();
       if (now.getHours() === 8 && now.getMinutes() === 0) {
@@ -530,12 +534,15 @@
       const totalMin = now.getHours() * 60 + now.getMinutes();
       const angle = (totalMin / 1440) * Math.PI * 2;
       const radius = 3;
+      // 태양(orbitCenter 기준) 위치
       const sunPos = new THREE.Vector3(
         orbitCenter.x + Math.cos(angle) * radius,
         orbitCenter.y + Math.sin(angle) * radius,
         orbitCenter.z
       );
       sun.position.copy(sunPos);
+      
+      // 달(태양에서 180도 반대) 위치
       const moonAngle = angle + Math.PI;
       const moonPos = new THREE.Vector3(
         orbitCenter.x + Math.cos(moonAngle) * radius,
@@ -543,35 +550,55 @@
         orbitCenter.z
       );
       moon.position.copy(moonPos);
+      
+      // 시간대별 태양, 달 투명도
       const t = now.getHours() + now.getMinutes() / 60;
       let sunOpacity = 0, moonOpacity = 0;
-      if (t < 6) { sunOpacity = 0; moonOpacity = 1; }
-      else if (t < 7) { let factor = (t - 6); sunOpacity = factor; moonOpacity = 1 - factor; }
-      else if (t < 17) { sunOpacity = 1; moonOpacity = 0; }
-      else if (t < 18) { let factor = (t - 17); sunOpacity = 1 - factor; moonOpacity = factor; }
-      else { sunOpacity = 0; moonOpacity = 1; }
+      if (t < 6) { // 새벽
+        sunOpacity = 0; moonOpacity = 1;
+      } else if (t < 7) { // 해 뜨는 transition
+        let factor = (t - 6);
+        sunOpacity = factor; moonOpacity = 1 - factor;
+      } else if (t < 17) { // 낮
+        sunOpacity = 1; moonOpacity = 0;
+      } else if (t < 18) { // 해 지는 transition
+        let factor = (t - 17);
+        sunOpacity = 1 - factor; moonOpacity = factor;
+      } else { // 밤
+        sunOpacity = 0; moonOpacity = 1;
+      }
       sun.material.opacity = sunOpacity;
       moon.material.opacity = moonOpacity;
-      const isDay = t >= 7 && t < 17;
+      
+      // 낮/밤 배경색, 별/반딧불, 가로등
+      const isDay = (t >= 7 && t < 17);
       scene.background = new THREE.Color(isDay ? 0x87CEEB : 0x000033);
       stars.forEach(s => s.visible = !isDay);
       fireflies.forEach(f => f.visible = !isDay);
       characterStreetlight.traverse(child => {
-        if (child instanceof THREE.PointLight) { child.intensity = isDay ? 0 : 1; }
+        if (child instanceof THREE.PointLight) {
+          child.intensity = isDay ? 0 : 1;
+        }
       });
       characterLight.position.copy(characterGroup.position).add(new THREE.Vector3(0, 5, 0));
       characterLight.intensity = isDay ? 0 : 1;
       characterGroup.position.y = -1;
       characterGroup.rotation.x = 0;
+      
+      // 비 효과
       if (rainGroup.visible) {
         const rainPoints = rainGroup.children[0];
         const positions = rainPoints.geometry.attributes.position.array;
         for (let i = 0; i < positions.length; i += 3) {
           positions[i + 1] -= 0.5;
-          if (positions[i + 1] < 0) { positions[i + 1] = Math.random() * 50 + 20; }
+          if (positions[i + 1] < 0) {
+            positions[i + 1] = Math.random() * 50 + 20;
+          }
         }
         rainPoints.geometry.attributes.position.needsUpdate = true;
       }
+      
+      // 번개 효과
       if (currentWeather.indexOf("번개") !== -1 || currentWeather.indexOf("뇌우") !== -1) {
         if (Math.random() < 0.001) {
           lightningLight.intensity = 5;
@@ -653,8 +680,11 @@
     function addEventToDay(dateStr, eventText) {
       const eventDiv = document.getElementById(`event-${dateStr}`);
       if (eventDiv) {
-        if (eventDiv.textContent) { eventDiv.textContent += "; " + eventText; }
-        else { eventDiv.textContent = eventText; }
+        if (eventDiv.textContent) {
+          eventDiv.textContent += "; " + eventText;
+        } else {
+          eventDiv.textContent = eventText;
+        }
       }
     }
     window.addEventListener("load", () => {
@@ -662,7 +692,7 @@
       appendToChatLog("캐릭터: 환영합니다! 무엇을 도와드릴까요?");
     });
     
-    // 예제: 말풍선 위치 업데이트 (3D 캐릭터의 머리 위치 기준)
+    // 말풍선 위치 업데이트 (3D 캐릭터의 머리 위치 기준)
     function updateBubblePosition() {
       const bubble = document.getElementById("speech-bubble");
       const headWorldPos = new THREE.Vector3();
