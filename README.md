@@ -113,6 +113,21 @@
       white-space: pre-line;
       pointer-events: none;
     }
+    /* 채팅 입력 영역 - 입력창과 버튼을 한 줄에 배치 */
+    #chat-input-area {
+      display: flex;
+      margin-top: 10px;
+    }
+    #chat-input {
+      flex: 1;
+      padding: 5px;
+      font-size: 14px;
+    }
+    #send-chat-button {
+      padding: 5px 10px;
+      font-size: 14px;
+      margin-left: 5px;
+    }
   </style>
 
   <!-- EmailJS 라이브러리 -->
@@ -182,13 +197,14 @@
   <div id="right-hud">
     <h3>채팅창</h3>
     <div id="chat-log"></div>
-    <input type="text" id="chat-input" placeholder="채팅 입력..." />
-    <br/><br/>
-    <input type="email" id="user-email" placeholder="이메일 주소 입력"
-           style="width: 100%; padding: 5px; margin-bottom: 5px;" />
-    <button onclick="sendEmailPush()" style="width: 100%; padding: 5px;">
-      이메일 알림 보내기
-    </button>
+    <!-- 채팅 입력 영역: 입력창과 전송 버튼 -->
+    <div id="chat-input-area">
+      <input type="text" id="chat-input" placeholder="채팅 입력..." />
+      <button id="send-chat-button" onclick="sendChat()">전송</button>
+    </div>
+    <br/>
+    <input type="email" id="user-email" placeholder="이메일 주소 입력" style="width: 100%; padding: 5px; margin-bottom: 5px;" />
+    <button onclick="sendEmailPush()" style="width: 100%; padding: 5px;">이메일 알림 보내기</button>
   </div>
 
   <!-- 왼쪽 HUD: 달력 UI -->
@@ -281,7 +297,7 @@
       houseGroup.add(roof);
       return houseGroup;
     }
-    // 빌딩 배치
+    // 빌딩 배치 (5열×2행)
     for (let i = 0; i < 10; i++) {
       const width = Math.random() * 2 + 2;
       const height = Math.random() * 10 + 10;
@@ -294,7 +310,7 @@
       building.position.set(x, -2 + height/2, z);
       backgroundGroup.add(building);
     }
-    // 집 배치
+    // 집 배치 (1행, 캐릭터 뒤쪽, Z = -5)
     for (let i = 0; i < 5; i++) {
       const width = Math.random() * 2 + 3;
       const height = Math.random() * 2 + 3;
@@ -305,7 +321,7 @@
       house.position.set(x, 0, z);
       backgroundGroup.add(house);
     }
-    // 단일 가로등: 캐릭터 옆
+    // 단일 가로등: 캐릭터 옆에 배치
     function createStreetlight() {
       const lightGroup = new THREE.Group();
       const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 4, 8), new THREE.MeshBasicMaterial({ color: 0x333333 }));
@@ -343,7 +359,7 @@
     initRain();
     rainGroup.visible = false;
 
-    // 날씨 효과 – 구름
+    // 날씨 효과 – 구름 (하나의 구름)
     let houseCloudGroup = new THREE.Group();
     function createHouseCloud() {
       const cloud = new THREE.Group();
@@ -460,14 +476,11 @@
       }
       appendToChatLog("사용자: " + input);
       appendToChatLog("캐릭터: " + response);
-      // 말풍선으로도 응답 표시
       showSpeechBubbleInChunks(response);
       inputEl.value = "";
     }
     document.getElementById("chat-input").addEventListener("keydown", function(e) {
-      if (e.key === "Enter") {
-        sendChat();
-      }
+      if (e.key === "Enter") { sendChat(); }
     });
     setInterval(() => {
       const now = new Date();
@@ -542,7 +555,6 @@
       }
       updateHouseClouds();
       characterStreetlight.position.set(characterGroup.position.x+1, -2, characterGroup.position.z);
-      // 말풍선 위치 업데이트
       updateBubblePosition();
       renderer.render(scene, camera);
     }
