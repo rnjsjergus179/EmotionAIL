@@ -3,40 +3,25 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <!-- Google Sign-In Client ID -->
-  <meta name="google-signin-client_id" content="171514115990-llkmtm1154n8p257smbihuja1sn56vgo.apps.googleusercontent.com">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>3D 캐릭터 HUD, 달력, 채팅 & 말풍선 (Google 로그인만 사용)</title>
+  <title>3D 캐릭터 HUD, 달력, 채팅 & 구글 이메일</title>
   
-  <!-- Google Sign-In 라이브러리 (구버전) -->
-  <script src="https://apis.google.com/js/platform.js" async defer></script>
+  <!-- Google Sign-In 라이브러리 제거 (로그인 기능 삭제) -->
+  <!-- 대신 구글 이메일 전송 UI를 추가합니다. -->
   
   <style>
-    /* CSS Reset 및 box-sizing 적용 */
+    /* CSS Reset 및 모든 요소에 box-sizing 적용 */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-    body {
+    html, body {
+      height: 100%;
       font-family: Arial, sans-serif;
       overflow: hidden;
     }
-    /* Google Sign-In 버튼 기본 스타일 오버라이드 */
-    .g-signin2 {
-      width: auto !important;
-      height: auto !important;
-      margin: 0 !important;
-      padding: 0 !important;
-    }
-    /* Google Sign-In 버튼 컨테이너 (고정) */
-    #google-signin {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      z-index: 30;
-    }
-    /* 오른쪽 HUD (채팅 등) */
+    /* 오른쪽 HUD: 채팅 및 구글 이메일 (고정) */
     #right-hud {
       position: fixed;
       top: 70px;
@@ -47,13 +32,49 @@
       border-radius: 5px;
       z-index: 20;
     }
-    /* 로그인 상태 표시 */
-    #login-status {
-      font-size: 14px;
+    /* 채팅 영역 */
+    #chat-log {
+      height: 100px;
+      overflow-y: scroll;
+      border: 1px solid #ccc;
+      padding: 5px;
       margin-bottom: 10px;
-      color: #333;
     }
-    /* 왼쪽 HUD (달력) */
+    #chat-input-area {
+      display: flex;
+      margin-bottom: 10px;
+    }
+    #chat-input {
+      flex: 1;
+      padding: 5px;
+      font-size: 14px;
+    }
+    #send-chat-button {
+      padding: 5px 10px;
+      font-size: 14px;
+      margin-left: 5px;
+    }
+    /* 구글 이메일 영역 (채팅창 아래 추가) */
+    #google-email-section {
+      margin-top: 10px;
+      border: 1px solid #ccc;
+      padding: 5px;
+      border-radius: 5px;
+      background: #f9f9f9;
+    }
+    #google-email-section input, 
+    #google-email-section textarea {
+      width: 100%;
+      margin-bottom: 5px;
+      padding: 5px;
+      font-size: 14px;
+    }
+    #send-email-button {
+      width: 100%;
+      padding: 5px;
+      font-size: 14px;
+    }
+    /* 왼쪽 HUD: 달력 (고정) */
     #left-hud {
       position: fixed;
       top: 70px;
@@ -105,28 +126,6 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    /* 채팅 영역 */
-    #chat-log {
-      height: 100px;
-      overflow-y: scroll;
-      border: 1px solid #ccc;
-      padding: 5px;
-      margin-top: 10px;
-    }
-    #chat-input-area {
-      display: flex;
-      margin-top: 10px;
-    }
-    #chat-input {
-      flex: 1;
-      padding: 5px;
-      font-size: 14px;
-    }
-    #send-chat-button {
-      padding: 5px 10px;
-      font-size: 14px;
-      margin-left: 5px;
-    }
     /* 3D 캔버스 (전체 화면 고정) */
     #canvas {
       position: fixed;
@@ -149,33 +148,17 @@
       white-space: pre-line;
       pointer-events: none;
     }
+    /* 미디어 쿼리 (작은 화면 대응) */
+    @media (max-width: 480px) {
+      #right-hud, #left-hud {
+        width: 90%;
+        left: 5%;
+        right: 5%;
+      }
+    }
   </style>
   
   <script>
-    // Google 로그인 초기화
-    function initGoogleAuth() {
-      gapi.load('auth2', function() {
-        gapi.auth2.init({
-          client_id: "171514115990-llkmtm1154n8p257smbihuja1sn56vgo.apps.googleusercontent.com"
-        }).then(() => {
-          console.log("Google auth 초기화 완료");
-        }, (error) => {
-          console.error("Google auth 초기화 에러:", error);
-        });
-      });
-    }
-    
-    // 전역 변수: 로그인한 이메일
-    let userProfileEmail = "";
-    
-    // Google Sign-In 성공 시 호출
-    function onSignIn(googleUser) {
-      const profile = googleUser.getBasicProfile();
-      userProfileEmail = profile.getEmail();
-      document.getElementById("login-status").textContent = "로그인한 이메일: " + userProfileEmail;
-      console.log("Google 로그인 성공:", userProfileEmail);
-    }
-    
     // 채팅 관련 함수
     function appendToChatLog(message) {
       const chatLog = document.getElementById("chat-log");
@@ -184,7 +167,6 @@
     }
     
     let danceInterval = null;
-    
     async function sendChat() {
       const inputEl = document.getElementById("chat-input");
       const input = inputEl.value.trim();
@@ -203,7 +185,7 @@
         response = "춤출게요!";
         if (danceInterval) clearInterval(danceInterval);
         danceInterval = setInterval(() => {
-          // 여기서 캐릭터 팔 회전 등의 애니메이션 코드를 추가하세요.
+          // 캐릭터 팔 회전 애니메이션 (Three.js 코드 추가)
         }, 50);
         setTimeout(() => { clearInterval(danceInterval); }, 3000);
       } else {
@@ -239,32 +221,51 @@
       showNextChunk();
     }
     
-    // 리사이즈 시 카메라 및 렌더러 업데이트
-    window.addEventListener("resize", function() {
+    // 윈도우 리사이즈 이벤트 - 카메라 및 렌더러 업데이트
+    window.addEventListener("resize", function(){
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
+    
+    // 구글 이메일 전송 기능 (예제)
+    function sendGoogleEmail() {
+      const recipient = document.getElementById("email-recipient").value.trim();
+      const subject = document.getElementById("email-subject").value.trim();
+      const message = document.getElementById("email-message").value.trim();
+      
+      if (!recipient || !subject || !message) {
+        alert("모든 이메일 필드를 입력해주세요.");
+        return;
+      }
+      
+      // 여기에 Gmail API 또는 EmailJS를 통한 실제 이메일 전송 코드를 추가하세요.
+      // 예를 들어, EmailJS 사용 시 templateParams에 recipient, subject, message 등을 설정 후 emailjs.send() 호출
+      console.log("이메일 전송 요청:", { recipient, subject, message });
+      alert("이메일 전송 요청됨:\n수신자: " + recipient + "\n제목: " + subject + "\n내용: " + message);
+    }
   </script>
 </head>
-<body onload="initGoogleAuth()">
-  <!-- Google 로그인 버튼 -->
-  <div id="google-signin">
-    <div class="g-signin2" data-onsuccess="onSignIn"></div>
-  </div>
-  
-  <!-- 오른쪽 HUD (채팅) -->
+<body>
+  <!-- 오른쪽 HUD: 채팅 및 구글 이메일 -->
   <div id="right-hud">
-    <div id="login-status">로그인 전</div>
     <h3>채팅창</h3>
     <div id="chat-log"></div>
     <div id="chat-input-area">
       <input type="text" id="chat-input" placeholder="채팅 입력..." />
       <button id="send-chat-button" onclick="sendChat()">전송</button>
     </div>
+    <!-- 구글 이메일 전송 UI (채팅창 아래 추가) -->
+    <div id="google-email-section">
+      <h4>구글 이메일 전송</h4>
+      <input type="email" id="email-recipient" placeholder="수신자 이메일" />
+      <input type="text" id="email-subject" placeholder="제목" />
+      <textarea id="email-message" rows="3" placeholder="내용"></textarea>
+      <button id="send-email-button" onclick="sendGoogleEmail()">이메일 보내기</button>
+    </div>
   </div>
   
-  <!-- 왼쪽 HUD (달력) -->
+  <!-- 왼쪽 HUD: 달력 UI -->
   <div id="left-hud">
     <h3>캘린더</h3>
     <div id="calendar-container">
@@ -296,7 +297,6 @@
     camera.position.set(5, 5, 10);
     camera.lookAt(0, 0, 0);
     
-    // 조명 설정
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(5, 10, 7).normalize();
     scene.add(directionalLight);
@@ -312,7 +312,7 @@
     const moon = new THREE.Mesh(new THREE.SphereGeometry(1.2, 64, 64), moonMaterial);
     scene.add(moon);
     
-    // 별과 반딧불 생성
+    // 별, 반딧불 생성
     const stars = [], fireflies = [];
     for (let i = 0; i < 100; i++) {
       const star = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
@@ -327,7 +327,7 @@
       fireflies.push(firefly);
     }
     
-    // 바닥 생성
+    // 고해상도 콩크리트 바닥 (Y = -2)
     const floorGeometry = new THREE.PlaneGeometry(200, 200, 128, 128);
     const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 1, metalness: 0 });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
@@ -335,7 +335,7 @@
     floor.position.y = -2;
     scene.add(floor);
     
-    // 배경(빌딩, 집, 가로등) 그룹 생성
+    // 배경 그룹 (빌딩, 집, 가로등)
     const backgroundGroup = new THREE.Group();
     scene.add(backgroundGroup);
     function createBuilding(width, height, depth, color) {
@@ -356,7 +356,7 @@
       houseGroup.add(roof);
       return houseGroup;
     }
-    // 빌딩 배치
+    // 빌딩 배치 (5열×2행)
     for (let i = 0; i < 10; i++) {
       const width = Math.random() * 2 + 2;
       const height = Math.random() * 10 + 10;
@@ -369,7 +369,7 @@
       building.position.set(x, -2 + height/2, z);
       backgroundGroup.add(building);
     }
-    // 집 배치
+    // 집 배치 (1행, 캐릭터 뒤쪽, Z = -5)
     for (let i = 0; i < 5; i++) {
       const width = Math.random() * 2 + 3;
       const height = Math.random() * 2 + 3;
@@ -380,7 +380,7 @@
       house.position.set(x, 0, z);
       backgroundGroup.add(house);
     }
-    // 가로등 생성
+    // 단일 가로등: 캐릭터 옆에 배치
     function createStreetlight() {
       const lightGroup = new THREE.Group();
       const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 4, 8),
@@ -400,7 +400,7 @@
     characterStreetlight.position.set(1, -2, 0);
     scene.add(characterStreetlight);
     
-    // 비 효과
+    // 날씨 효과 – 비
     let rainGroup = new THREE.Group();
     scene.add(rainGroup);
     function initRain() {
@@ -420,7 +420,7 @@
     initRain();
     rainGroup.visible = false;
     
-    // 구름 효과
+    // 날씨 효과 – 구름 (하나의 구름)
     let houseCloudGroup = new THREE.Group();
     function createHouseCloud() {
       const cloud = new THREE.Group();
@@ -444,7 +444,7 @@
       if (singleCloud.position.x > 5) { singleCloud.position.x = -5; }
     }
     
-    // 번개 효과
+    // 날씨 효과 – 번개
     let lightningLight = new THREE.PointLight(0xffffff, 0, 500);
     lightningLight.position.set(0, 50, 0);
     scene.add(lightningLight);
@@ -520,7 +520,7 @@
         response = "춤출게요!";
         if (danceInterval) clearInterval(danceInterval);
         danceInterval = setInterval(() => {
-          // 캐릭터 팔 회전 등의 애니메이션 코드를 여기서 업데이트
+          // 캐릭터 팔 회전 애니메이션 (Three.js 업데이트 코드 추가)
         }, 50);
         setTimeout(() => { clearInterval(danceInterval); }, 3000);
       } else {
@@ -572,7 +572,6 @@
         orbitCenter.z
       );
       moon.position.copy(moonPos);
-      
       // 시간에 따른 태양/달 투명도 조절
       const t = now.getHours() + now.getMinutes() / 60;
       let sunOpacity = 0, moonOpacity = 0;
@@ -592,7 +591,7 @@
       sun.material.opacity = sunOpacity;
       moon.material.opacity = moonOpacity;
       
-      // 낮/밤에 따른 배경색 및 별, 반딧불, 가로등 설정
+      // 낮/밤 배경, 별, 반딧불, 가로등 설정
       const isDay = (t >= 7 && t < 17);
       scene.background = new THREE.Color(isDay ? 0x87CEEB : 0x000033);
       stars.forEach(s => s.visible = !isDay);
