@@ -108,7 +108,7 @@
   <script type="text/javascript">
     // EmailJS 초기화 – (Public Key를 본인 것으로 교체)
     (function() {
-      emailjs.init("3YFtNo1im0qkWpUDE"); 
+      emailjs.init("3YFtNo1im0qkWpUDE");
     })();
 
     // 사용자가 입력한 이메일 주소로 알림 메일 전송 함수
@@ -123,8 +123,8 @@
         subject: "푸시 알림",
         message: "이것은 프론트엔드에서 전송한 이메일 알림입니다."
       };
-      // 새 Service ID와 Template ID로 교체
-      emailjs.send("service_s1n70ic", "template_lmj9j1t", templateParams)
+      // 새 Service ID와 Template ID 사용
+      emailjs.send("171514115990-llkmtm1154n", "template_lmj91jt", templateParams)
         .then(function(response) {
           alert("이메일이 전송되었습니다!");
         }, function(error) {
@@ -472,7 +472,6 @@
     ==================================== */
     // 날씨 호출 (예시용 더미 함수)
     async function getWeather() {
-      // 실제 API 연동이 없다면 임시 값 리턴
       return "맑음";
     }
 
@@ -489,13 +488,12 @@
       const input = inputEl.value.trim();
       let response = "";
 
-      if (!input) return; // 빈 입력 처리
+      if (!input) return;
 
       const lowerInput = input.toLowerCase();
 
       if (lowerInput.includes("안녕")) {
         response = "안녕하세요, 주인님! 오늘 기분은 어떠세요?";
-        // 팔 흔드는 모션 예시
         characterGroup.children[7].rotation.z = Math.PI / 4;
         setTimeout(() => {
           characterGroup.children[7].rotation.z = 0;
@@ -530,22 +528,17 @@
         response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
       }
 
-      // 입력과 응답을 채팅창에 출력
       appendToChatLog("사용자: " + input);
       appendToChatLog("캐릭터: " + response);
-
-      // 입력창 초기화
       inputEl.value = "";
     }
 
-    // 엔터키 입력 처리
     document.getElementById("chat-input").addEventListener("keydown", function(e) {
       if (e.key === "Enter") {
         sendChat();
       }
     });
 
-    // 시간대별 자동 메시지
     setInterval(() => {
       const now = new Date();
       if (now.getHours() === 8 && now.getMinutes() === 0) {
@@ -568,12 +561,10 @@
       head.getWorldPosition(headWorldPos);
       const orbitCenter = headWorldPos.clone().add(new THREE.Vector3(0, 2, 0));
 
-      // 태양 / 달 움직임 (시간에 따라 위치 변화)
       const totalMin = now.getHours() * 60 + now.getMinutes();
       const angle = (totalMin / 1440) * Math.PI * 2;
       const radius = 3;
 
-      // 태양
       const sunPos = new THREE.Vector3(
         orbitCenter.x + Math.cos(angle) * radius,
         orbitCenter.y + Math.sin(angle) * radius,
@@ -581,7 +572,6 @@
       );
       sun.position.copy(sunPos);
 
-      // 달
       const moonAngle = angle + Math.PI;
       const moonPos = new THREE.Vector3(
         orbitCenter.x + Math.cos(moonAngle) * radius,
@@ -590,7 +580,6 @@
       );
       moon.position.copy(moonPos);
 
-      // 낮/밤 전환
       const t = now.getHours() + now.getMinutes() / 60;
       let sunOpacity = 0, moonOpacity = 0;
       if (t < 6) {
@@ -619,7 +608,6 @@
       stars.forEach((s) => (s.visible = !isDay));
       fireflies.forEach((f) => (f.visible = !isDay));
 
-      // 캐릭터 옆 가로등: 낮에는 꺼지고, 밤에는 켜짐
       characterStreetlight.traverse((child) => {
         if (child instanceof THREE.PointLight) {
           child.intensity = isDay ? 0 : 1;
@@ -631,7 +619,6 @@
       characterGroup.position.y = -1;
       characterGroup.rotation.x = 0;
 
-      // 비 업데이트
       if (rainGroup.visible) {
         const rainPoints = rainGroup.children[0];
         const positions = rainPoints.geometry.attributes.position.array;
@@ -644,7 +631,6 @@
         rainPoints.geometry.attributes.position.needsUpdate = true;
       }
 
-      // 번개 효과
       if (
         currentWeather.indexOf("번개") !== -1 ||
         currentWeather.indexOf("뇌우") !== -1
@@ -657,10 +643,8 @@
         }
       }
 
-      // 구름 업데이트
       updateHouseClouds();
 
-      // 캐릭터 옆 가로등 위치 (캐릭터 기준 x + 1)
       characterStreetlight.position.set(
         characterGroup.position.x + 1,
         -2,
@@ -728,7 +712,6 @@
       const grid = document.getElementById("calendar-grid");
       grid.innerHTML = "";
 
-      // 요일 헤더 추가
       const daysOfWeek = ["일","월","화","수","목","금","토"];
       daysOfWeek.forEach((day) => {
         const th = document.createElement("div");
@@ -741,12 +724,10 @@
       const firstDay = new Date(year, month, 1).getDay();
       const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-      // 빈 칸
       for (let i = 0; i < firstDay; i++) {
         grid.appendChild(document.createElement("div"));
       }
 
-      // 날짜 셀
       for (let d = 1; d <= daysInMonth; d++) {
         const cell = document.createElement("div");
         cell.innerHTML = `
@@ -776,7 +757,6 @@
 
     window.addEventListener("load", () => {
       initCalendar();
-      // 처음 로딩 시 인사 한마디
       appendToChatLog("캐릭터: 환영합니다! 무엇을 도와드릴까요?");
     });
   </script>
