@@ -3,7 +3,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <!-- Google Sign-In Client ID (실제 값으로 적용) -->
+  <!-- Google Sign-In Client ID -->
   <meta name="google-signin-client_id" content="171514115990-llkmtm1154n8p257smbihuja1sn56vgo.apps.googleusercontent.com">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>3D 캐릭터 HUD, 달력, 채팅 & 말풍선 (Google 로그인만 사용)</title>
@@ -12,7 +12,7 @@
   <script src="https://apis.google.com/js/platform.js" async defer></script>
   
   <style>
-    /* CSS Reset 및 모든 요소에 box-sizing 적용 */
+    /* CSS Reset 및 box-sizing 적용 */
     * {
       margin: 0;
       padding: 0;
@@ -29,23 +29,23 @@
       margin: 0 !important;
       padding: 0 !important;
     }
-    /* Google Sign-In 버튼 컨테이너 (오른쪽 상단 고정) */
+    /* Google Sign-In 버튼 컨테이너 (고정) */
     #google-signin {
       position: fixed;
       top: 10px;
       right: 10px;
       z-index: 30;
     }
-    /* 오른쪽 HUD: 채팅 및 기타 기능 (화면 오른쪽에 고정) */
+    /* 오른쪽 HUD (채팅 등) */
     #right-hud {
       position: fixed;
-      top: 70px; /* 로그인 버튼 아래 */
+      top: 70px;
       right: 10px;
+      width: 300px;
       padding: 10px;
       background: rgba(255,255,255,0.8);
       border-radius: 5px;
       z-index: 20;
-      width: 300px;
     }
     /* 로그인 상태 표시 */
     #login-status {
@@ -53,20 +53,20 @@
       margin-bottom: 10px;
       color: #333;
     }
-    /* 왼쪽 HUD: 달력 UI (화면 왼쪽에 고정) */
+    /* 왼쪽 HUD (달력) */
     #left-hud {
       position: fixed;
       top: 70px;
       left: 10px;
+      width: 320px;
       padding: 10px;
       background: rgba(255,255,255,0.9);
       border-radius: 5px;
       z-index: 20;
-      width: 320px;
       max-height: 90vh;
       overflow-y: auto;
     }
-    /* 달력 UI 스타일 */
+    /* 달력 UI 내부 스타일 */
     #calendar-container { margin-top: 10px; }
     #calendar-header {
       display: flex;
@@ -105,7 +105,7 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    /* 채팅 로그 */
+    /* 채팅 영역 */
     #chat-log {
       height: 100px;
       overflow-y: scroll;
@@ -113,7 +113,6 @@
       padding: 5px;
       margin-top: 10px;
     }
-    /* 채팅 입력 영역 */
     #chat-input-area {
       display: flex;
       margin-top: 10px;
@@ -128,7 +127,7 @@
       font-size: 14px;
       margin-left: 5px;
     }
-    /* 3D 캔버스 (화면 전체 고정) */
+    /* 3D 캔버스 (전체 화면 고정) */
     #canvas {
       position: fixed;
       top: 0;
@@ -138,7 +137,7 @@
       z-index: 1;
       display: block;
     }
-    /* 말풍선 스타일 */
+    /* 말풍선 */
     #speech-bubble {
       position: fixed;
       background: white;
@@ -153,7 +152,7 @@
   </style>
   
   <script>
-    // 초기 Google 인증 초기화
+    // Google 로그인 초기화
     function initGoogleAuth() {
       gapi.load('auth2', function() {
         gapi.auth2.init({
@@ -165,11 +164,11 @@
         });
       });
     }
-
-    // 전역 변수: Google 로그인 후 받아온 내 이메일
+    
+    // 전역 변수: 로그인한 이메일
     let userProfileEmail = "";
     
-    // Google Sign-In 성공 시 호출되는 함수
+    // Google Sign-In 성공 시 호출
     function onSignIn(googleUser) {
       const profile = googleUser.getBasicProfile();
       userProfileEmail = profile.getEmail();
@@ -184,8 +183,8 @@
       chatLog.scrollTop = chatLog.scrollHeight;
     }
     
-    let danceInterval = null; // 춤 동작 setInterval 핸들
-
+    let danceInterval = null;
+    
     async function sendChat() {
       const inputEl = document.getElementById("chat-input");
       const input = inputEl.value.trim();
@@ -202,16 +201,11 @@
         response = "현재 날씨는 맑음입니다.";
       } else if (lowerInput.includes("캐릭터 춤춰줘")) {
         response = "춤출게요!";
-        if (danceInterval) {
-          clearInterval(danceInterval);
-        }
+        if (danceInterval) clearInterval(danceInterval);
         danceInterval = setInterval(() => {
-          // 예: 간단한 팔 회전 애니메이션
-          // 실제로는 Three.js에서 캐릭터 팔 오브젝트의 rotation.z 등을 업데이트
+          // 여기서 캐릭터 팔 회전 등의 애니메이션 코드를 추가하세요.
         }, 50);
-        setTimeout(() => {
-          clearInterval(danceInterval);
-        }, 3000);
+        setTimeout(() => { clearInterval(danceInterval); }, 3000);
       } else {
         response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
       }
@@ -222,7 +216,7 @@
     }
     
     document.getElementById("chat-input").addEventListener("keydown", function(e) {
-      if (e.key === "Enter") { sendChat(); }
+      if (e.key === "Enter") sendChat();
     });
     
     function showSpeechBubbleInChunks(text, chunkSize = 15, delay = 3000) {
@@ -239,16 +233,14 @@
           index++;
           setTimeout(showNextChunk, delay);
         } else {
-          setTimeout(() => {
-            bubble.style.display = "none";
-          }, 3000);
+          setTimeout(() => { bubble.style.display = "none"; }, 3000);
         }
       }
       showNextChunk();
     }
     
-    // 윈도우 리사이즈 이벤트 - 캔버스와 카메라 업데이트
-    window.addEventListener("resize", function(){
+    // 리사이즈 시 카메라 및 렌더러 업데이트
+    window.addEventListener("resize", function() {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -256,14 +248,13 @@
   </script>
 </head>
 <body onload="initGoogleAuth()">
-  <!-- Google Sign-In 버튼 (오른쪽 상단) -->
+  <!-- Google 로그인 버튼 -->
   <div id="google-signin">
     <div class="g-signin2" data-onsuccess="onSignIn"></div>
   </div>
   
-  <!-- 오른쪽 HUD: 채팅 및 기타 기능 -->
+  <!-- 오른쪽 HUD (채팅) -->
   <div id="right-hud">
-    <!-- 로그인 상태 표시 -->
     <div id="login-status">로그인 전</div>
     <h3>채팅창</h3>
     <div id="chat-log"></div>
@@ -273,7 +264,7 @@
     </div>
   </div>
   
-  <!-- 왼쪽 HUD: 달력 UI -->
+  <!-- 왼쪽 HUD (달력) -->
   <div id="left-hud">
     <h3>캘린더</h3>
     <div id="calendar-container">
@@ -295,7 +286,7 @@
   
   <script>
     /* ====================================
-       3D 씬 설정 (캐릭터, 배경, 날씨 효과 등)
+       Three.js 3D 씬 설정 (캐릭터, 배경, 날씨 효과 등)
     ==================================== */
     let currentWeather = "";
     const scene = new THREE.Scene();
@@ -305,6 +296,7 @@
     camera.position.set(5, 5, 10);
     camera.lookAt(0, 0, 0);
     
+    // 조명 설정
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(5, 10, 7).normalize();
     scene.add(directionalLight);
@@ -320,7 +312,7 @@
     const moon = new THREE.Mesh(new THREE.SphereGeometry(1.2, 64, 64), moonMaterial);
     scene.add(moon);
     
-    // 별, 반딧불 생성
+    // 별과 반딧불 생성
     const stars = [], fireflies = [];
     for (let i = 0; i < 100; i++) {
       const star = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
@@ -335,7 +327,7 @@
       fireflies.push(firefly);
     }
     
-    // 고해상도 콩크리트 바닥 (Y = -2)
+    // 바닥 생성
     const floorGeometry = new THREE.PlaneGeometry(200, 200, 128, 128);
     const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 1, metalness: 0 });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
@@ -343,7 +335,7 @@
     floor.position.y = -2;
     scene.add(floor);
     
-    // 배경 그룹 (빌딩, 집, 가로등)
+    // 배경(빌딩, 집, 가로등) 그룹 생성
     const backgroundGroup = new THREE.Group();
     scene.add(backgroundGroup);
     function createBuilding(width, height, depth, color) {
@@ -364,7 +356,7 @@
       houseGroup.add(roof);
       return houseGroup;
     }
-    // 빌딩 배치 (5열×2행)
+    // 빌딩 배치
     for (let i = 0; i < 10; i++) {
       const width = Math.random() * 2 + 2;
       const height = Math.random() * 10 + 10;
@@ -377,7 +369,7 @@
       building.position.set(x, -2 + height/2, z);
       backgroundGroup.add(building);
     }
-    // 집 배치 (1행, 캐릭터 뒤쪽, Z = -5)
+    // 집 배치
     for (let i = 0; i < 5; i++) {
       const width = Math.random() * 2 + 3;
       const height = Math.random() * 2 + 3;
@@ -388,7 +380,7 @@
       house.position.set(x, 0, z);
       backgroundGroup.add(house);
     }
-    // 단일 가로등: 캐릭터 옆에 배치
+    // 가로등 생성
     function createStreetlight() {
       const lightGroup = new THREE.Group();
       const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 4, 8),
@@ -408,7 +400,7 @@
     characterStreetlight.position.set(1, -2, 0);
     scene.add(characterStreetlight);
     
-    // 날씨 효과 – 비
+    // 비 효과
     let rainGroup = new THREE.Group();
     scene.add(rainGroup);
     function initRain() {
@@ -428,7 +420,7 @@
     initRain();
     rainGroup.visible = false;
     
-    // 날씨 효과 – 구름 (하나의 구름)
+    // 구름 효과
     let houseCloudGroup = new THREE.Group();
     function createHouseCloud() {
       const cloud = new THREE.Group();
@@ -452,7 +444,7 @@
       if (singleCloud.position.x > 5) { singleCloud.position.x = -5; }
     }
     
-    // 날씨 효과 – 번개
+    // 번개 효과
     let lightningLight = new THREE.PointLight(0xffffff, 0, 500);
     lightningLight.position.set(0, 50, 0);
     scene.add(lightningLight);
@@ -494,8 +486,7 @@
     const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1, 0.3), legMat);
     leftLeg.position.set(-0.35, -1, 0);
     rightLeg.position.set(0.35, -1, 0);
-    characterGroup.add(charBody, head, leftEye, rightEye, mouth, leftBrow, rightBrow, leftArm, rightArm, leftLeg);
-    characterGroup.add(rightLeg);
+    characterGroup.add(charBody, head, leftEye, rightEye, mouth, leftBrow, rightBrow, leftArm, rightArm, leftLeg, rightLeg);
     characterGroup.position.y = -1;
     scene.add(characterGroup);
     const characterLight = new THREE.PointLight(0xffee88, 1, 15);
@@ -510,7 +501,39 @@
       chatLog.innerHTML += "<div>" + message + "</div>";
       chatLog.scrollTop = chatLog.scrollHeight;
     }
-    
+    async function sendChat() {
+      const inputEl = document.getElementById("chat-input");
+      const input = inputEl.value.trim();
+      let response = "";
+      if (!input) return;
+      const lowerInput = input.toLowerCase();
+      if (lowerInput.includes("안녕")) {
+        response = "안녕하세요, 주인님! 오늘 기분은 어떠세요?";
+      } else if (lowerInput.includes("캐릭터 넌 누구야")) {
+        response = "저는 당신의 개인 비서에요.";
+      } else if (lowerInput.includes("일정")) {
+        response = "캘린더는 좌측에서 확인하세요.";
+      } else if (lowerInput.includes("날씨") && (lowerInput.includes("알려") || lowerInput.includes("어때"))) {
+        const weather = await getWeather();
+        response = `현재 날씨는 ${weather}입니다.`;
+      } else if (lowerInput.includes("캐릭터 춤춰줘")) {
+        response = "춤출게요!";
+        if (danceInterval) clearInterval(danceInterval);
+        danceInterval = setInterval(() => {
+          // 캐릭터 팔 회전 등의 애니메이션 코드를 여기서 업데이트
+        }, 50);
+        setTimeout(() => { clearInterval(danceInterval); }, 3000);
+      } else {
+        response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
+      }
+      appendToChatLog("사용자: " + input);
+      appendToChatLog("캐릭터: " + response);
+      showSpeechBubbleInChunks(response);
+      inputEl.value = "";
+    }
+    document.getElementById("chat-input").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") sendChat();
+    });
     setInterval(() => {
       const now = new Date();
       if (now.getHours() === 8 && now.getMinutes() === 0) {
@@ -534,15 +557,14 @@
       const totalMin = now.getHours() * 60 + now.getMinutes();
       const angle = (totalMin / 1440) * Math.PI * 2;
       const radius = 3;
-      // 태양(orbitCenter 기준) 위치
+      // 태양 위치 업데이트
       const sunPos = new THREE.Vector3(
         orbitCenter.x + Math.cos(angle) * radius,
         orbitCenter.y + Math.sin(angle) * radius,
         orbitCenter.z
       );
       sun.position.copy(sunPos);
-      
-      // 달(태양에서 180도 반대) 위치
+      // 달 위치 업데이트 (태양 반대 방향)
       const moonAngle = angle + Math.PI;
       const moonPos = new THREE.Vector3(
         orbitCenter.x + Math.cos(moonAngle) * radius,
@@ -551,26 +573,26 @@
       );
       moon.position.copy(moonPos);
       
-      // 시간대별 태양, 달 투명도
+      // 시간에 따른 태양/달 투명도 조절
       const t = now.getHours() + now.getMinutes() / 60;
       let sunOpacity = 0, moonOpacity = 0;
-      if (t < 6) { // 새벽
+      if (t < 6) {
         sunOpacity = 0; moonOpacity = 1;
-      } else if (t < 7) { // 해 뜨는 transition
+      } else if (t < 7) {
         let factor = (t - 6);
         sunOpacity = factor; moonOpacity = 1 - factor;
-      } else if (t < 17) { // 낮
+      } else if (t < 17) {
         sunOpacity = 1; moonOpacity = 0;
-      } else if (t < 18) { // 해 지는 transition
+      } else if (t < 18) {
         let factor = (t - 17);
         sunOpacity = 1 - factor; moonOpacity = factor;
-      } else { // 밤
+      } else {
         sunOpacity = 0; moonOpacity = 1;
       }
       sun.material.opacity = sunOpacity;
       moon.material.opacity = moonOpacity;
       
-      // 낮/밤 배경색, 별/반딧불, 가로등
+      // 낮/밤에 따른 배경색 및 별, 반딧불, 가로등 설정
       const isDay = (t >= 7 && t < 17);
       scene.background = new THREE.Color(isDay ? 0x87CEEB : 0x000033);
       stars.forEach(s => s.visible = !isDay);
@@ -585,7 +607,7 @@
       characterGroup.position.y = -1;
       characterGroup.rotation.x = 0;
       
-      // 비 효과
+      // 비 효과 업데이트
       if (rainGroup.visible) {
         const rainPoints = rainGroup.children[0];
         const positions = rainPoints.geometry.attributes.position.array;
@@ -597,8 +619,7 @@
         }
         rainPoints.geometry.attributes.position.needsUpdate = true;
       }
-      
-      // 번개 효과
+      // 번개 효과 업데이트
       if (currentWeather.indexOf("번개") !== -1 || currentWeather.indexOf("뇌우") !== -1) {
         if (Math.random() < 0.001) {
           lightningLight.intensity = 5;
@@ -613,7 +634,7 @@
     animate();
     
     /* ====================================
-       달력 UI
+       달력 UI 관련 함수
     ==================================== */
     let currentYear, currentMonth;
     function initCalendar() {
@@ -672,7 +693,9 @@
                           <div class="event" id="event-${year}-${month+1}-${d}"></div>`;
         cell.addEventListener("click", () => {
           const eventText = prompt(`${year}-${month+1}-${d} 일정 입력:`);
-          if (eventText) { addEventToDay(`${year}-${month+1}-${d}`, eventText); }
+          if (eventText) {
+            addEventToDay(`${year}-${month+1}-${d}`, eventText);
+          }
         });
         grid.appendChild(cell);
       }
