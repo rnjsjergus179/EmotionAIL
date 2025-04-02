@@ -94,6 +94,37 @@
       padding: 5px;
       margin-top: 10px;
     }
+    /* 채팅 입력 영역: 입력창과 전송 버튼을 한 줄에 배치 */
+    #chat-input-area {
+      display: flex;
+      margin-top: 10px;
+    }
+    #chat-input {
+      flex: 1;
+      padding: 5px;
+      font-size: 14px;
+    }
+    #send-chat-button {
+      padding: 5px 10px;
+      font-size: 14px;
+      margin-left: 5px;
+    }
+    /* 사용자 프로필 영역: 내 이메일 입력 및 저장 */
+    #user-profile {
+      margin-top: 10px;
+      border-top: 1px solid #ccc;
+      padding-top: 10px;
+    }
+    #user-email-profile {
+      width: calc(100% - 70px);
+      padding: 5px;
+      font-size: 14px;
+    }
+    #save-profile-button {
+      padding: 5px 10px;
+      font-size: 14px;
+      margin-left: 5px;
+    }
     /* 3D 캔버스 */
     #canvas {
       position: absolute;
@@ -113,21 +144,6 @@
       white-space: pre-line;
       pointer-events: none;
     }
-    /* 채팅 입력 영역 - 입력창과 버튼을 한 줄에 배치 */
-    #chat-input-area {
-      display: flex;
-      margin-top: 10px;
-    }
-    #chat-input {
-      flex: 1;
-      padding: 5px;
-      font-size: 14px;
-    }
-    #send-chat-button {
-      padding: 5px 10px;
-      font-size: 14px;
-      margin-left: 5px;
-    }
   </style>
 
   <!-- EmailJS 라이브러리 -->
@@ -140,15 +156,30 @@
       emailjs.init("3YFtNo1im0qkWpUDE");
     })();
 
-    // 이메일 전송 함수
+    // 사용자 프로필 이메일을 저장할 변수 (초기에는 빈 문자열)
+    let userProfileEmail = "";
+
+    // 사용자 프로필 저장 함수
+    function saveUserProfile() {
+      const emailInput = document.getElementById("user-email-profile").value.trim();
+      if (emailInput) {
+        userProfileEmail = emailInput;
+        alert("이메일이 저장되었습니다: " + userProfileEmail);
+      } else {
+        alert("이메일을 입력해주세요.");
+      }
+    }
+
+    // 이메일 전송 함수 - 사용자 프로필에 저장된 이메일을 사용 (없으면 입력창의 값을 사용)
     function sendEmailPush() {
-      const userEmail = document.getElementById('user-email').value.trim();
-      if (!userEmail) {
+      // 우선 저장된 이메일이 있으면 사용, 없으면 오른쪽 HUD의 입력 필드 값 사용
+      const emailToSend = userProfileEmail || document.getElementById('user-email').value.trim();
+      if (!emailToSend) {
         alert("이메일 주소를 입력해주세요.");
         return;
       }
       const templateParams = {
-        to_email: userEmail,
+        to_email: emailToSend,
         subject: "푸시 알림",
         message: "이것은 프론트엔드에서 전송한 이메일 알림입니다."
       };
@@ -205,6 +236,12 @@
     <br/>
     <input type="email" id="user-email" placeholder="이메일 주소 입력" style="width: 100%; padding: 5px; margin-bottom: 5px;" />
     <button onclick="sendEmailPush()" style="width: 100%; padding: 5px;">이메일 알림 보내기</button>
+    <!-- 사용자 프로필 영역 (채팅창 하단) -->
+    <div id="user-profile">
+      <h4>내 이메일 설정</h4>
+      <input type="email" id="user-email-profile" placeholder="내 이메일 입력" />
+      <button id="save-profile-button" onclick="saveUserProfile()">저장</button>
+    </div>
   </div>
 
   <!-- 왼쪽 HUD: 달력 UI -->
@@ -280,7 +317,6 @@
     // 배경 그룹 (빌딩, 집, 가로등)
     const backgroundGroup = new THREE.Group();
     scene.add(backgroundGroup);
-
     function createBuilding(width, height, depth, color) {
       const geometry = new THREE.BoxGeometry(width, height, depth);
       const material = new THREE.MeshStandardMaterial({ color: color, roughness: 0.7, metalness: 0.1 });
@@ -288,10 +324,12 @@
     }
     function createHouse(width, height, depth, baseColor, roofColor) {
       const houseGroup = new THREE.Group();
-      const base = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), new THREE.MeshStandardMaterial({ color: baseColor, roughness: 0.8 }));
+      const base = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth),
+                                  new THREE.MeshStandardMaterial({ color: baseColor, roughness: 0.8 }));
       base.position.y = -2 + height/2;
       houseGroup.add(base);
-      const roof = new THREE.Mesh(new THREE.ConeGeometry(width * 0.8, height * 0.6, 4), new THREE.MeshStandardMaterial({ color: roofColor, roughness: 0.8 }));
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(width * 0.8, height * 0.6, 4),
+                                  new THREE.MeshStandardMaterial({ color: roofColor, roughness: 0.8 }));
       roof.position.y = -2 + height + (height * 0.6)/2;
       roof.rotation.y = Math.PI/4;
       houseGroup.add(roof);
@@ -324,10 +362,12 @@
     // 단일 가로등: 캐릭터 옆에 배치
     function createStreetlight() {
       const lightGroup = new THREE.Group();
-      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 4, 8), new THREE.MeshBasicMaterial({ color: 0x333333 }));
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 4, 8),
+                                    new THREE.MeshBasicMaterial({ color: 0x333333 }));
       pole.position.y = 2;
       lightGroup.add(pole);
-      const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffcc00 }));
+      const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8),
+                                    new THREE.MeshBasicMaterial({ color: 0xffcc00 }));
       lamp.position.y = 4.2;
       lightGroup.add(lamp);
       const lampLight = new THREE.PointLight(0xffcc00, 1, 10);
@@ -638,4 +678,4 @@
     });
   </script>
 </body>
-</html>
+</html> 
