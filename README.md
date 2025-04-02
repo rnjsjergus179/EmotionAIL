@@ -3,180 +3,169 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>3D 캐릭터 HUD, 달력, 이메일 알림 & 말풍선 채팅 with Google 로그인</title>
-  <!-- Google Sign-In 라이브러리 (클라이언트 ID를 실제 값으로 교체) -->
+  <!-- Google Sign-In Client ID (실제 값으로 교체) -->
   <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>3D 캐릭터 HUD, 달력, 채팅 & 말풍선 (Google 로그인만 사용)</title>
+  
+  <!-- Google Sign-In 라이브러리 -->
   <script src="https://apis.google.com/js/platform.js" async defer></script>
+  
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; overflow: hidden; }
-    /* 오른쪽 HUD: 채팅창, 이메일 알림, 사용자 프로필 및 사용자 목록 */
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+    /* Google Sign-In 버튼 컨테이너 (오른쪽 상단 고정) */
+    #google-signin {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 30;
+    }
+    /* 오른쪽 HUD: 채팅 및 기타 기능 */
     #right-hud {
-      position: absolute; top: 10px; right: 10px; padding: 10px;
-      background: rgba(255,255,255,0.8); border-radius: 5px; z-index: 20;
+      position: absolute;
+      top: 70px; /* Google 로그인 버튼 아래쪽 */
+      right: 10px;
+      padding: 10px;
+      background: rgba(255,255,255,0.8);
+      border-radius: 5px;
+      z-index: 20;
       width: 300px;
     }
     /* 왼쪽 HUD: 달력 UI */
     #left-hud {
-      position: absolute; top: 10px; left: 10px; padding: 10px;
-      background: rgba(255,255,255,0.9); border-radius: 5px; z-index: 20;
-      width: 320px; max-height: 90vh; overflow-y: auto;
+      position: absolute;
+      top: 70px;
+      left: 10px;
+      padding: 10px;
+      background: rgba(255,255,255,0.9);
+      border-radius: 5px;
+      z-index: 20;
+      width: 320px;
+      max-height: 90vh;
+      overflow-y: auto;
     }
     /* 달력 UI 스타일 */
     #calendar-container { margin-top: 10px; }
-    #calendar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+    #calendar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 5px;
+    }
     #calendar-header button { padding: 2px 6px; font-size: 12px; }
     #month-year-label { font-weight: bold; font-size: 14px; }
     #year-select { font-size: 12px; padding: 2px; margin-left: 5px; }
     #calendar-grid {
-      display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
     }
     #calendar-grid div {
-      border: 1px solid #ccc; min-height: 40px; font-size: 12px; padding: 2px;
-      position: relative; cursor: pointer;
+      border: 1px solid #ccc;
+      min-height: 40px;
+      font-size: 12px;
+      padding: 2px;
+      position: relative;
+      cursor: pointer;
     }
     #calendar-grid div:hover { background: #f0f0f0; }
     .day-number { position: absolute; top: 2px; left: 2px; font-weight: bold; }
     .event { margin-top: 18px; font-size: 10px; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     /* 채팅 로그 */
-    #chat-log { height: 100px; overflow-y: scroll; border: 1px solid #ccc; padding: 5px; margin-top: 10px; }
+    #chat-log {
+      height: 100px;
+      overflow-y: scroll;
+      border: 1px solid #ccc;
+      padding: 5px;
+      margin-top: 10px;
+    }
     /* 채팅 입력 영역 */
-    #chat-input-area { display: flex; margin-top: 10px; }
+    #chat-input-area {
+      display: flex;
+      margin-top: 10px;
+    }
     #chat-input { flex: 1; padding: 5px; font-size: 14px; }
     #send-chat-button { padding: 5px 10px; font-size: 14px; margin-left: 5px; }
-    /* 사용자 프로필 영역 */
-    #user-profile { margin-top: 10px; border-top: 1px solid #ccc; padding-top: 10px; }
-    /* 구글 로그인 버튼 영역 */
-    #google-signin { margin-bottom: 10px; }
-    /* 사용자 목록 영역 */
-    #user-list {
-      margin-top: 10px; border-top: 1px solid #ccc; padding-top: 10px;
-    }
-    #user-select { width: 100%; height: 100px; padding: 5px; font-size: 14px; }
-    #send-selected-button { width: 100%; margin-top: 5px; padding: 5px 10px; font-size: 14px; }
-    /* 새 사용자 추가 */
-    #add-user { margin-top: 10px; }
-    #new-user-email { width: calc(100% - 70px); padding: 5px; font-size: 14px; }
-    #add-user-button { padding: 5px 10px; font-size: 14px; margin-left: 5px; }
     /* 3D 캔버스 */
-    #canvas { position: absolute; width: 100%; height: 100%; z-index: 1; }
+    #canvas {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
     /* 말풍선 스타일 */
     #speech-bubble {
-      position: absolute; background: white; padding: 5px 10px;
-      border-radius: 10px; font-size: 12px; display: none; z-index: 30;
-      white-space: pre-line; pointer-events: none;
+      position: absolute;
+      background: white;
+      padding: 5px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      display: none;
+      z-index: 30;
+      white-space: pre-line;
+      pointer-events: none;
     }
   </style>
+  
   <script>
-    // EmailJS 초기화 (Public Key, 실제 값으로 수정)
-    (function() {
-      emailjs.init("3YFtNo1im0qkWpUDE");
-    })();
-
-    // 전역 변수: 구글 로그인 후 받아온 이메일, 사용자 목록 등
+    // 전역 변수: Google 로그인 후 받아온 내 이메일
     let userProfileEmail = "";
-    let userList = []; // 선택 가능한 사용자 목록 (이메일 배열)
-
+    
     // Google Sign-In 성공 시 호출되는 함수
     function onSignIn(googleUser) {
-      // GoogleUser 객체에서 기본 프로필 정보를 가져옵니다.
       const profile = googleUser.getBasicProfile();
       userProfileEmail = profile.getEmail();
-      alert("Google 로그인 성공! 이메일: " + userProfileEmail);
-      addUser(userProfileEmail);
-      updateUserListUI();
+      alert("Google 로그인 성공! 내 이메일: " + userProfileEmail);
     }
-
-    // Sign out 함수 (원할 경우)
-    function signOut() {
-      const auth2 = gapi.auth2.getAuthInstance();
-      auth2.signOut().then(() => {
-        alert("사용자가 로그아웃했습니다.");
-        userProfileEmail = "";
-      });
+    
+    // 채팅 관련 함수
+    function appendToChatLog(message) {
+      const chatLog = document.getElementById("chat-log");
+      chatLog.innerHTML += "<div>" + message + "</div>";
+      chatLog.scrollTop = chatLog.scrollHeight;
     }
-
-    // 사용자 목록에 이메일 추가 (중복 방지)
-    function addUser(email) {
-      if (email && !userList.includes(email)) {
-        userList.push(email);
-        updateUserListUI();
-      }
-    }
-    // 사용자 목록 UI 업데이트
-    function updateUserListUI() {
-      const select = document.getElementById("user-select");
-      select.innerHTML = "";
-      userList.forEach(email => {
-        const option = document.createElement("option");
-        option.value = email;
-        option.textContent = email;
-        select.appendChild(option);
-      });
-    }
-    // 새 사용자 추가 (수동 입력)
-    function addNewUser() {
-      const newUserEmail = document.getElementById("new-user-email").value.trim();
-      if (newUserEmail) {
-        addUser(newUserEmail);
-        alert("새 사용자 추가됨: " + newUserEmail);
+    
+    async function sendChat() {
+      const inputEl = document.getElementById("chat-input");
+      const input = inputEl.value.trim();
+      let response = "";
+      if (!input) return;
+      const lowerInput = input.toLowerCase();
+      if (lowerInput.includes("안녕")) {
+        response = "안녕하세요, 주인님! 오늘 기분은 어떠세요?";
+      } else if (lowerInput.includes("캐릭터 넌 누구야")) {
+        response = "저는 당신의 개인 비서에요.";
+      } else if (lowerInput.includes("일정")) {
+        response = "캘린더는 좌측에서 확인하세요.";
+      } else if (lowerInput.includes("날씨") && (lowerInput.includes("알려") || lowerInput.includes("어때"))) {
+        response = "현재 날씨는 맑음입니다.";
+      } else if (lowerInput.includes("캐릭터 춤춰줘")) {
+        response = "춤출게요!";
+        const danceInterval = setInterval(() => {
+          // 간단한 춤 동작 효과 (예: 팔 회전)
+        }, 50);
+        setTimeout(() => {
+          clearInterval(danceInterval);
+        }, 3000);
       } else {
-        alert("새 사용자 이메일을 입력해주세요.");
+        response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
       }
+      appendToChatLog("사용자: " + input);
+      appendToChatLog("캐릭터: " + response);
+      showSpeechBubbleInChunks(response);
+      inputEl.value = "";
     }
-    // EmailJS를 이용한 기본 이메일 전송 (내 이메일로 자동 전송)
-    function sendEmailPush() {
-      if (!userProfileEmail) {
-        alert("먼저 Google 로그인을 해주세요.");
-        return;
-      }
-      const templateParams = {
-        to_email: userProfileEmail,
-        subject: "푸시 알림 (내게)",
-        message: "이것은 내게 전송된 이메일 알림입니다."
-      };
-      emailjs.send("171514115990-llkmtm1154n", "template_lmj91jt", templateParams)
-        .then(function(response) {
-          alert("내 이메일로 전송되었습니다!");
-        }, function(error) {
-          alert("이메일 전송 실패: " + JSON.stringify(error));
-        });
-    }
-    // 선택된 사용자들에게 이메일 전송
-    function sendEmailToSelectedUsers() {
-      const select = document.getElementById("user-select");
-      const selectedOptions = Array.from(select.selectedOptions);
-      const selectedEmails = selectedOptions.map(option => option.value);
-      if (selectedEmails.length === 0) {
-        alert("이메일을 보낼 사용자를 선택해주세요.");
-        return;
-      }
-      selectedEmails.forEach(email => {
-        const templateParams = {
-          to_email: email,
-          subject: "푸시 알림",
-          message: "이것은 이메일 알림입니다."
-        };
-        emailjs.send("171514115990-llkmtm1154n", "template_lmj91jt", templateParams)
-          .then(function(response) {
-            console.log(`이메일이 ${email}에게 전송되었습니다!`);
-          }, function(error) {
-            console.log(`이메일 전송 실패: ${email}`, error);
-          });
-      });
-      alert("선택된 사용자에게 이메일 전송 시도 완료");
-    }
-    // 말풍선 관련 함수
-    function updateBubblePosition() {
-      const bubble = document.getElementById('speech-bubble');
-      const headWorldPos = new THREE.Vector3();
-      head.getWorldPosition(headWorldPos);
-      const screenPos = headWorldPos.project(camera);
-      bubble.style.left = ((screenPos.x * 0.5 + 0.5) * window.innerWidth) + "px";
-      bubble.style.top = ((1 - (screenPos.y * 0.5 + 0.5)) * window.innerHeight - 50) + "px";
-    }
+    
+    document.getElementById("chat-input").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") { sendChat(); }
+    });
+    
     function showSpeechBubbleInChunks(text, chunkSize = 15, delay = 3000) {
-      const bubble = document.getElementById('speech-bubble');
+      const bubble = document.getElementById("speech-bubble");
       const chunks = [];
       for (let i = 0; i < text.length; i += chunkSize) {
         chunks.push(text.slice(i, i + chunkSize));
@@ -185,11 +174,11 @@
       function showNextChunk() {
         if (index < chunks.length) {
           bubble.textContent = chunks[index];
-          bubble.style.display = 'block';
+          bubble.style.display = "block";
           index++;
           setTimeout(showNextChunk, delay);
         } else {
-          setTimeout(() => bubble.style.display = 'none', 3000);
+          setTimeout(() => bubble.style.display = "none", 3000);
         }
       }
       showNextChunk();
@@ -197,12 +186,12 @@
   </script>
 </head>
 <body>
-  <!-- Google Sign-In 버튼 (소비자 입장에서는 간편하게 로그인) -->
+  <!-- Google Sign-In 버튼 (오른쪽 상단) -->
   <div id="google-signin">
     <div class="g-signin2" data-onsuccess="onSignIn"></div>
   </div>
-
-  <!-- 오른쪽 HUD: 채팅, 이메일 알림, 사용자 목록 -->
+  
+  <!-- 오른쪽 HUD: 채팅 및 기타 기능 -->
   <div id="right-hud">
     <h3>채팅창</h3>
     <div id="chat-log"></div>
@@ -210,23 +199,8 @@
       <input type="text" id="chat-input" placeholder="채팅 입력..." />
       <button id="send-chat-button" onclick="sendChat()">전송</button>
     </div>
-    <br/>
-    <!-- 기본 이메일 전송 버튼 (Google 로그인 후 자동 저장된 내 이메일 사용) -->
-    <button onclick="sendEmailPush()" style="width: 100%; padding: 5px;">내 이메일로 알림 보내기</button>
-    <hr/>
-    <!-- 사용자 목록 영역 -->
-    <div id="user-list">
-      <h4>사용자 목록</h4>
-      <select id="user-select" multiple></select>
-      <button id="send-selected-button" onclick="sendEmailToSelectedUsers()">선택된 사용자에게 이메일 보내기</button>
-    </div>
-    <!-- 새 사용자 추가 -->
-    <div id="add-user">
-      <input type="email" id="new-user-email" placeholder="새 사용자 이메일" style="width: calc(100% - 70px); padding: 5px;" />
-      <button id="add-user-button" onclick="addNewUser()">사용자 추가</button>
-    </div>
   </div>
-
+  
   <!-- 왼쪽 HUD: 달력 UI -->
   <div id="left-hud">
     <h3>캘린더</h3>
@@ -240,13 +214,13 @@
       <div id="calendar-grid"></div>
     </div>
   </div>
-
+  
   <!-- 말풍선 (3D 캐릭터 말풍선) -->
   <div id="speech-bubble"></div>
-
+  
   <!-- 3D 캔버스 -->
   <canvas id="canvas"></canvas>
-
+  
   <script>
     /* ====================================
        3D 씬 설정 (캐릭터, 배경, 날씨 효과 등)
@@ -254,26 +228,26 @@
     let currentWeather = "";
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas'), alpha: true });
+    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("canvas"), alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     camera.position.set(5, 5, 10);
     camera.lookAt(0, 0, 0);
-
+    
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(5, 10, 7).normalize();
     scene.add(directionalLight);
     scene.add(new THREE.AmbientLight(0x333333));
-
+    
     // 태양 객체
     const sunMaterial = new THREE.MeshStandardMaterial({ color: 0xffcc00, emissive: 0xff9900, transparent: true, opacity: 0 });
     const sun = new THREE.Mesh(new THREE.SphereGeometry(1.5, 64, 64), sunMaterial);
     scene.add(sun);
-
+    
     // 달 객체
     const moonMaterial = new THREE.MeshStandardMaterial({ color: 0xcccccc, emissive: 0x222222, transparent: true, opacity: 1 });
     const moon = new THREE.Mesh(new THREE.SphereGeometry(1.2, 64, 64), moonMaterial);
     scene.add(moon);
-
+    
     // 별, 반딧불 생성
     const stars = [], fireflies = [];
     for (let i = 0; i < 100; i++) {
@@ -288,7 +262,7 @@
       scene.add(firefly);
       fireflies.push(firefly);
     }
-
+    
     // 고해상도 콩크리트 바닥 (Y = -2)
     const floorGeometry = new THREE.PlaneGeometry(200, 200, 128, 128);
     const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 1, metalness: 0 });
@@ -296,7 +270,7 @@
     floor.rotation.x = -Math.PI/2;
     floor.position.y = -2;
     scene.add(floor);
-
+    
     // 배경 그룹 (빌딩, 집, 가로등)
     const backgroundGroup = new THREE.Group();
     scene.add(backgroundGroup);
@@ -361,7 +335,7 @@
     const characterStreetlight = createStreetlight();
     characterStreetlight.position.set(1, -2, 0);
     scene.add(characterStreetlight);
-
+    
     // 날씨 효과 – 비
     let rainGroup = new THREE.Group();
     scene.add(rainGroup);
@@ -381,7 +355,7 @@
     }
     initRain();
     rainGroup.visible = false;
-
+    
     // 날씨 효과 – 구름 (하나의 구름)
     let houseCloudGroup = new THREE.Group();
     function createHouseCloud() {
@@ -405,7 +379,7 @@
       singleCloud.position.x += 0.02;
       if (singleCloud.position.x > 5) { singleCloud.position.x = -5; }
     }
-
+    
     // 날씨 효과 – 번개
     let lightningLight = new THREE.PointLight(0xffffff, 0, 500);
     lightningLight.position.set(0, 50, 0);
@@ -418,7 +392,7 @@
         houseCloudGroup.visible = true;
       } else { houseCloudGroup.visible = false; }
     }
-
+    
     // 캐릭터 생성
     const characterGroup = new THREE.Group();
     const charBody = new THREE.Mesh(new THREE.BoxGeometry(1, 1.5, 0.5), new THREE.MeshStandardMaterial({ color: 0x00cc66 }));
@@ -449,7 +423,7 @@
     scene.add(characterGroup);
     const characterLight = new THREE.PointLight(0xffee88, 1, 15);
     scene.add(characterLight);
-
+    
     /* ====================================
        채팅 관련 함수
     ==================================== */
@@ -467,32 +441,24 @@
       const lowerInput = input.toLowerCase();
       if (lowerInput.includes("안녕")) {
         response = "안녕하세요, 주인님! 오늘 기분은 어떠세요?";
-        characterGroup.children[7].rotation.z = Math.PI/4;
-        setTimeout(() => { characterGroup.children[7].rotation.z = 0; }, 1000);
-      }
-      else if (lowerInput.includes("캐릭터 넌 누구야")) {
+      } else if (lowerInput.includes("캐릭터 넌 누구야")) {
         response = "저는 당신의 개인 비서에요.";
-      }
-      else if (lowerInput.includes("일정")) {
+      } else if (lowerInput.includes("일정")) {
         response = "캘린더는 좌측에서 확인하세요.";
-      }
-      else if (lowerInput.includes("날씨") && (lowerInput.includes("알려") || lowerInput.includes("어때"))) {
+      } else if (lowerInput.includes("날씨") && (lowerInput.includes("알려") || lowerInput.includes("어때"))) {
         const weather = await getWeather();
         response = `현재 날씨는 ${weather}입니다.`;
-      }
-      else if (lowerInput.includes("캐릭터 춤춰줘")) {
+      } else if (lowerInput.includes("캐릭터 춤춰줘")) {
         response = "춤출게요!";
         const danceInterval = setInterval(() => {
-          characterGroup.children[7].rotation.z = Math.sin(Date.now() * 0.01) * Math.PI/4;
-          head.rotation.y = Math.sin(Date.now() * 0.01) * Math.PI/8;
+          // 간단한 춤 동작 효과 (예: 팔 회전)
         }, 50);
         setTimeout(() => {
           clearInterval(danceInterval);
-          characterGroup.children[7].rotation.z = 0;
-          head.rotation.y = 0;
         }, 3000);
+      } else {
+        response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
       }
-      else { response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?"; }
       appendToChatLog("사용자: " + input);
       appendToChatLog("캐릭터: " + response);
       showSpeechBubbleInChunks(response);
@@ -511,7 +477,7 @@
         appendToChatLog("캐릭터: 주무실 시간이에요 zzzz");
       }
     }, 60000);
-
+    
     /* ====================================
        애니메이션 루프 (3D 씬 업데이트)
     ==================================== */
@@ -521,28 +487,28 @@
       const headWorldPos = new THREE.Vector3();
       head.getWorldPosition(headWorldPos);
       const orbitCenter = headWorldPos.clone().add(new THREE.Vector3(0, 2, 0));
-      const totalMin = now.getHours()*60 + now.getMinutes();
-      const angle = (totalMin/1440)*Math.PI*2;
+      const totalMin = now.getHours() * 60 + now.getMinutes();
+      const angle = (totalMin / 1440) * Math.PI * 2;
       const radius = 3;
       const sunPos = new THREE.Vector3(
-        orbitCenter.x + Math.cos(angle)*radius,
-        orbitCenter.y + Math.sin(angle)*radius,
+        orbitCenter.x + Math.cos(angle) * radius,
+        orbitCenter.y + Math.sin(angle) * radius,
         orbitCenter.z
       );
       sun.position.copy(sunPos);
       const moonAngle = angle + Math.PI;
       const moonPos = new THREE.Vector3(
-        orbitCenter.x + Math.cos(moonAngle)*radius,
-        orbitCenter.y + Math.sin(moonAngle)*radius,
+        orbitCenter.x + Math.cos(moonAngle) * radius,
+        orbitCenter.y + Math.sin(moonAngle) * radius,
         orbitCenter.z
       );
       moon.position.copy(moonPos);
-      const t = now.getHours() + now.getMinutes()/60;
+      const t = now.getHours() + now.getMinutes() / 60;
       let sunOpacity = 0, moonOpacity = 0;
-      if(t < 6) { sunOpacity = 0; moonOpacity = 1; }
-      else if(t < 7) { let factor = (t-6); sunOpacity = factor; moonOpacity = 1-factor; }
-      else if(t < 17) { sunOpacity = 1; moonOpacity = 0; }
-      else if(t < 18) { let factor = (t-17); sunOpacity = 1-factor; moonOpacity = factor; }
+      if (t < 6) { sunOpacity = 0; moonOpacity = 1; }
+      else if (t < 7) { let factor = (t - 6); sunOpacity = factor; moonOpacity = 1 - factor; }
+      else if (t < 17) { sunOpacity = 1; moonOpacity = 0; }
+      else if (t < 18) { let factor = (t - 17); sunOpacity = 1 - factor; moonOpacity = factor; }
       else { sunOpacity = 0; moonOpacity = 1; }
       sun.material.opacity = sunOpacity;
       moon.material.opacity = moonOpacity;
@@ -551,34 +517,34 @@
       stars.forEach(s => s.visible = !isDay);
       fireflies.forEach(f => f.visible = !isDay);
       characterStreetlight.traverse(child => {
-        if(child instanceof THREE.PointLight) { child.intensity = isDay ? 0 : 1; }
+        if (child instanceof THREE.PointLight) { child.intensity = isDay ? 0 : 1; }
       });
-      characterLight.position.copy(characterGroup.position).add(new THREE.Vector3(0,5,0));
+      characterLight.position.copy(characterGroup.position).add(new THREE.Vector3(0, 5, 0));
       characterLight.intensity = isDay ? 0 : 1;
       characterGroup.position.y = -1;
       characterGroup.rotation.x = 0;
-      if(rainGroup.visible) {
+      if (rainGroup.visible) {
         const rainPoints = rainGroup.children[0];
         const positions = rainPoints.geometry.attributes.position.array;
-        for(let i=0; i<positions.length; i+=3) {
-          positions[i+1] -= 0.5;
-          if(positions[i+1] < 0) { positions[i+1] = Math.random()*50+20; }
+        for (let i = 0; i < positions.length; i += 3) {
+          positions[i + 1] -= 0.5;
+          if (positions[i + 1] < 0) { positions[i + 1] = Math.random() * 50 + 20; }
         }
         rainPoints.geometry.attributes.position.needsUpdate = true;
       }
-      if(currentWeather.indexOf("번개") !== -1 || currentWeather.indexOf("뇌우") !== -1) {
-        if(Math.random() < 0.001) {
+      if (currentWeather.indexOf("번개") !== -1 || currentWeather.indexOf("뇌우") !== -1) {
+        if (Math.random() < 0.001) {
           lightningLight.intensity = 5;
           setTimeout(() => { lightningLight.intensity = 0; }, 100);
         }
       }
       updateHouseClouds();
-      characterStreetlight.position.set(characterGroup.position.x+1, -2, characterGroup.position.z);
+      characterStreetlight.position.set(characterGroup.position.x + 1, -2, characterGroup.position.z);
       updateBubblePosition();
       renderer.render(scene, camera);
     }
     animate();
-
+    
     /* ====================================
        달력 UI
     ==================================== */
@@ -591,12 +557,12 @@
       renderCalendar(currentYear, currentMonth);
       document.getElementById("prev-month").addEventListener("click", () => {
         currentMonth--;
-        if(currentMonth < 0) { currentMonth = 11; currentYear--; }
+        if (currentMonth < 0) { currentMonth = 11; currentYear--; }
         renderCalendar(currentYear, currentMonth);
       });
       document.getElementById("next-month").addEventListener("click", () => {
         currentMonth++;
-        if(currentMonth > 11) { currentMonth = 0; currentYear++; }
+        if (currentMonth > 11) { currentMonth = 0; currentYear++; }
         renderCalendar(currentYear, currentMonth);
       });
       document.getElementById("year-select").addEventListener("change", (e) => {
@@ -607,20 +573,20 @@
     function populateYearSelect() {
       const yearSelect = document.getElementById("year-select");
       yearSelect.innerHTML = "";
-      for(let y = 2020; y <= 2070; y++) {
+      for (let y = 2020; y <= 2070; y++) {
         const option = document.createElement("option");
         option.value = y;
         option.textContent = y;
-        if(y === currentYear) option.selected = true;
+        if (y === currentYear) option.selected = true;
         yearSelect.appendChild(option);
       }
     }
     function renderCalendar(year, month) {
-      const monthNames = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
+      const monthNames = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
       document.getElementById("month-year-label").textContent = `${year}년 ${monthNames[month]}`;
       const grid = document.getElementById("calendar-grid");
       grid.innerHTML = "";
-      const daysOfWeek = ["일","월","화","수","목","금","토"];
+      const daysOfWeek = ["일", "월", "화", "수", "목", "금", "토"];
       daysOfWeek.forEach((day) => {
         const th = document.createElement("div");
         th.style.fontWeight = "bold";
@@ -629,25 +595,25 @@
         grid.appendChild(th);
       });
       const firstDay = new Date(year, month, 1).getDay();
-      const daysInMonth = new Date(year, month+1, 0).getDate();
-      for(let i = 0; i < firstDay; i++) {
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      for (let i = 0; i < firstDay; i++) {
         grid.appendChild(document.createElement("div"));
       }
-      for(let d = 1; d <= daysInMonth; d++) {
+      for (let d = 1; d <= daysInMonth; d++) {
         const cell = document.createElement("div");
         cell.innerHTML = `<div class="day-number">${d}</div>
                           <div class="event" id="event-${year}-${month+1}-${d}"></div>`;
         cell.addEventListener("click", () => {
           const eventText = prompt(`${year}-${month+1}-${d} 일정 입력:`);
-          if(eventText) { addEventToDay(`${year}-${month+1}-${d}`, eventText); }
+          if (eventText) { addEventToDay(`${year}-${month+1}-${d}`, eventText); }
         });
         grid.appendChild(cell);
       }
     }
     function addEventToDay(dateStr, eventText) {
       const eventDiv = document.getElementById(`event-${dateStr}`);
-      if(eventDiv) {
-        if(eventDiv.textContent) { eventDiv.textContent += "; " + eventText; }
+      if (eventDiv) {
+        if (eventDiv.textContent) { eventDiv.textContent += "; " + eventText; }
         else { eventDiv.textContent = eventText; }
       }
     }
