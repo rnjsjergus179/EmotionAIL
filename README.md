@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -48,6 +49,16 @@
     #save-profile-button, #save-other-email-button {
       padding: 5px 10px; font-size: 14px; margin-left: 5px;
     }
+    /* 사용자 목록 스타일 */
+    #user-list select {
+      width: 100%;
+      height: 100px;
+      padding: 5px;
+      font-size: 14px;
+    }
+    #add-user {
+      margin-top: 10px;
+    }
     /* 3D 캔버스 */
     #canvas { position: absolute; width: 100%; height: 100%; z-index: 1; }
     /* 말풍선 스타일 */
@@ -65,10 +76,11 @@
   <script>
     // EmailJS 초기화 (Public Key, 실제 값으로 수정)
     (function() {
-      emailjs.init("3YFtNo1im0qkWpUDE");
+      emailjs.init("3YFtNo1im0qkWpUDE"); // 실제 Public Key로 교체하세요
     })();
 
-    // 전역 변수: 사용자와 상대방 이메일 저장
+    // 전역 변수: 사용자 목록 및 사용자 이메일 저장
+    let userList = []; // 사용자 이메일 목록
     let userProfileEmail = "";
     let otherProfileEmail = "";
 
@@ -76,6 +88,7 @@
     function saveUserProfile() {
       const emailInput = document.getElementById("user-email-profile").value.trim();
       if (emailInput) {
+        addUser(emailInput); // 사용자 목록에 추가
         userProfileEmail = emailInput;
         alert("내 이메일이 저장되었습니다: " + userProfileEmail);
       } else {
@@ -86,18 +99,60 @@
     function saveOtherProfile() {
       const otherInput = document.getElementById("other-email-input").value.trim();
       if (otherInput) {
+        addUser(otherInput); // 사용자 목록에 추가
         otherProfileEmail = otherInput;
         alert("상대방 이메일이 저장되었습니다: " + otherProfileEmail);
       } else {
         alert("상대방 이메일을 입력해주세요.");
       }
     }
+    // 사용자 목록에 이메일 추가
+    function addUser(email) {
+      if (email && !userList.includes(email)) {
+        userList.push(email);
+        updateUserListUI(); // UI 업데이트
+      }
+    }
+    // 사용자 목록 UI 업데이트
+    function updateUserListUI() {
+      const select = document.getElementById("user-select");
+      select.innerHTML = ""; // 기존 목록 초기화
+      userList.forEach(email => {
+        const option = document.createElement("option");
+        option.value = email;
+        option.textContent = email;
+        select.appendChild(option);
+      });
+    }
+    // 선택된 사용자들에게 이메일 전송
+    function sendEmailToSelectedUsers() {
+      const select = document.getElementById("user-select");
+      const selectedOptions = Array.from(select.selectedOptions);
+      const selectedEmails = selectedOptions.map(option => option.value);
+
+      if (selectedEmails.length === 0) {
+        alert("이메일을 보낼 사용자를 선택해주세요.");
+        return;
+      }
+
+      selectedEmails.forEach(email => {
+        const templateParams = {
+          to_email: email,
+          subject: "푸시 알림",
+          message: "이것은 이메일 알림입니다."
+        };
+        emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", templateParams)
+          .then(function(response) {
+            console.log(`이메일이 ${email}에게 전송되었습니다!`);
+          }, function(error) {
+            console.log(`이메일 전송에 실패했습니다: ${email}`, error);
+          });
+      });
+    }
 
     // 사용자와 상대방에게 이메일 전송 함수
     function sendEmailPush() {
-      // 사용자 이메일: 저장된 값 우선, 없으면 오른쪽 입력 필드 값 사용
-      const emailToSend = userProfileEmail || document.getElementById('user-email').value.trim();
-      // 상대방 이메일: 저장된 값 우선, 없으면 새로 추가한 입력 필드 값 사용
+      const emailToSend = userProfileEmail || document.getElementById('user-email-profile').value.trim();
       const otherEmailToSend = otherProfileEmail || document.getElementById('other-email-input').value.trim();
       if (!emailToSend || !otherEmailToSend) {
         alert("내 이메일과 상대방 이메일 모두 입력해주세요.");
@@ -109,7 +164,7 @@
         subject: "푸시 알림 (사용자)",
         message: "이것은 사용자에게 전송된 이메일 알림입니다."
       };
-      emailjs.send("171514115990-llkmtm1154n", "template_lmj91jt", templateParamsUser)
+      emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", templateParamsUser)
         .then(function(response) {
           alert("사용자에게 이메일이 전송되었습니다!");
         }, function(error) {
@@ -121,7 +176,7 @@
         subject: "푸시 알림 (상대방)",
         message: "이것은 상대방에게 전송된 이메일 알림입니다."
       };
-      emailjs.send("171514115990-llkmtm1154n", "template_lmj91jt", templateParamsOther)
+      emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", templateParamsOther)
         .then(function(response) {
           console.log("상대방에게 이메일이 전송되었습니다!");
         }, function(error) {
@@ -132,10 +187,8 @@
     // 말풍선 관련 함수
     function updateBubblePosition() {
       const bubble = document.getElementById('speech-bubble');
-      // 캐릭터 head의 월드 좌표 구하기
       const headWorldPos = new THREE.Vector3();
       head.getWorldPosition(headWorldPos);
-      // 화면 좌표로 변환
       const screenPos = headWorldPos.project(camera);
       bubble.style.left = ((screenPos.x * 0.5 + 0.5) * window.innerWidth) + "px";
       bubble.style.top = ((1 - (screenPos.y * 0.5 + 0.5)) * window.innerHeight - 50) + "px";
@@ -172,11 +225,6 @@
       <button id="send-chat-button" onclick="sendChat()">전송</button>
     </div>
     <br/>
-    <!-- 기본 이메일 입력 (기본값으로 사용 가능) -->
-    <input type="email" id="user-email" placeholder="내 이메일 입력 (또는 저장된 이메일 사용)" style="width: 100%; padding: 5px; margin-bottom: 5px;" />
-    <!-- 다른 사람(상대방) 이메일 입력 -->
-    <input type="email" id="other-email-input" placeholder="상대방 이메일 입력" style="width: 100%; padding: 5px; margin-bottom: 5px;" />
-    <button onclick="sendEmailPush()" style="width: 100%; padding: 5px;">이메일 알림 보내기</button>
     <!-- 사용자 프로필 영역 (채팅창 하단) -->
     <div id="user-profile">
       <h4>내 이메일 설정</h4>
@@ -185,6 +233,17 @@
       <h4>상대방 이메일 설정</h4>
       <input type="email" id="other-email-input" placeholder="상대방 이메일 입력" />
       <button id="save-other-email-button" onclick="saveOtherProfile()">저장</button>
+    </div>
+    <!-- 사용자 목록 및 이메일 전송 -->
+    <div id="user-list">
+      <h4>사용자 목록</h4>
+      <select id="user-select" multiple style="width: 100%; height: 100px;"></select>
+      <button onclick="sendEmailToSelectedUsers()" style="width: 100%; margin-top: 5px;">선택된 사용자에게 이메일 보내기</button>
+    </div>
+    <!-- 새 사용자 추가 -->
+    <div id="add-user">
+      <input type="email" id="new-user-email" placeholder="새 사용자 이메일" style="width: calc(100% - 70px); padding: 5px;" />
+      <button onclick="addUser(document.getElementById('new-user-email').value)" style="padding: 5px 10px;">사용자 추가</button>
     </div>
   </div>
 
