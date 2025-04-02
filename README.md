@@ -3,8 +3,8 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <!-- Google Sign-In Client ID (실제 값으로 교체) -->
-  <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
+  <!-- Google Sign-In Client ID (실제 값으로 적용) -->
+  <meta name="google-signin-client_id" content="171514115990-llkmtm1154n8p257smbihuja1sn56vgo.apps.googleusercontent.com">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>3D 캐릭터 HUD, 달력, 채팅 & 말풍선 (Google 로그인만 사용)</title>
   
@@ -146,7 +146,7 @@
       } else if (lowerInput.includes("캐릭터 춤춰줘")) {
         response = "춤출게요!";
         const danceInterval = setInterval(() => {
-          // 간단한 춤 동작 효과 (예: 팔 회전)
+          // 간단한 춤 동작 효과 (예: 팔 회전 등)
         }, 50);
         setTimeout(() => {
           clearInterval(danceInterval);
@@ -387,10 +387,14 @@
     function updateWeatherEffects() {
       if (currentWeather.indexOf("비") !== -1 || currentWeather.indexOf("소나기") !== -1) {
         rainGroup.visible = true;
-      } else { rainGroup.visible = false; }
+      } else {
+        rainGroup.visible = false;
+      }
       if (currentWeather.indexOf("구름") !== -1) {
         houseCloudGroup.visible = true;
-      } else { houseCloudGroup.visible = false; }
+      } else {
+        houseCloudGroup.visible = false;
+      }
     }
     
     // 캐릭터 생성
