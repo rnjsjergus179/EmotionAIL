@@ -3,31 +3,36 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <!-- Google Sign-In Client ID (실제 값으로 적용) -->
+  <!-- Google Sign-In Client ID (실제 값 적용) -->
   <meta name="google-signin-client_id" content="171514115990-llkmtm1154n8p257smbihuja1sn56vgo.apps.googleusercontent.com">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>3D 캐릭터 HUD, 달력, 채팅 & 말풍선 (Google 로그인만 사용)</title>
   
-  <!-- Google Sign-In 라이브러리 -->
+  <!-- Google Sign-In 라이브러리 (구버전) -->
   <script src="https://apis.google.com/js/platform.js" async defer></script>
   
   <style>
-    body {
+    /* CSS Reset 및 모든 요소에 box-sizing 적용 */
+    * {
       margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
       font-family: Arial, sans-serif;
       overflow: hidden;
     }
-    /* Google Sign-In 버튼 컨테이너 (오른쪽 상단 고정) */
+    /* Google Sign-In 버튼 컨테이너 (화면 오른쪽 상단 고정) */
     #google-signin {
-      position: absolute;
+      position: fixed;
       top: 10px;
       right: 10px;
       z-index: 30;
     }
-    /* 오른쪽 HUD: 채팅 및 기타 기능 */
+    /* 오른쪽 HUD: 채팅 및 기타 기능 (화면 오른쪽에 고정) */
     #right-hud {
-      position: absolute;
-      top: 70px; /* Google 로그인 버튼 아래쪽 */
+      position: fixed;
+      top: 70px; /* 로그인 버튼 아래 */
       right: 10px;
       padding: 10px;
       background: rgba(255,255,255,0.8);
@@ -35,9 +40,9 @@
       z-index: 20;
       width: 300px;
     }
-    /* 왼쪽 HUD: 달력 UI */
+    /* 왼쪽 HUD: 달력 UI (화면 왼쪽에 고정) */
     #left-hud {
-      position: absolute;
+      position: fixed;
       top: 70px;
       left: 10px;
       padding: 10px;
@@ -74,7 +79,14 @@
     }
     #calendar-grid div:hover { background: #f0f0f0; }
     .day-number { position: absolute; top: 2px; left: 2px; font-weight: bold; }
-    .event { margin-top: 18px; font-size: 10px; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .event {
+      margin-top: 18px;
+      font-size: 10px;
+      color: #333;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     /* 채팅 로그 */
     #chat-log {
       height: 100px;
@@ -90,16 +102,19 @@
     }
     #chat-input { flex: 1; padding: 5px; font-size: 14px; }
     #send-chat-button { padding: 5px 10px; font-size: 14px; margin-left: 5px; }
-    /* 3D 캔버스 */
+    /* 3D 캔버스 (배경에 고정) */
     #canvas {
-      position: absolute;
+      position: fixed;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
       z-index: 1;
+      display: block;
     }
     /* 말풍선 스타일 */
     #speech-bubble {
-      position: absolute;
+      position: fixed;
       background: white;
       padding: 5px 10px;
       border-radius: 10px;
@@ -112,6 +127,19 @@
   </style>
   
   <script>
+    // 초기 Google 인증 초기화
+    function initGoogleAuth() {
+      gapi.load('auth2', function() {
+        gapi.auth2.init({
+          client_id: "171514115990-llkmtm1154n8p257smbihuja1sn56vgo.apps.googleusercontent.com"
+        }).then(() => {
+          console.log("Google auth 초기화 완료");
+        }, (error) => {
+          console.error("Google auth 초기화 에러:", error);
+        });
+      });
+    }
+
     // 전역 변수: Google 로그인 후 받아온 내 이메일
     let userProfileEmail = "";
     
@@ -119,7 +147,8 @@
     function onSignIn(googleUser) {
       const profile = googleUser.getBasicProfile();
       userProfileEmail = profile.getEmail();
-      alert("Google 로그인 성공! 내 이메일: " + userProfileEmail);
+      document.getElementById("login-status").textContent = "로그인한 이메일: " + userProfileEmail;
+      console.log("Google 로그인 성공:", userProfileEmail);
     }
     
     // 채팅 관련 함수
@@ -146,11 +175,9 @@
       } else if (lowerInput.includes("캐릭터 춤춰줘")) {
         response = "춤출게요!";
         const danceInterval = setInterval(() => {
-          // 간단한 춤 동작 효과 (예: 팔 회전 등)
+          // 예: 간단한 팔 회전 애니메이션
         }, 50);
-        setTimeout(() => {
-          clearInterval(danceInterval);
-        }, 3000);
+        setTimeout(() => { clearInterval(danceInterval); }, 3000);
       } else {
         response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
       }
@@ -178,14 +205,21 @@
           index++;
           setTimeout(showNextChunk, delay);
         } else {
-          setTimeout(() => bubble.style.display = "none", 3000);
+          setTimeout(() => { bubble.style.display = "none"; }, 3000);
         }
       }
       showNextChunk();
     }
+    
+    // 윈도우 리사이즈 이벤트 - 캔버스와 카메라 업데이트
+    window.addEventListener("resize", function(){
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
   </script>
 </head>
-<body>
+<body onload="initGoogleAuth()">
   <!-- Google Sign-In 버튼 (오른쪽 상단) -->
   <div id="google-signin">
     <div class="g-signin2" data-onsuccess="onSignIn"></div>
@@ -193,6 +227,8 @@
   
   <!-- 오른쪽 HUD: 채팅 및 기타 기능 -->
   <div id="right-hud">
+    <!-- 로그인 상태 표시 -->
+    <div id="login-status">로그인 전</div>
     <h3>채팅창</h3>
     <div id="chat-log"></div>
     <div id="chat-input-area">
@@ -227,7 +263,7 @@
     ==================================== */
     let currentWeather = "";
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("canvas"), alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     camera.position.set(5, 5, 10);
@@ -625,6 +661,16 @@
       initCalendar();
       appendToChatLog("캐릭터: 환영합니다! 무엇을 도와드릴까요?");
     });
+    
+    // 예제: 말풍선 위치 업데이트 (3D 캐릭터의 머리 위치 기준)
+    function updateBubblePosition() {
+      const bubble = document.getElementById("speech-bubble");
+      const headWorldPos = new THREE.Vector3();
+      head.getWorldPosition(headWorldPos);
+      const screenPos = headWorldPos.project(camera);
+      bubble.style.left = ((screenPos.x * 0.5 + 0.5) * window.innerWidth) + "px";
+      bubble.style.top = ((1 - (screenPos.y * 0.5 + 0.5)) * window.innerHeight - 50) + "px";
+    }
   </script>
 </body>
 </html>
