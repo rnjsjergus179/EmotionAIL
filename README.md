@@ -6,143 +6,65 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>3D 캐릭터 HUD, 달력, 이메일 알림 & 말풍선 채팅</title>
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      overflow: hidden;
-    }
+    body { margin: 0; font-family: Arial, sans-serif; overflow: hidden; }
     /* 오른쪽 HUD: 채팅창 + 이메일 알림 */
     #right-hud {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      padding: 10px;
-      background: rgba(255,255,255,0.8);
-      border-radius: 5px;
-      z-index: 20;
-      width: 300px;
+      position: absolute; top: 10px; right: 10px; padding: 10px;
+      background: rgba(255,255,255,0.8); border-radius: 5px; z-index: 20; width: 300px;
     }
     /* 왼쪽 HUD: 달력 UI */
     #left-hud {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      padding: 10px;
-      background: rgba(255,255,255,0.9);
-      border-radius: 5px;
-      z-index: 20;
-      width: 320px;
-      max-height: 90vh;
-      overflow-y: auto;
+      position: absolute; top: 10px; left: 10px; padding: 10px;
+      background: rgba(255,255,255,0.9); border-radius: 5px; z-index: 20;
+      width: 320px; max-height: 90vh; overflow-y: auto;
     }
     /* 달력 UI 스타일 */
     #calendar-container { margin-top: 10px; }
-    #calendar-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 5px;
-    }
-    #calendar-header button {
-      padding: 2px 6px;
-      font-size: 12px;
-    }
-    #month-year-label {
-      font-weight: bold;
-      font-size: 14px;
-    }
-    #year-select {
-      font-size: 12px;
-      padding: 2px;
-      margin-left: 5px;
-    }
+    #calendar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+    #calendar-header button { padding: 2px 6px; font-size: 12px; }
+    #month-year-label { font-weight: bold; font-size: 14px; }
+    #year-select { font-size: 12px; padding: 2px; margin-left: 5px; }
     #calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 2px;
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
     }
     #calendar-grid div {
-      border: 1px solid #ccc;
-      min-height: 40px;
-      font-size: 12px;
-      padding: 2px;
-      position: relative;
-      cursor: pointer;
+      border: 1px solid #ccc; min-height: 40px; font-size: 12px; padding: 2px;
+      position: relative; cursor: pointer;
     }
-    #calendar-grid div:hover {
-      background: #f0f0f0;
-    }
-    .day-number {
-      position: absolute;
-      top: 2px;
-      left: 2px;
-      font-weight: bold;
-    }
+    #calendar-grid div:hover { background: #f0f0f0; }
+    .day-number { position: absolute; top: 2px; left: 2px; font-weight: bold; }
     .event {
-      margin-top: 18px;
-      font-size: 10px;
-      color: #333;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      margin-top: 18px; font-size: 10px; color: #333; overflow: hidden;
+      text-overflow: ellipsis; white-space: nowrap;
     }
     /* 채팅 로그 */
     #chat-log {
-      height: 100px;
-      overflow-y: scroll;
-      border: 1px solid #ccc;
-      padding: 5px;
-      margin-top: 10px;
+      height: 100px; overflow-y: scroll; border: 1px solid #ccc;
+      padding: 5px; margin-top: 10px;
     }
     /* 채팅 입력 영역: 입력창과 전송 버튼을 한 줄에 배치 */
     #chat-input-area {
-      display: flex;
-      margin-top: 10px;
+      display: flex; margin-top: 10px;
     }
-    #chat-input {
-      flex: 1;
-      padding: 5px;
-      font-size: 14px;
-    }
-    #send-chat-button {
-      padding: 5px 10px;
-      font-size: 14px;
-      margin-left: 5px;
-    }
+    #chat-input { flex: 1; padding: 5px; font-size: 14px; }
+    #send-chat-button { padding: 5px 10px; font-size: 14px; margin-left: 5px; }
     /* 사용자 프로필 영역: 내 이메일 입력 및 저장 */
     #user-profile {
-      margin-top: 10px;
-      border-top: 1px solid #ccc;
-      padding-top: 10px;
+      margin-top: 10px; border-top: 1px solid #ccc; padding-top: 10px;
     }
     #user-email-profile {
-      width: calc(100% - 70px);
-      padding: 5px;
-      font-size: 14px;
+      width: calc(100% - 70px); padding: 5px; font-size: 14px;
     }
     #save-profile-button {
-      padding: 5px 10px;
-      font-size: 14px;
-      margin-left: 5px;
+      padding: 5px 10px; font-size: 14px; margin-left: 5px;
     }
     /* 3D 캔버스 */
-    #canvas {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-    }
+    #canvas { position: absolute; width: 100%; height: 100%; z-index: 1; }
     /* 말풍선 스타일 */
     #speech-bubble {
-      position: absolute;
-      background: white;
-      padding: 5px 10px;
-      border-radius: 10px;
-      font-size: 12px;
-      display: none;
-      z-index: 30;
-      white-space: pre-line;
-      pointer-events: none;
+      position: absolute; background: white; padding: 5px 10px;
+      border-radius: 10px; font-size: 12px; display: none; z-index: 30;
+      white-space: pre-line; pointer-events: none;
     }
   </style>
 
@@ -158,6 +80,8 @@
 
     // 사용자 프로필 이메일을 저장할 변수 (초기에는 빈 문자열)
     let userProfileEmail = "";
+    // 관리자 이메일 (관리자에게도 알림을 보내고 싶다면)
+    const adminEmail = "admin@example.com"; // 본인 관리자 이메일로 변경
 
     // 사용자 프로필 저장 함수
     function saveUserProfile() {
@@ -170,9 +94,9 @@
       }
     }
 
-    // 이메일 전송 함수 - 사용자 프로필에 저장된 이메일을 사용 (없으면 입력창의 값을 사용)
+    // 사용자 및 관리자에게 이메일 전송 함수
     function sendEmailPush() {
-      // 우선 저장된 이메일이 있으면 사용, 없으면 오른쪽 HUD의 입력 필드 값 사용
+      // 저장된 이메일이 있으면 사용, 없으면 오른쪽 HUD 입력 필드의 값을 사용
       const emailToSend = userProfileEmail || document.getElementById('user-email').value.trim();
       if (!emailToSend) {
         alert("이메일 주소를 입력해주세요.");
@@ -185,9 +109,24 @@
       };
       emailjs.send("171514115990-llkmtm1154n", "template_lmj91jt", templateParams)
         .then(function(response) {
-          alert("이메일이 전송되었습니다!");
+          alert("사용자에게 이메일이 전송되었습니다!");
+          // 관리자에게도 이메일 전송
+          sendEmailToAdmin();
         }, function(error) {
           alert("이메일 전송에 실패했습니다: " + JSON.stringify(error));
+        });
+    }
+    function sendEmailToAdmin() {
+      const templateParamsAdmin = {
+        to_email: adminEmail,
+        subject: "사용자 알림 요청",
+        message: "사용자가 알림을 요청했습니다."
+      };
+      emailjs.send("171514115990-llkmtm1154n", "template_lmj91jt", templateParamsAdmin)
+        .then(function(response) {
+          console.log("관리자에게 이메일이 전송되었습니다!");
+        }, function(error) {
+          console.log("관리자 이메일 전송 실패: " + JSON.stringify(error));
         });
     }
 
@@ -678,4 +617,4 @@
     });
   </script>
 </body>
-</html> 
+</html>
