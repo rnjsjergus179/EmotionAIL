@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -10,7 +9,8 @@
     /* 오른쪽 HUD: 채팅창 + 이메일 알림 */
     #right-hud {
       position: absolute; top: 10px; right: 10px; padding: 10px;
-      background: rgba(255,255,255,0.8); border-radius: 5px; z-index: 20; width: 300px;
+      background: rgba(255,255,255,0.8); border-radius: 5px; z-index: 20;
+      width: 300px;
     }
     /* 왼쪽 HUD: 달력 UI */
     #left-hud {
@@ -33,29 +33,19 @@
     }
     #calendar-grid div:hover { background: #f0f0f0; }
     .day-number { position: absolute; top: 2px; left: 2px; font-weight: bold; }
-    .event {
-      margin-top: 18px; font-size: 10px; color: #333; overflow: hidden;
-      text-overflow: ellipsis; white-space: nowrap;
-    }
+    .event { margin-top: 18px; font-size: 10px; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     /* 채팅 로그 */
-    #chat-log {
-      height: 100px; overflow-y: scroll; border: 1px solid #ccc;
-      padding: 5px; margin-top: 10px;
-    }
-    /* 채팅 입력 영역: 입력창과 전송 버튼을 한 줄에 배치 */
-    #chat-input-area {
-      display: flex; margin-top: 10px;
-    }
+    #chat-log { height: 100px; overflow-y: scroll; border: 1px solid #ccc; padding: 5px; margin-top: 10px; }
+    /* 채팅 입력 영역: 입력창과 전송 버튼 한 줄 */
+    #chat-input-area { display: flex; margin-top: 10px; }
     #chat-input { flex: 1; padding: 5px; font-size: 14px; }
     #send-chat-button { padding: 5px 10px; font-size: 14px; margin-left: 5px; }
-    /* 사용자 프로필 영역: 내 이메일 입력 및 저장 */
-    #user-profile {
-      margin-top: 10px; border-top: 1px solid #ccc; padding-top: 10px;
-    }
-    #user-email-profile {
+    /* 사용자 프로필 영역: 내 이메일과 상대방 이메일 입력 */
+    #user-profile { margin-top: 10px; border-top: 1px solid #ccc; padding-top: 10px; }
+    #user-email-profile, #other-email-input {
       width: calc(100% - 70px); padding: 5px; font-size: 14px;
     }
-    #save-profile-button {
+    #save-profile-button, #save-other-email-button {
       padding: 5px 10px; font-size: 14px; margin-left: 5px;
     }
     /* 3D 캔버스 */
@@ -69,64 +59,73 @@
   </style>
 
   <!-- EmailJS 라이브러리 -->
-  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
   <!-- Three.js 라이브러리 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
-  <script type="text/javascript">
-    // EmailJS 초기화 (Public Key를 본인 값으로 교체)
+  <script>
+    // EmailJS 초기화 (Public Key, 실제 값으로 수정)
     (function() {
       emailjs.init("3YFtNo1im0qkWpUDE");
     })();
 
-    // 사용자 프로필 이메일을 저장할 변수 (초기에는 빈 문자열)
+    // 전역 변수: 사용자와 상대방 이메일 저장
     let userProfileEmail = "";
-    // 관리자 이메일 (관리자에게도 알림을 보내고 싶다면)
-    const adminEmail = "admin@example.com"; // 본인 관리자 이메일로 변경
+    let otherProfileEmail = "";
 
-    // 사용자 프로필 저장 함수
+    // 사용자 프로필 저장 함수 (내 이메일)
     function saveUserProfile() {
       const emailInput = document.getElementById("user-email-profile").value.trim();
       if (emailInput) {
         userProfileEmail = emailInput;
-        alert("이메일이 저장되었습니다: " + userProfileEmail);
+        alert("내 이메일이 저장되었습니다: " + userProfileEmail);
       } else {
-        alert("이메일을 입력해주세요.");
+        alert("내 이메일을 입력해주세요.");
+      }
+    }
+    // 상대방 이메일 저장 함수
+    function saveOtherProfile() {
+      const otherInput = document.getElementById("other-email-input").value.trim();
+      if (otherInput) {
+        otherProfileEmail = otherInput;
+        alert("상대방 이메일이 저장되었습니다: " + otherProfileEmail);
+      } else {
+        alert("상대방 이메일을 입력해주세요.");
       }
     }
 
-    // 사용자 및 관리자에게 이메일 전송 함수
+    // 사용자와 상대방에게 이메일 전송 함수
     function sendEmailPush() {
-      // 저장된 이메일이 있으면 사용, 없으면 오른쪽 HUD 입력 필드의 값을 사용
+      // 사용자 이메일: 저장된 값 우선, 없으면 오른쪽 입력 필드 값 사용
       const emailToSend = userProfileEmail || document.getElementById('user-email').value.trim();
-      if (!emailToSend) {
-        alert("이메일 주소를 입력해주세요.");
+      // 상대방 이메일: 저장된 값 우선, 없으면 새로 추가한 입력 필드 값 사용
+      const otherEmailToSend = otherProfileEmail || document.getElementById('other-email-input').value.trim();
+      if (!emailToSend || !otherEmailToSend) {
+        alert("내 이메일과 상대방 이메일 모두 입력해주세요.");
         return;
       }
-      const templateParams = {
+      // 사용자에게 전송
+      const templateParamsUser = {
         to_email: emailToSend,
-        subject: "푸시 알림",
-        message: "이것은 프론트엔드에서 전송한 이메일 알림입니다."
+        subject: "푸시 알림 (사용자)",
+        message: "이것은 사용자에게 전송된 이메일 알림입니다."
       };
-      emailjs.send("171514115990-llkmtm1154n", "template_lmj91jt", templateParams)
+      emailjs.send("171514115990-llkmtm1154n", "template_lmj91jt", templateParamsUser)
         .then(function(response) {
           alert("사용자에게 이메일이 전송되었습니다!");
-          // 관리자에게도 이메일 전송
-          sendEmailToAdmin();
         }, function(error) {
-          alert("이메일 전송에 실패했습니다: " + JSON.stringify(error));
+          alert("사용자 이메일 전송에 실패했습니다: " + JSON.stringify(error));
         });
-    }
-    function sendEmailToAdmin() {
-      const templateParamsAdmin = {
-        to_email: adminEmail,
-        subject: "사용자 알림 요청",
-        message: "사용자가 알림을 요청했습니다."
+      // 상대방에게 전송
+      const templateParamsOther = {
+        to_email: otherEmailToSend,
+        subject: "푸시 알림 (상대방)",
+        message: "이것은 상대방에게 전송된 이메일 알림입니다."
       };
-      emailjs.send("171514115990-llkmtm1154n", "template_lmj91jt", templateParamsAdmin)
+      emailjs.send("171514115990-llkmtm1154n", "template_lmj91jt", templateParamsOther)
         .then(function(response) {
-          console.log("관리자에게 이메일이 전송되었습니다!");
+          console.log("상대방에게 이메일이 전송되었습니다!");
         }, function(error) {
-          console.log("관리자 이메일 전송 실패: " + JSON.stringify(error));
+          console.log("상대방 이메일 전송에 실패했습니다: " + JSON.stringify(error));
         });
     }
 
@@ -163,7 +162,7 @@
   </script>
 </head>
 <body>
-  <!-- 오른쪽 HUD: 채팅 및 이메일 알림 입력 -->
+  <!-- 오른쪽 HUD: 채팅, 이메일 알림, 사용자 프로필 영역 -->
   <div id="right-hud">
     <h3>채팅창</h3>
     <div id="chat-log"></div>
@@ -173,13 +172,19 @@
       <button id="send-chat-button" onclick="sendChat()">전송</button>
     </div>
     <br/>
-    <input type="email" id="user-email" placeholder="이메일 주소 입력" style="width: 100%; padding: 5px; margin-bottom: 5px;" />
+    <!-- 기본 이메일 입력 (기본값으로 사용 가능) -->
+    <input type="email" id="user-email" placeholder="내 이메일 입력 (또는 저장된 이메일 사용)" style="width: 100%; padding: 5px; margin-bottom: 5px;" />
+    <!-- 다른 사람(상대방) 이메일 입력 -->
+    <input type="email" id="other-email-input" placeholder="상대방 이메일 입력" style="width: 100%; padding: 5px; margin-bottom: 5px;" />
     <button onclick="sendEmailPush()" style="width: 100%; padding: 5px;">이메일 알림 보내기</button>
     <!-- 사용자 프로필 영역 (채팅창 하단) -->
     <div id="user-profile">
       <h4>내 이메일 설정</h4>
       <input type="email" id="user-email-profile" placeholder="내 이메일 입력" />
       <button id="save-profile-button" onclick="saveUserProfile()">저장</button>
+      <h4>상대방 이메일 설정</h4>
+      <input type="email" id="other-email-input" placeholder="상대방 이메일 입력" />
+      <button id="save-other-email-button" onclick="saveOtherProfile()">저장</button>
     </div>
   </div>
 
