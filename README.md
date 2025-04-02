@@ -4,205 +4,145 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>3D 캐릭터 HUD, 달력, 채팅 & 구글 이메일</title>
-  
-  <!-- Google Sign-In 라이브러리 제거 (로그인 기능 삭제) -->
-  <!-- 대신 구글 이메일 전송 UI를 추가합니다. -->
-  
+  <title>3D 캐릭터 HUD, 달력, 이메일 알림 & 말풍선 채팅</title>
   <style>
-    /* CSS Reset 및 모든 요소에 box-sizing 적용 */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    html, body {
-      height: 100%;
-      font-family: Arial, sans-serif;
-      overflow: hidden;
-    }
-    /* 오른쪽 HUD: 채팅 및 구글 이메일 (고정) */
+    body { margin: 0; font-family: Arial, sans-serif; overflow: hidden; }
+    /* 오른쪽 HUD: 채팅창 + 이메일 알림 */
     #right-hud {
-      position: fixed;
-      top: 70px;
-      right: 10px;
-      width: 300px;
-      padding: 10px;
-      background: rgba(255,255,255,0.8);
-      border-radius: 5px;
-      z-index: 20;
+      position: absolute; top: 10px; right: 10px; padding: 10px;
+      background: rgba(255,255,255,0.8); border-radius: 5px; z-index: 20; width: 300px;
     }
-    /* 채팅 영역 */
-    #chat-log {
-      height: 100px;
-      overflow-y: scroll;
-      border: 1px solid #ccc;
-      padding: 5px;
-      margin-bottom: 10px;
-    }
-    #chat-input-area {
-      display: flex;
-      margin-bottom: 10px;
-    }
-    #chat-input {
-      flex: 1;
-      padding: 5px;
-      font-size: 14px;
-    }
-    #send-chat-button {
-      padding: 5px 10px;
-      font-size: 14px;
-      margin-left: 5px;
-    }
-    /* 구글 이메일 영역 (채팅창 아래 추가) */
-    #google-email-section {
-      margin-top: 10px;
-      border: 1px solid #ccc;
-      padding: 5px;
-      border-radius: 5px;
-      background: #f9f9f9;
-    }
-    #google-email-section input, 
-    #google-email-section textarea {
-      width: 100%;
-      margin-bottom: 5px;
-      padding: 5px;
-      font-size: 14px;
-    }
-    #send-email-button {
-      width: 100%;
-      padding: 5px;
-      font-size: 14px;
-    }
-    /* 왼쪽 HUD: 달력 (고정) */
+    /* 왼쪽 HUD: 달력 UI */
     #left-hud {
-      position: fixed;
-      top: 70px;
-      left: 10px;
-      width: 320px;
-      padding: 10px;
-      background: rgba(255,255,255,0.9);
-      border-radius: 5px;
-      z-index: 20;
-      max-height: 90vh;
-      overflow-y: auto;
+      position: absolute; top: 10px; left: 10px; padding: 10px;
+      background: rgba(255,255,255,0.9); border-radius: 5px; z-index: 20;
+      width: 320px; max-height: 90vh; overflow-y: auto;
     }
-    /* 달력 UI 내부 스타일 */
+    /* 달력 UI 스타일 */
     #calendar-container { margin-top: 10px; }
-    #calendar-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 5px;
-    }
+    #calendar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
     #calendar-header button { padding: 2px 6px; font-size: 12px; }
     #month-year-label { font-weight: bold; font-size: 14px; }
     #year-select { font-size: 12px; padding: 2px; margin-left: 5px; }
     #calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 2px;
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
     }
     #calendar-grid div {
-      border: 1px solid #ccc;
-      min-height: 40px;
-      font-size: 12px;
-      padding: 2px;
-      position: relative;
-      cursor: pointer;
+      border: 1px solid #ccc; min-height: 40px; font-size: 12px; padding: 2px;
+      position: relative; cursor: pointer;
     }
     #calendar-grid div:hover { background: #f0f0f0; }
-    .day-number {
-      position: absolute;
-      top: 2px;
-      left: 2px;
-      font-weight: bold;
-    }
+    .day-number { position: absolute; top: 2px; left: 2px; font-weight: bold; }
     .event {
-      margin-top: 18px;
-      font-size: 10px;
-      color: #333;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      margin-top: 18px; font-size: 10px; color: #333; overflow: hidden;
+      text-overflow: ellipsis; white-space: nowrap;
     }
-    /* 3D 캔버스 (전체 화면 고정) */
-    #canvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-      display: block;
+    /* 채팅 로그 */
+    #chat-log {
+      height: 100px; overflow-y: scroll; border: 1px solid #ccc;
+      padding: 5px; margin-top: 10px;
     }
-    /* 말풍선 */
+    /* 채팅 입력 영역: 입력창과 전송 버튼을 한 줄에 배치 */
+    #chat-input-area {
+      display: flex; margin-top: 10px;
+    }
+    #chat-input { flex: 1; padding: 5px; font-size: 14px; }
+    #send-chat-button { padding: 5px 10px; font-size: 14px; margin-left: 5px; }
+    /* 사용자 프로필 영역: 내 이메일 입력 및 저장 */
+    #user-profile {
+      margin-top: 10px; border-top: 1px solid #ccc; padding-top: 10px;
+    }
+    #user-email-profile {
+      width: calc(100% - 70px); padding: 5px; font-size: 14px;
+    }
+    #save-profile-button {
+      padding: 5px 10px; font-size: 14px; margin-left: 5px;
+    }
+    /* 3D 캔버스 */
+    #canvas { position: absolute; width: 100%; height: 100%; z-index: 1; }
+    /* 말풍선 스타일 */
     #speech-bubble {
-      position: fixed;
-      background: white;
-      padding: 5px 10px;
-      border-radius: 10px;
-      font-size: 12px;
-      display: none;
-      z-index: 30;
-      white-space: pre-line;
-      pointer-events: none;
-    }
-    /* 미디어 쿼리 (작은 화면 대응) */
-    @media (max-width: 480px) {
-      #right-hud, #left-hud {
-        width: 90%;
-        left: 5%;
-        right: 5%;
-      }
+      position: absolute; background: white; padding: 5px 10px;
+      border-radius: 10px; font-size: 12px; display: none; z-index: 30;
+      white-space: pre-line; pointer-events: none;
     }
   </style>
-  
-  <script>
-    // 채팅 관련 함수
-    function appendToChatLog(message) {
-      const chatLog = document.getElementById("chat-log");
-      chatLog.innerHTML += "<div>" + message + "</div>";
-      chatLog.scrollTop = chatLog.scrollHeight;
-    }
-    
-    let danceInterval = null;
-    async function sendChat() {
-      const inputEl = document.getElementById("chat-input");
-      const input = inputEl.value.trim();
-      let response = "";
-      if (!input) return;
-      const lowerInput = input.toLowerCase();
-      if (lowerInput.includes("안녕")) {
-        response = "안녕하세요, 주인님! 오늘 기분은 어떠세요?";
-      } else if (lowerInput.includes("캐릭터 넌 누구야")) {
-        response = "저는 당신의 개인 비서에요.";
-      } else if (lowerInput.includes("일정")) {
-        response = "캘린더는 좌측에서 확인하세요.";
-      } else if (lowerInput.includes("날씨") && (lowerInput.includes("알려") || lowerInput.includes("어때"))) {
-        response = "현재 날씨는 맑음입니다.";
-      } else if (lowerInput.includes("캐릭터 춤춰줘")) {
-        response = "춤출게요!";
-        if (danceInterval) clearInterval(danceInterval);
-        danceInterval = setInterval(() => {
-          // 캐릭터 팔 회전 애니메이션 (Three.js 코드 추가)
-        }, 50);
-        setTimeout(() => { clearInterval(danceInterval); }, 3000);
+
+  <!-- EmailJS 라이브러리 -->
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+  <!-- Three.js 라이브러리 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script type="text/javascript">
+    // EmailJS 초기화 (Public Key를 본인 값으로 교체)
+    (function() {
+      emailjs.init("3YFtNo1im0qkWpUDE");
+    })();
+
+    // 사용자 프로필 이메일을 저장할 변수 (초기에는 빈 문자열)
+    let userProfileEmail = "";
+    // 관리자 이메일 (관리자에게도 알림을 보내고 싶다면)
+    const adminEmail = "admin@example.com"; // 본인 관리자 이메일로 변경
+
+    // 사용자 프로필 저장 함수
+    function saveUserProfile() {
+      const emailInput = document.getElementById("user-email-profile").value.trim();
+      if (emailInput) {
+        userProfileEmail = emailInput;
+        alert("이메일이 저장되었습니다: " + userProfileEmail);
       } else {
-        response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
+        alert("이메일을 입력해주세요.");
       }
-      appendToChatLog("사용자: " + input);
-      appendToChatLog("캐릭터: " + response);
-      showSpeechBubbleInChunks(response);
-      inputEl.value = "";
     }
-    
-    document.getElementById("chat-input").addEventListener("keydown", function(e) {
-      if (e.key === "Enter") sendChat();
-    });
-    
+
+    // 사용자 및 관리자에게 이메일 전송 함수
+    function sendEmailPush() {
+      // 저장된 이메일이 있으면 사용, 없으면 오른쪽 HUD 입력 필드의 값을 사용
+      const emailToSend = userProfileEmail || document.getElementById('user-email').value.trim();
+      if (!emailToSend) {
+        alert("이메일 주소를 입력해주세요.");
+        return;
+      }
+      const templateParams = {
+        to_email: emailToSend,
+        subject: "푸시 알림",
+        message: "이것은 프론트엔드에서 전송한 이메일 알림입니다."
+      };
+      emailjs.send("171514115990-llkmtm1154n", "template_lmj91jt", templateParams)
+        .then(function(response) {
+          alert("사용자에게 이메일이 전송되었습니다!");
+          // 관리자에게도 이메일 전송
+          sendEmailToAdmin();
+        }, function(error) {
+          alert("이메일 전송에 실패했습니다: " + JSON.stringify(error));
+        });
+    }
+    function sendEmailToAdmin() {
+      const templateParamsAdmin = {
+        to_email: adminEmail,
+        subject: "사용자 알림 요청",
+        message: "사용자가 알림을 요청했습니다."
+      };
+      emailjs.send("171514115990-llkmtm1154n", "template_lmj91jt", templateParamsAdmin)
+        .then(function(response) {
+          console.log("관리자에게 이메일이 전송되었습니다!");
+        }, function(error) {
+          console.log("관리자 이메일 전송 실패: " + JSON.stringify(error));
+        });
+    }
+
+    // 말풍선 관련 함수
+    function updateBubblePosition() {
+      const bubble = document.getElementById('speech-bubble');
+      // 캐릭터 head의 월드 좌표 구하기
+      const headWorldPos = new THREE.Vector3();
+      head.getWorldPosition(headWorldPos);
+      // 화면 좌표로 변환
+      const screenPos = headWorldPos.project(camera);
+      bubble.style.left = ((screenPos.x * 0.5 + 0.5) * window.innerWidth) + "px";
+      bubble.style.top = ((1 - (screenPos.y * 0.5 + 0.5)) * window.innerHeight - 50) + "px";
+    }
     function showSpeechBubbleInChunks(text, chunkSize = 15, delay = 3000) {
-      const bubble = document.getElementById("speech-bubble");
+      const bubble = document.getElementById('speech-bubble');
       const chunks = [];
       for (let i = 0; i < text.length; i += chunkSize) {
         chunks.push(text.slice(i, i + chunkSize));
@@ -211,60 +151,38 @@
       function showNextChunk() {
         if (index < chunks.length) {
           bubble.textContent = chunks[index];
-          bubble.style.display = "block";
+          bubble.style.display = 'block';
           index++;
           setTimeout(showNextChunk, delay);
         } else {
-          setTimeout(() => { bubble.style.display = "none"; }, 3000);
+          setTimeout(() => bubble.style.display = 'none', 3000);
         }
       }
       showNextChunk();
     }
-    
-    // 윈도우 리사이즈 이벤트 - 카메라 및 렌더러 업데이트
-    window.addEventListener("resize", function(){
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-    
-    // 구글 이메일 전송 기능 (예제)
-    function sendGoogleEmail() {
-      const recipient = document.getElementById("email-recipient").value.trim();
-      const subject = document.getElementById("email-subject").value.trim();
-      const message = document.getElementById("email-message").value.trim();
-      
-      if (!recipient || !subject || !message) {
-        alert("모든 이메일 필드를 입력해주세요.");
-        return;
-      }
-      
-      // 여기에 Gmail API 또는 EmailJS를 통한 실제 이메일 전송 코드를 추가하세요.
-      // 예를 들어, EmailJS 사용 시 templateParams에 recipient, subject, message 등을 설정 후 emailjs.send() 호출
-      console.log("이메일 전송 요청:", { recipient, subject, message });
-      alert("이메일 전송 요청됨:\n수신자: " + recipient + "\n제목: " + subject + "\n내용: " + message);
-    }
   </script>
 </head>
 <body>
-  <!-- 오른쪽 HUD: 채팅 및 구글 이메일 -->
+  <!-- 오른쪽 HUD: 채팅 및 이메일 알림 입력 -->
   <div id="right-hud">
     <h3>채팅창</h3>
     <div id="chat-log"></div>
+    <!-- 채팅 입력 영역: 입력창과 전송 버튼 -->
     <div id="chat-input-area">
       <input type="text" id="chat-input" placeholder="채팅 입력..." />
       <button id="send-chat-button" onclick="sendChat()">전송</button>
     </div>
-    <!-- 구글 이메일 전송 UI (채팅창 아래 추가) -->
-    <div id="google-email-section">
-      <h4>구글 이메일 전송</h4>
-      <input type="email" id="email-recipient" placeholder="수신자 이메일" />
-      <input type="text" id="email-subject" placeholder="제목" />
-      <textarea id="email-message" rows="3" placeholder="내용"></textarea>
-      <button id="send-email-button" onclick="sendGoogleEmail()">이메일 보내기</button>
+    <br/>
+    <input type="email" id="user-email" placeholder="이메일 주소 입력" style="width: 100%; padding: 5px; margin-bottom: 5px;" />
+    <button onclick="sendEmailPush()" style="width: 100%; padding: 5px;">이메일 알림 보내기</button>
+    <!-- 사용자 프로필 영역 (채팅창 하단) -->
+    <div id="user-profile">
+      <h4>내 이메일 설정</h4>
+      <input type="email" id="user-email-profile" placeholder="내 이메일 입력" />
+      <button id="save-profile-button" onclick="saveUserProfile()">저장</button>
     </div>
   </div>
-  
+
   <!-- 왼쪽 HUD: 달력 UI -->
   <div id="left-hud">
     <h3>캘린더</h3>
@@ -278,40 +196,40 @@
       <div id="calendar-grid"></div>
     </div>
   </div>
-  
+
   <!-- 말풍선 (3D 캐릭터 말풍선) -->
   <div id="speech-bubble"></div>
-  
+
   <!-- 3D 캔버스 -->
   <canvas id="canvas"></canvas>
-  
+
   <script>
     /* ====================================
-       Three.js 3D 씬 설정 (캐릭터, 배경, 날씨 효과 등)
+       3D 씬 설정 (캐릭터, 배경, 날씨 효과 등)
     ==================================== */
     let currentWeather = "";
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("canvas"), alpha: true });
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas'), alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     camera.position.set(5, 5, 10);
     camera.lookAt(0, 0, 0);
-    
+
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(5, 10, 7).normalize();
     scene.add(directionalLight);
     scene.add(new THREE.AmbientLight(0x333333));
-    
+
     // 태양 객체
     const sunMaterial = new THREE.MeshStandardMaterial({ color: 0xffcc00, emissive: 0xff9900, transparent: true, opacity: 0 });
     const sun = new THREE.Mesh(new THREE.SphereGeometry(1.5, 64, 64), sunMaterial);
     scene.add(sun);
-    
+
     // 달 객체
     const moonMaterial = new THREE.MeshStandardMaterial({ color: 0xcccccc, emissive: 0x222222, transparent: true, opacity: 1 });
     const moon = new THREE.Mesh(new THREE.SphereGeometry(1.2, 64, 64), moonMaterial);
     scene.add(moon);
-    
+
     // 별, 반딧불 생성
     const stars = [], fireflies = [];
     for (let i = 0; i < 100; i++) {
@@ -326,7 +244,7 @@
       scene.add(firefly);
       fireflies.push(firefly);
     }
-    
+
     // 고해상도 콩크리트 바닥 (Y = -2)
     const floorGeometry = new THREE.PlaneGeometry(200, 200, 128, 128);
     const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 1, metalness: 0 });
@@ -334,7 +252,7 @@
     floor.rotation.x = -Math.PI/2;
     floor.position.y = -2;
     scene.add(floor);
-    
+
     // 배경 그룹 (빌딩, 집, 가로등)
     const backgroundGroup = new THREE.Group();
     scene.add(backgroundGroup);
@@ -399,7 +317,7 @@
     const characterStreetlight = createStreetlight();
     characterStreetlight.position.set(1, -2, 0);
     scene.add(characterStreetlight);
-    
+
     // 날씨 효과 – 비
     let rainGroup = new THREE.Group();
     scene.add(rainGroup);
@@ -419,7 +337,7 @@
     }
     initRain();
     rainGroup.visible = false;
-    
+
     // 날씨 효과 – 구름 (하나의 구름)
     let houseCloudGroup = new THREE.Group();
     function createHouseCloud() {
@@ -443,7 +361,7 @@
       singleCloud.position.x += 0.02;
       if (singleCloud.position.x > 5) { singleCloud.position.x = -5; }
     }
-    
+
     // 날씨 효과 – 번개
     let lightningLight = new THREE.PointLight(0xffffff, 0, 500);
     lightningLight.position.set(0, 50, 0);
@@ -451,16 +369,12 @@
     function updateWeatherEffects() {
       if (currentWeather.indexOf("비") !== -1 || currentWeather.indexOf("소나기") !== -1) {
         rainGroup.visible = true;
-      } else {
-        rainGroup.visible = false;
-      }
+      } else { rainGroup.visible = false; }
       if (currentWeather.indexOf("구름") !== -1) {
         houseCloudGroup.visible = true;
-      } else {
-        houseCloudGroup.visible = false;
-      }
+      } else { houseCloudGroup.visible = false; }
     }
-    
+
     // 캐릭터 생성
     const characterGroup = new THREE.Group();
     const charBody = new THREE.Mesh(new THREE.BoxGeometry(1, 1.5, 0.5), new THREE.MeshStandardMaterial({ color: 0x00cc66 }));
@@ -491,11 +405,13 @@
     scene.add(characterGroup);
     const characterLight = new THREE.PointLight(0xffee88, 1, 15);
     scene.add(characterLight);
-    
+
     /* ====================================
        채팅 관련 함수
     ==================================== */
-    async function getWeather() { return "맑음"; }
+    async function getWeather() {
+      return "맑음";
+    }
     function appendToChatLog(message) {
       const chatLog = document.getElementById("chat-log");
       chatLog.innerHTML += "<div>" + message + "</div>";
@@ -509,21 +425,32 @@
       const lowerInput = input.toLowerCase();
       if (lowerInput.includes("안녕")) {
         response = "안녕하세요, 주인님! 오늘 기분은 어떠세요?";
-      } else if (lowerInput.includes("캐릭터 넌 누구야")) {
+        characterGroup.children[7].rotation.z = Math.PI/4;
+        setTimeout(() => { characterGroup.children[7].rotation.z = 0; }, 1000);
+      }
+      else if (lowerInput.includes("캐릭터 넌 누구야")) {
         response = "저는 당신의 개인 비서에요.";
-      } else if (lowerInput.includes("일정")) {
+      }
+      else if (lowerInput.includes("일정")) {
         response = "캘린더는 좌측에서 확인하세요.";
-      } else if (lowerInput.includes("날씨") && (lowerInput.includes("알려") || lowerInput.includes("어때"))) {
+      }
+      else if (lowerInput.includes("날씨") && (lowerInput.includes("알려") || lowerInput.includes("어때"))) {
         const weather = await getWeather();
         response = `현재 날씨는 ${weather}입니다.`;
-      } else if (lowerInput.includes("캐릭터 춤춰줘")) {
+      }
+      else if (lowerInput.includes("캐릭터 춤춰줘")) {
         response = "춤출게요!";
-        if (danceInterval) clearInterval(danceInterval);
-        danceInterval = setInterval(() => {
-          // 캐릭터 팔 회전 애니메이션 (Three.js 업데이트 코드 추가)
+        const danceInterval = setInterval(() => {
+          characterGroup.children[7].rotation.z = Math.sin(Date.now() * 0.01) * Math.PI/4;
+          head.rotation.y = Math.sin(Date.now() * 0.01) * Math.PI/8;
         }, 50);
-        setTimeout(() => { clearInterval(danceInterval); }, 3000);
-      } else {
+        setTimeout(() => {
+          clearInterval(danceInterval);
+          characterGroup.children[7].rotation.z = 0;
+          head.rotation.y = 0;
+        }, 3000);
+      }
+      else {
         response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
       }
       appendToChatLog("사용자: " + input);
@@ -532,7 +459,7 @@
       inputEl.value = "";
     }
     document.getElementById("chat-input").addEventListener("keydown", function(e) {
-      if (e.key === "Enter") sendChat();
+      if (e.key === "Enter") { sendChat(); }
     });
     setInterval(() => {
       const now = new Date();
@@ -544,7 +471,7 @@
         appendToChatLog("캐릭터: 주무실 시간이에요 zzzz");
       }
     }, 60000);
-    
+
     /* ====================================
        애니메이션 루프 (3D 씬 업데이트)
     ==================================== */
@@ -554,86 +481,66 @@
       const headWorldPos = new THREE.Vector3();
       head.getWorldPosition(headWorldPos);
       const orbitCenter = headWorldPos.clone().add(new THREE.Vector3(0, 2, 0));
-      const totalMin = now.getHours() * 60 + now.getMinutes();
-      const angle = (totalMin / 1440) * Math.PI * 2;
+      const totalMin = now.getHours()*60 + now.getMinutes();
+      const angle = (totalMin/1440)*Math.PI*2;
       const radius = 3;
-      // 태양 위치 업데이트
       const sunPos = new THREE.Vector3(
-        orbitCenter.x + Math.cos(angle) * radius,
-        orbitCenter.y + Math.sin(angle) * radius,
+        orbitCenter.x + Math.cos(angle)*radius,
+        orbitCenter.y + Math.sin(angle)*radius,
         orbitCenter.z
       );
       sun.position.copy(sunPos);
-      // 달 위치 업데이트 (태양 반대 방향)
       const moonAngle = angle + Math.PI;
       const moonPos = new THREE.Vector3(
-        orbitCenter.x + Math.cos(moonAngle) * radius,
-        orbitCenter.y + Math.sin(moonAngle) * radius,
+        orbitCenter.x + Math.cos(moonAngle)*radius,
+        orbitCenter.y + Math.sin(moonAngle)*radius,
         orbitCenter.z
       );
       moon.position.copy(moonPos);
-      // 시간에 따른 태양/달 투명도 조절
-      const t = now.getHours() + now.getMinutes() / 60;
+      const t = now.getHours() + now.getMinutes()/60;
       let sunOpacity = 0, moonOpacity = 0;
-      if (t < 6) {
-        sunOpacity = 0; moonOpacity = 1;
-      } else if (t < 7) {
-        let factor = (t - 6);
-        sunOpacity = factor; moonOpacity = 1 - factor;
-      } else if (t < 17) {
-        sunOpacity = 1; moonOpacity = 0;
-      } else if (t < 18) {
-        let factor = (t - 17);
-        sunOpacity = 1 - factor; moonOpacity = factor;
-      } else {
-        sunOpacity = 0; moonOpacity = 1;
-      }
+      if(t < 6) { sunOpacity = 0; moonOpacity = 1; }
+      else if(t < 7) { let factor = (t-6); sunOpacity = factor; moonOpacity = 1-factor; }
+      else if(t < 17) { sunOpacity = 1; moonOpacity = 0; }
+      else if(t < 18) { let factor = (t-17); sunOpacity = 1-factor; moonOpacity = factor; }
+      else { sunOpacity = 0; moonOpacity = 1; }
       sun.material.opacity = sunOpacity;
       moon.material.opacity = moonOpacity;
-      
-      // 낮/밤 배경, 별, 반딧불, 가로등 설정
-      const isDay = (t >= 7 && t < 17);
+      const isDay = t >= 7 && t < 17;
       scene.background = new THREE.Color(isDay ? 0x87CEEB : 0x000033);
       stars.forEach(s => s.visible = !isDay);
       fireflies.forEach(f => f.visible = !isDay);
       characterStreetlight.traverse(child => {
-        if (child instanceof THREE.PointLight) {
-          child.intensity = isDay ? 0 : 1;
-        }
+        if(child instanceof THREE.PointLight) { child.intensity = isDay ? 0 : 1; }
       });
-      characterLight.position.copy(characterGroup.position).add(new THREE.Vector3(0, 5, 0));
+      characterLight.position.copy(characterGroup.position).add(new THREE.Vector3(0,5,0));
       characterLight.intensity = isDay ? 0 : 1;
       characterGroup.position.y = -1;
       characterGroup.rotation.x = 0;
-      
-      // 비 효과 업데이트
-      if (rainGroup.visible) {
+      if(rainGroup.visible) {
         const rainPoints = rainGroup.children[0];
         const positions = rainPoints.geometry.attributes.position.array;
-        for (let i = 0; i < positions.length; i += 3) {
-          positions[i + 1] -= 0.5;
-          if (positions[i + 1] < 0) {
-            positions[i + 1] = Math.random() * 50 + 20;
-          }
+        for(let i=0; i<positions.length; i+=3) {
+          positions[i+1] -= 0.5;
+          if(positions[i+1] < 0) { positions[i+1] = Math.random()*50+20; }
         }
         rainPoints.geometry.attributes.position.needsUpdate = true;
       }
-      // 번개 효과 업데이트
-      if (currentWeather.indexOf("번개") !== -1 || currentWeather.indexOf("뇌우") !== -1) {
-        if (Math.random() < 0.001) {
+      if(currentWeather.indexOf("번개") !== -1 || currentWeather.indexOf("뇌우") !== -1) {
+        if(Math.random() < 0.001) {
           lightningLight.intensity = 5;
           setTimeout(() => { lightningLight.intensity = 0; }, 100);
         }
       }
       updateHouseClouds();
-      characterStreetlight.position.set(characterGroup.position.x + 1, -2, characterGroup.position.z);
+      characterStreetlight.position.set(characterGroup.position.x+1, -2, characterGroup.position.z);
       updateBubblePosition();
       renderer.render(scene, camera);
     }
     animate();
-    
+
     /* ====================================
-       달력 UI 관련 함수
+       달력 UI
     ==================================== */
     let currentYear, currentMonth;
     function initCalendar() {
@@ -644,12 +551,12 @@
       renderCalendar(currentYear, currentMonth);
       document.getElementById("prev-month").addEventListener("click", () => {
         currentMonth--;
-        if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+        if(currentMonth < 0) { currentMonth = 11; currentYear--; }
         renderCalendar(currentYear, currentMonth);
       });
       document.getElementById("next-month").addEventListener("click", () => {
         currentMonth++;
-        if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+        if(currentMonth > 11) { currentMonth = 0; currentYear++; }
         renderCalendar(currentYear, currentMonth);
       });
       document.getElementById("year-select").addEventListener("change", (e) => {
@@ -660,20 +567,20 @@
     function populateYearSelect() {
       const yearSelect = document.getElementById("year-select");
       yearSelect.innerHTML = "";
-      for (let y = 2020; y <= 2070; y++) {
+      for(let y = 2020; y <= 2070; y++) {
         const option = document.createElement("option");
         option.value = y;
         option.textContent = y;
-        if (y === currentYear) option.selected = true;
+        if(y === currentYear) option.selected = true;
         yearSelect.appendChild(option);
       }
     }
     function renderCalendar(year, month) {
-      const monthNames = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
+      const monthNames = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
       document.getElementById("month-year-label").textContent = `${year}년 ${monthNames[month]}`;
       const grid = document.getElementById("calendar-grid");
       grid.innerHTML = "";
-      const daysOfWeek = ["일", "월", "화", "수", "목", "금", "토"];
+      const daysOfWeek = ["일","월","화","수","목","금","토"];
       daysOfWeek.forEach((day) => {
         const th = document.createElement("div");
         th.style.fontWeight = "bold";
@@ -682,47 +589,32 @@
         grid.appendChild(th);
       });
       const firstDay = new Date(year, month, 1).getDay();
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      for (let i = 0; i < firstDay; i++) {
+      const daysInMonth = new Date(year, month+1, 0).getDate();
+      for(let i = 0; i < firstDay; i++) {
         grid.appendChild(document.createElement("div"));
       }
-      for (let d = 1; d <= daysInMonth; d++) {
+      for(let d = 1; d <= daysInMonth; d++) {
         const cell = document.createElement("div");
         cell.innerHTML = `<div class="day-number">${d}</div>
                           <div class="event" id="event-${year}-${month+1}-${d}"></div>`;
         cell.addEventListener("click", () => {
           const eventText = prompt(`${year}-${month+1}-${d} 일정 입력:`);
-          if (eventText) {
-            addEventToDay(`${year}-${month+1}-${d}`, eventText);
-          }
+          if(eventText) { addEventToDay(`${year}-${month+1}-${d}`, eventText); }
         });
         grid.appendChild(cell);
       }
     }
     function addEventToDay(dateStr, eventText) {
       const eventDiv = document.getElementById(`event-${dateStr}`);
-      if (eventDiv) {
-        if (eventDiv.textContent) {
-          eventDiv.textContent += "; " + eventText;
-        } else {
-          eventDiv.textContent = eventText;
-        }
+      if(eventDiv) {
+        if(eventDiv.textContent) { eventDiv.textContent += "; " + eventText; }
+        else { eventDiv.textContent = eventText; }
       }
     }
     window.addEventListener("load", () => {
       initCalendar();
       appendToChatLog("캐릭터: 환영합니다! 무엇을 도와드릴까요?");
     });
-    
-    // 말풍선 위치 업데이트 (3D 캐릭터의 머리 위치 기준)
-    function updateBubblePosition() {
-      const bubble = document.getElementById("speech-bubble");
-      const headWorldPos = new THREE.Vector3();
-      head.getWorldPosition(headWorldPos);
-      const screenPos = headWorldPos.project(camera);
-      bubble.style.left = ((screenPos.x * 0.5 + 0.5) * window.innerWidth) + "px";
-      bubble.style.top = ((1 - (screenPos.y * 0.5 + 0.5)) * window.innerHeight - 50) + "px";
-    }
   </script>
 </body>
 </html>
