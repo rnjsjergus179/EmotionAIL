@@ -4,21 +4,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>3D 캐릭터 HUD, 달력 & 말풍선 채팅</title>
+  <title>3D 캐릭터 HUD, 달력 & 말풍선 채팅 (고해상도 느낌)</title>
   <style>
     /* CSS Reset 및 기본 스타일 */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; font-family: Arial, sans-serif; overflow: hidden; }
     
-    /* 오른쪽 HUD: 채팅창 (이메일 관련 요소 삭제됨) */
+    /* 오른쪽 HUD: 채팅창 */
     #right-hud {
       position: fixed;
-      top: 150px; /* 위치 조정 */
+      top: 150px;
       right: 10px;
       width: 300px;
       padding: 10px;
       background: rgba(255,255,255,0.8);
       border-radius: 5px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
       z-index: 20;
     }
     /* 채팅 로그 */
@@ -28,6 +29,8 @@
       border: 1px solid #ccc;
       padding: 5px;
       margin-top: 10px;
+      border-radius: 3px;
+      background: #fff;
     }
     /* 채팅 입력 영역 */
     #chat-input-area {
@@ -43,20 +46,27 @@
       padding: 5px 10px;
       font-size: 14px;
       margin-left: 5px;
+      cursor: pointer;
     }
-    /* 왼쪽 HUD: 달력 UI – 상단 위치 50px */
+    
+    /* 왼쪽 HUD: 달력 UI – 상단 위치 50px, 너비 280px, 고해상도 느낌으로 그림자 추가 */
     #left-hud {
       position: fixed;
       top: 50px;
       left: 10px;
-      width: 280px; /* 이전보다 약간 축소된 너비 (원하는 크기에 따라 조정 가능) */
+      width: 280px;
       padding: 10px;
       background: rgba(255,255,255,0.9);
       border-radius: 5px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
       z-index: 20;
       max-height: 90vh;
       overflow-y: auto;
     }
+    #left-hud h3 {
+      margin-bottom: 5px;
+    }
+    
     /* 달력 UI 내부 스타일 */
     #calendar-container { margin-top: 10px; }
     #calendar-header {
@@ -65,9 +75,10 @@
       justify-content: space-between;
       margin-bottom: 5px;
     }
-    #calendar-header button { padding: 2px 6px; font-size: 12px; }
+    #calendar-header button { padding: 2px 6px; font-size: 12px; cursor: pointer; }
     #month-year-label { font-weight: bold; font-size: 14px; }
     #year-select { font-size: 12px; padding: 2px; margin-left: 5px; }
+    
     /* 달력 액션 버튼 영역 */
     #calendar-actions {
       margin-top: 5px;
@@ -77,37 +88,44 @@
       margin: 2px;
       padding: 5px 8px;
       font-size: 12px;
+      cursor: pointer;
     }
-    /* 달력 그리드 스타일: 높이와 폰트 크기 축소 */
+    
+    /* 달력 그리드: 고해상도 느낌 + 세로 크기 축소 */
     #calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       gap: 2px;
     }
     #calendar-grid div {
+      background: #fff;
       border: 1px solid #ccc;
-      min-height: 30px;  /* 기존 40px -> 30px로 축소 */
-      font-size: 10px;   /* 폰트 크기도 줄임 */
+      border-radius: 4px;
+      min-height: 25px;  /* 세로 크기 대폭 축소 (20~25px) */
+      font-size: 10px;   /* 폰트도 작게 */
       padding: 2px;
       position: relative;
       cursor: pointer;
     }
-    #calendar-grid div:hover { background: #f0f0f0; }
+    #calendar-grid div:hover {
+      background: #e9e9e9;
+    }
     .day-number {
       position: absolute;
       top: 2px;
       left: 2px;
       font-weight: bold;
-      font-size: 10px; /* 축소된 폰트 크기 */
+      font-size: 10px;
     }
     .event {
-      margin-top: 14px; /* 약간 줄임 */
-      font-size: 8px;   /* 축소된 폰트 크기 */
+      margin-top: 14px;
+      font-size: 8px;
       color: #333;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    
     /* 3D 캔버스 (전체 화면 고정) */
     #canvas {
       position: fixed;
@@ -129,10 +147,15 @@
       z-index: 30;
       white-space: pre-line;
       pointer-events: none;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
     /* 미디어 쿼리 (작은 화면 대응) */
     @media (max-width: 480px) {
-      #right-hud, #left-hud { width: 90%; left: 5%; right: 5%; }
+      #right-hud, #left-hud {
+        width: 90%;
+        left: 5%;
+        right: 5%;
+      }
     }
   </style>
   
@@ -185,6 +208,26 @@
       showSpeechBubbleInChunks(response);
       inputEl.value = "";
     }
+    
+    // AI 응답 버튼 (구글 AI API 시뮬레이션)
+    async function sendAIChat() {
+      const inputEl = document.getElementById("chat-input");
+      const input = inputEl.value.trim();
+      if (!input) return;
+      appendToChatLog("사용자: " + input);
+      appendToChatLog("AI: (처리 중...)");
+      const aiResponse = await getAIResponse(input);
+      appendToChatLog("AI: " + aiResponse);
+      inputEl.value = "";
+    }
+    function getAIResponse(input) {
+      return new Promise(resolve => {
+        setTimeout(() => {
+          resolve("이건 AI가 처리한 답변입니다. (입력: " + input + ")");
+        }, 1000);
+      });
+    }
+    
     document.getElementById("chat-input").addEventListener("keydown", function(e) {
       if (e.key === "Enter") sendChat();
     });
@@ -254,28 +297,6 @@
   <canvas id="canvas"></canvas>
   
   <script>
-    /* ====================================
-       구글 AI API 시뮬레이션 (예시)
-       → 실제 구글 AI API 엔드포인트로 변경 가능
-    ==================================== */
-    async function sendAIChat() {
-      const inputEl = document.getElementById("chat-input");
-      const input = inputEl.value.trim();
-      if (!input) return;
-      appendToChatLog("사용자: " + input);
-      appendToChatLog("AI: (처리 중...)");
-      const aiResponse = await getAIResponse(input);
-      appendToChatLog("AI: " + aiResponse);
-      inputEl.value = "";
-    }
-    function getAIResponse(input) {
-      return new Promise(resolve => {
-        setTimeout(() => {
-          resolve("이건 AI가 처리한 답변입니다. (입력: " + input + ")");
-        }, 1000);
-      });
-    }
-    
     /* ====================================
        Three.js 3D 씬 설정 (캐릭터, 배경, 날씨 효과 등)
     ==================================== */
@@ -370,7 +391,7 @@
       house.position.set(x, 0, z);
       backgroundGroup.add(house);
     }
-    // 단일 가로등: 캐릭터 옆에 배치
+    // 단일 가로등
     function createStreetlight() {
       const lightGroup = new THREE.Group();
       const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 4, 8),
@@ -422,7 +443,6 @@
       const sphere3 = new THREE.Mesh(new THREE.SphereGeometry(2.1, 32, 32), cloudMat);
       sphere3.position.set(-2.2, 0.5, 0);
       cloud.add(sphere1, sphere2, sphere3);
-      cloud.userData.initialPos = cloud.position.clone();
       return cloud;
     }
     const singleCloud = createHouseCloud();
@@ -497,6 +517,7 @@
         orbitCenter.z
       );
       sun.position.copy(sunPos);
+      
       const moonAngle = angle + Math.PI;
       const moonPos = new THREE.Vector3(
         orbitCenter.x + Math.cos(moonAngle) * radius,
@@ -504,19 +525,30 @@
         orbitCenter.z
       );
       moon.position.copy(moonPos);
+      
       const t = now.getHours() + now.getMinutes() / 60;
       let sunOpacity = 0, moonOpacity = 0;
-      if (t < 6) { sunOpacity = 0; moonOpacity = 1; }
-      else if (t < 7) { let factor = (t - 6); sunOpacity = factor; moonOpacity = 1 - factor; }
-      else if (t < 17) { sunOpacity = 1; moonOpacity = 0; }
-      else if (t < 18) { let factor = (t - 17); sunOpacity = 1 - factor; moonOpacity = factor; }
-      else { sunOpacity = 0; moonOpacity = 1; }
+      if (t < 6) {
+        sunOpacity = 0; moonOpacity = 1;
+      } else if (t < 7) {
+        let factor = (t - 6);
+        sunOpacity = factor; moonOpacity = 1 - factor;
+      } else if (t < 17) {
+        sunOpacity = 1; moonOpacity = 0;
+      } else if (t < 18) {
+        let factor = (t - 17);
+        sunOpacity = 1 - factor; moonOpacity = factor;
+      } else {
+        sunOpacity = 0; moonOpacity = 1;
+      }
       sun.material.opacity = sunOpacity;
       moon.material.opacity = moonOpacity;
+      
       const isDay = (t >= 7 && t < 17);
       scene.background = new THREE.Color(isDay ? 0x87CEEB : 0x000033);
       stars.forEach(s => s.visible = !isDay);
       fireflies.forEach(f => f.visible = !isDay);
+      
       characterStreetlight.traverse(child => {
         if (child instanceof THREE.PointLight) { child.intensity = isDay ? 0 : 1; }
       });
@@ -524,15 +556,19 @@
       characterLight.intensity = isDay ? 0 : 1;
       characterGroup.position.y = -1;
       characterGroup.rotation.x = 0;
+      
       if (rainGroup.visible) {
         const rainPoints = rainGroup.children[0];
         const positions = rainPoints.geometry.attributes.position.array;
         for (let i = 0; i < positions.length; i += 3) {
           positions[i + 1] -= 0.5;
-          if (positions[i + 1] < 0) { positions[i + 1] = Math.random() * 50 + 20; }
+          if (positions[i + 1] < 0) {
+            positions[i + 1] = Math.random() * 50 + 20;
+          }
         }
         rainPoints.geometry.attributes.position.needsUpdate = true;
       }
+      
       if (currentWeather.indexOf("번개") !== -1 || currentWeather.indexOf("뇌우") !== -1) {
         if (Math.random() < 0.001) {
           lightningLight.intensity = 5;
@@ -542,6 +578,7 @@
       updateHouseClouds();
       characterStreetlight.position.set(characterGroup.position.x + 1, -2, characterGroup.position.z);
       updateBubblePosition();
+      
       renderer.render(scene, camera);
     }
     animate();
