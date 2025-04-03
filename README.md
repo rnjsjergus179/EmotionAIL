@@ -41,12 +41,6 @@
       padding: 5px;
       font-size: 14px;
     }
-    #send-chat-button {
-      padding: 5px 10px;
-      font-size: 14px;
-      margin-left: 5px;
-      cursor: pointer;
-    }
     
     /* 왼쪽 HUD: 달력 UI */
     #left-hud {
@@ -149,7 +143,7 @@
   <script>
     // 날씨 API 키 (OpenWeatherMap API 사용)
     const weatherKey = "396bfaf4974ab9c336b3fb46e15242da";
-    // 전역 변수에 날씨 상태를 저장 ("맑음", "비", "구름 낀" 등)
+    // 전역 변수: 날씨 상태 ("맑음", "비", "구름 낀" 등)
     let currentWeather = "";
     
     /* 채팅 및 날씨 API 통합 함수 */
@@ -161,7 +155,7 @@
       let response = "";
       const lowerInput = input.toLowerCase();
       
-      // 날씨 관련 문의일 경우
+      // 날씨 관련 문의 시
       if (lowerInput.includes("날씨") &&
          (lowerInput.includes("알려") || lowerInput.includes("어때") ||
           lowerInput.includes("뭐야") || lowerInput.includes("어떻게") || lowerInput.includes("맑아"))) {
@@ -195,7 +189,7 @@
       inputEl.value = "";
     }
     
-    // OpenWeatherMap API를 호출하여 서울의 날씨 정보를 가져오고, currentWeather 업데이트
+    // OpenWeatherMap API 호출 및 날씨 정보 가져오기 (서울 기준)
     async function getWeather() {
       try {
         const city = "Seoul";
@@ -205,7 +199,7 @@
         const data = await res.json();
         const description = data.weather[0].description;
         const temp = data.main.temp;
-        currentWeather = description; // 날씨 상태 업데이트
+        currentWeather = description; // 전역 날씨 상태 업데이트
         return `오늘 ${city}의 날씨는 ${description}이며, 온도는 ${temp}°C입니다.`;
       } catch (err) {
         currentWeather = "";
@@ -215,13 +209,13 @@
     
     // currentWeather에 따라 비, 구름 효과 연동
     function updateWeatherEffects() {
-      // 비 효과: "비" 또는 "소나기" 포함
+      // 비 효과: "비" 또는 "소나기" 포함 시
       if (currentWeather.indexOf("비") !== -1 || currentWeather.indexOf("소나기") !== -1) {
         rainGroup.visible = true;
       } else {
         rainGroup.visible = false;
       }
-      // 구름 효과: "구름" 포함
+      // 구름 효과: "구름" 포함 시
       if (currentWeather.indexOf("구름") !== -1) {
         houseCloudGroup.visible = true;
       } else {
@@ -229,7 +223,7 @@
       }
     }
     
-    // 번개 효과 (currentWeather에 "번개" 또는 "뇌우"가 포함되면)
+    // 번개 효과 (랜덤 발생)
     function updateLightning() {
       if (currentWeather.indexOf("번개") !== -1 || currentWeather.indexOf("뇌우") !== -1) {
         if (Math.random() < 0.001) {
@@ -259,7 +253,7 @@
       showNextChunk();
     }
     
-    // 엔터키 입력 시 sendChat 호출
+    // 엔터키 입력 시 sendChat() 호출 (버튼은 삭제됨)
     document.getElementById("chat-input").addEventListener("keydown", function(e) {
       if (e.key === "Enter") sendChat();
     });
@@ -273,13 +267,12 @@
   </script>
 </head>
 <body>
-  <!-- 오른쪽 HUD: 채팅 UI (채팅 로그 숨김) -->
+  <!-- 오른쪽 HUD: 채팅 UI (채팅 로그는 숨김, 전송 버튼 삭제) -->
   <div id="right-hud">
     <h3>채팅창</h3>
     <div id="chat-log"></div>
     <div id="chat-input-area">
       <input type="text" id="chat-input" placeholder="채팅 입력..." />
-      <button id="send-chat-button" onclick="sendChat()">전송</button>
     </div>
   </div>
   
@@ -321,7 +314,7 @@
     scene.add(directionalLight);
     scene.add(new THREE.AmbientLight(0x333333));
     
-    // 태양과 달 객체
+    // 태양 및 달 객체
     const sunMaterial = new THREE.MeshStandardMaterial({ color: 0xffcc00, emissive: 0xff9900, transparent: true, opacity: 0 });
     const sun = new THREE.Mesh(new THREE.SphereGeometry(1.5, 64, 64), sunMaterial);
     scene.add(sun);
@@ -330,7 +323,7 @@
     const moon = new THREE.Mesh(new THREE.SphereGeometry(1.2, 64, 64), moonMaterial);
     scene.add(moon);
     
-    // 별과 반딧불
+    // 별, 반딧불 생성
     const stars = [], fireflies = [];
     for (let i = 0; i < 100; i++) {
       const star = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
@@ -353,7 +346,7 @@
     floor.position.y = -2;
     scene.add(floor);
     
-    // 배경: 빌딩, 집, 가로등
+    // 배경 그룹 (빌딩, 집, 가로등)
     const backgroundGroup = new THREE.Group();
     scene.add(backgroundGroup);
     function createBuilding(width, height, depth, color) {
@@ -415,7 +408,7 @@
     characterStreetlight.position.set(1, -2, 0);
     scene.add(characterStreetlight);
     
-    // 날씨 효과 – 비 (rainGroup)
+    // 날씨 효과 – 비
     let rainGroup = new THREE.Group();
     scene.add(rainGroup);
     function initRain() {
@@ -435,7 +428,7 @@
     initRain();
     rainGroup.visible = false;
     
-    // 날씨 효과 – 구름 (houseCloudGroup)
+    // 날씨 효과 – 구름
     let houseCloudGroup = new THREE.Group();
     function createHouseCloud() {
       const cloud = new THREE.Group();
@@ -463,8 +456,16 @@
     let lightningLight = new THREE.PointLight(0xffffff, 0, 500);
     lightningLight.position.set(0, 50, 0);
     scene.add(lightningLight);
+    function updateLightning() {
+      if (currentWeather.indexOf("번개") !== -1 || currentWeather.indexOf("뇌우") !== -1) {
+        if (Math.random() < 0.001) {
+          lightningLight.intensity = 5;
+          setTimeout(() => { lightningLight.intensity = 0; }, 100);
+        }
+      }
+    }
     
-    /* 캐릭터 생성 */
+    // 캐릭터 생성
     const characterGroup = new THREE.Group();
     const charBody = new THREE.Mesh(new THREE.BoxGeometry(1, 1.5, 0.5),
                                     new THREE.MeshStandardMaterial({ color: 0x00cc66 }));
