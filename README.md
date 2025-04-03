@@ -495,7 +495,7 @@
       buildingGroup.add(building);
       
       const windowMat = new THREE.MeshStandardMaterial({ color: 0x87CEEB });
-      for (let y = 1; y < height - 1; y += 2) {
+      for (let y = 3; y < height - 1; y += 2) {
         for (let x = -width/2 + 0.5; x < width/2; x += 1) {
           const window = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.8, 0.1), windowMat);
           window.position.set(x, y - height/2, depth/2 + 0.01);
@@ -659,26 +659,24 @@
       requestAnimationFrame(animate);
       
       const now = new Date();
-      const headWorldPos = new THREE.Vector3();
-      head.getWorldPosition(headWorldPos);
-      const orbitCenter = headWorldPos.clone().add(new THREE.Vector3(0, 5, -5));
       const totalMin = now.getHours() * 60 + now.getMinutes();
       const angle = (totalMin / 1440) * Math.PI * 2;
-      const radius = 10;
-      const sunPos = new THREE.Vector3(
-        orbitCenter.x + Math.cos(angle) * radius,
-        orbitCenter.y + Math.sin(angle) * radius,
-        orbitCenter.z
-      );
-      sun.position.copy(sunPos);
+      const leftHouseX = -10;
+      const rightHouseX = 40;
+      const heightAboveRoof = 5;
+      const zPos = 0;
       
-      const moonAngle = angle + Math.PI;
-      const moonPos = new THREE.Vector3(
-        orbitCenter.x + Math.cos(moonAngle) * radius,
-        orbitCenter.y + Math.sin(moonAngle) * radius,
-        orbitCenter.z
-      );
-      moon.position.copy(moonPos);
+      const sunX = leftHouseX + (rightHouseX - leftHouseX) * (totalMin / 1440);
+      const sunY = totalMin <= 720 ? 
+        heightAboveRoof * Math.sin(angle) : 
+        -heightAboveRoof * Math.sin(angle - Math.PI);
+      sun.position.set(sunX, sunY, zPos);
+      
+      const moonX = rightHouseX - (rightHouseX - leftHouseX) * (totalMin / 1440);
+      const moonY = totalMin <= 720 ? 
+        -heightAboveRoof * Math.sin(angle) : 
+        heightAboveRoof * Math.sin(angle - Math.PI);
+      moon.position.set(moonX, moonY, zPos);
       
       const t = now.getHours() + now.getMinutes() / 60;
       let sunOpacity = 0, moonOpacity = 0;
