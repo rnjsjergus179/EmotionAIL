@@ -533,19 +533,20 @@
       fireflies.push(firefly);
     }
     
-    // ----- 바닥 -----
+    // ----- 콘크리트 바닥(바닥) -----
     const floorGeometry = new THREE.PlaneGeometry(400, 400, 128, 128);
+    // 콘크리트 느낌으로 그레이 컬러 설정
     const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 1, metalness: 0 });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI/2;
-    floor.position.y = -2;
+    floor.position.y = -2; 
     scene.add(floor);
     
     // ----- 건물/배경 그룹 -----
     const backgroundGroup = new THREE.Group();
     scene.add(backgroundGroup);
     
-    // 빌딩 간단 생성 (2D창문, 2D문)
+    // 건물(빌딩) 생성 함수 (창문/문 포함)
     function createBuilding(width, height, depth, color) {
       const buildingGroup = new THREE.Group();
       
@@ -578,17 +579,7 @@
       return buildingGroup;
     }
     
-    // 빌딩 몇 개 배치 예시
-    for (let i = 0; i < 5; i++) {
-      const width = Math.random() * 4 + 4;
-      const height = Math.random() * 20 + 20;
-      const depth = Math.random() * 4 + 4;
-      const building = createBuilding(width, height, depth, 0x555555);
-      building.position.set(-40 + i*10, -2 + height/2, -30);
-      backgroundGroup.add(building);
-    }
-    
-    // 집(2D창문, 2D문)
+    // 집 생성 함수 (창문/문 포함)
     function createHouse(width, height, depth, baseColor, roofColor) {
       const houseGroup = new THREE.Group();
       
@@ -597,7 +588,8 @@
         new THREE.BoxGeometry(width, height, depth),
         new THREE.MeshStandardMaterial({ color: baseColor, roughness: 0.8 })
       );
-      base.position.y = -2 + height/2;
+      // house 바닥이 y = -2(바닥) 에 닿도록 위치할 것이므로, 중앙 높이를 0으로 시작하지 않고 아래에서 조정
+      base.position.y = 0;
       houseGroup.add(base);
       
       // 지붕
@@ -605,7 +597,7 @@
         new THREE.ConeGeometry(width * 0.8, height * 0.6, 4),
         new THREE.MeshStandardMaterial({ color: roofColor, roughness: 0.8 })
       );
-      roof.position.y = -2 + height + (height * 0.6)/2;
+      roof.position.y = (height / 2) + (height * 0.6) / 2;
       roof.rotation.y = Math.PI/4;
       houseGroup.add(roof);
       
@@ -615,7 +607,7 @@
         for (let x = -width/2 + 1; x <= width/2 - 1; x += 1.5) {
           const winGeo = new THREE.PlaneGeometry(0.6, 0.6);
           const win = new THREE.Mesh(winGeo, windowMat);
-          win.position.set(x, -2 + y, depth/2 + 0.01);
+          win.position.set(x, y - (height/2), depth/2 + 0.01);
           win.rotation.y = Math.PI;
           houseGroup.add(win);
         }
@@ -625,16 +617,29 @@
       const doorMat = new THREE.MeshBasicMaterial({ color: 0x8B4513 });
       const doorGeo = new THREE.PlaneGeometry(1, 1.5);
       const door = new THREE.Mesh(doorGeo, doorMat);
-      door.position.set(0, -2 + 0.75, depth/2 + 0.01);
+      door.position.set(0, -height/2 + 0.75, depth/2 + 0.01);
       door.rotation.y = Math.PI;
       houseGroup.add(door);
       
       return houseGroup;
     }
     
-    // 집 하나 예시
+    // ----- 빌딩/집을 바닥에 고정된 상태로 생성하기 -----
+    // 빌딩 1
+    const building1 = createBuilding(6, 20, 6, 0x666666);
+    // 빌딩 바닥이 y=-2 에 맞도록 => 가운데 y좌표 = -2 + (빌딩 높이/2)
+    building1.position.set(-10, -2 + 20/2, -20);
+    backgroundGroup.add(building1);
+    
+    // 빌딩 2
+    const building2 = createBuilding(6, 25, 6, 0x444444);
+    building2.position.set(10, -2 + 25/2, -20);
+    backgroundGroup.add(building2);
+    
+    // 집(기본 높이 8)
     const myHouse = createHouse(6, 8, 6, 0xa0522d, 0x8b0000);
-    myHouse.position.set(0, 0, -10);
+    // 집 바닥이 y=-2 에 맞도록 => 가운데 y좌표 = -2 + (집 높이/2)
+    myHouse.position.set(0, -2 + 8/2, -10);
     backgroundGroup.add(myHouse);
     
     // ----- 캐릭터 생성 -----
