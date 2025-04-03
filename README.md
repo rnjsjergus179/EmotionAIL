@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>3D 캐릭터 HUD, 달력 & 말풍선 채팅 (GPT-3.5 Turbo 통합)</title>
+  <title>3D 캐릭터 HUD, 달력 & 말풍선 채팅</title>
   <style>
     /* CSS Reset 및 기본 스타일 */
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -42,7 +42,7 @@
       padding: 5px;
       font-size: 14px;
     }
-    #send-chat-button, #ai-chat-button {
+    #send-chat-button {
       padding: 5px 10px;
       font-size: 14px;
       margin-left: 5px;
@@ -156,8 +156,11 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   
   <script>
+    // 새로 추가한 키 (사용 예: 디버깅용, 혹은 다른 목적)
+    const newKey = "날시키9948482fc88fa1f5b6ad5d3e0872aaad";
+    
     /* ====================================
-       채팅 및 GPT-3.5 Turbo API 관련 함수
+       채팅 관련 함수
     ==================================== */
     function appendToChatLog(message) {
       const chatLog = document.getElementById("chat-log");
@@ -203,46 +206,6 @@
       inputEl.value = "";
     }
     
-    // GPT-3.5 Turbo API 호출 – 제공해주신 API 키 사용
-    async function sendAIChat() {
-      const inputEl = document.getElementById("chat-input");
-      const input = inputEl.value.trim();
-      if (!input) return;
-      appendToChatLog("사용자: " + input);
-      appendToChatLog("AI: (처리 중...)");
-      try {
-        const aiResponse = await askGPT35(input);
-        appendToChatLog("AI: " + aiResponse);
-      } catch (err) {
-        appendToChatLog("AI: 오류 발생 (" + err.message + ")");
-      }
-      inputEl.value = "";
-    }
-    
-    async function askGPT35(promptText) {
-      const apiKey = "sk-proj-JPQMlbkM0GxW8vKw6XDnn-mLkq4QeWZaWQA-1W58_4nGUaBr6-DPVCo4ZEfoOQirvSz9GxA2BXT3BlbkFJM9cGJLrmakWJ-KD0ZKNfObMRonYGJzaeQc2Xn6XFab9ukqYgIAsENHKJ8rk5hVdQk1CD7vWr4";
-      const endpoint = "https://api.openai.com/v1/chat/completions";
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: "gpt-3.5-turbo",
-          messages: [{ role: "user", content: promptText }],
-          temperature: 0.7
-        })
-      });
-      const data = await response.json();
-      console.log("GPT-3.5 응답:", data);
-      return data.choices?.[0]?.message?.content || "응답 없음";
-    }
-    
-    document.getElementById("chat-input").addEventListener("keydown", function(e) {
-      if (e.key === "Enter") sendChat();
-    });
-    
     function showSpeechBubbleInChunks(text, chunkSize = 15, delay = 3000) {
       const bubble = document.getElementById("speech-bubble");
       const chunks = [];
@@ -279,7 +242,6 @@
     <div id="chat-input-area">
       <input type="text" id="chat-input" placeholder="채팅 입력..." />
       <button id="send-chat-button" onclick="sendChat()">전송</button>
-      <button id="ai-chat-button" onclick="sendAIChat()">AI 응답</button>
     </div>
   </div>
   
