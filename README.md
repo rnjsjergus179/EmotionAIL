@@ -157,8 +157,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   
   <script>
-    // 날씨 API 관련 키 (예제에서는 OpenWeatherMap API 사용)
-    const weatherKey = "날시키9948482fc88fa1f5b6ad5d3e0872aaad";
+    // 날씨 API 관련 키 (OpenWeatherMap API 사용)
+    const weatherKey = "396bfaf4974ab9c336b3fb46e15242da";
     
     /* ====================================
        채팅 및 날씨 API 통합 관련 함수
