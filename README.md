@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -146,9 +145,9 @@
     // 전역 변수: 날씨 상태 ("맑음", "비", "구름 낀" 등)
     let currentWeather = "";
     
-    /* 파일 저장 함수 */
+    /* 파일 저장 함수 (브라우저 기본 다운로드 방식) */
     function saveFile() {
-      const content = "파일 저장 완료"; // 원하는 파일 내용을 수정 가능
+      const content = "파일 저장 완료"; // 필요에 따라 파일 내용을 수정하세요.
       const filename = "saved_file.txt";
       const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
       const link = document.createElement("a");
@@ -159,7 +158,7 @@
       document.body.removeChild(link);
     }
     
-    /* 캘린더 저장 함수 */
+    /* 캘린더 저장 함수 (현재 달력 이벤트를 JSON 파일로 저장) */
     function saveCalendar() {
       const daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
       const calendarData = {};
@@ -193,7 +192,7 @@
         response = "네, 알겠습니다. 파일 저장하겠습니다.";
         saveFile();
       }
-      // 캘린더 저장 관련 (여러 형태)
+      // 캘린더 저장 관련 (여러 형태의 명령어 지원)
       else if ((lowerInput.includes("캘린더") && lowerInput.includes("저장")) ||
                lowerInput.includes("일정저장") ||
                lowerInput.includes("하루일과저장")) {
@@ -206,8 +205,8 @@
           lowerInput.includes("뭐야") || lowerInput.includes("어떻게") || lowerInput.includes("맑아"))) {
         response = await getWeather();
       }
-      // 기분 관련 (사용자가 "기분좋아"라고 입력하면)
-      else if (lowerInput.includes("기분좋아")) {
+      // 기분 관련 (키워드에 "기분"과 "좋아"가 모두 포함된 경우)
+      else if (lowerInput.includes("기분") && lowerInput.includes("좋아")) {
         response = "정말요!? 저도 정말 기분좋아요😁";
         // 눈 반짝임 효과
         const originalEyeColor = leftEye.material.color.getHex();
@@ -218,17 +217,17 @@
           rightEye.material.color.set(originalEyeColor);
         }, 500);
         // 눈썹 움직임 효과
-        const originalLeftBrowRotation = characterGroup.children[5].rotation.x;
-        const originalRightBrowRotation = characterGroup.children[6].rotation.x;
+        const originalLeftBrowRotation = leftBrow.rotation.x;
+        const originalRightBrowRotation = rightBrow.rotation.x;
         const eyebrowInterval = setInterval(() => {
           const angle = Math.sin(Date.now() * 0.005) * 0.3;
-          characterGroup.children[5].rotation.x = originalLeftBrowRotation + angle;
-          characterGroup.children[6].rotation.x = originalRightBrowRotation + angle;
+          leftBrow.rotation.x = originalLeftBrowRotation + angle;
+          rightBrow.rotation.x = originalRightBrowRotation + angle;
         }, 50);
         setTimeout(() => {
           clearInterval(eyebrowInterval);
-          characterGroup.children[5].rotation.x = originalLeftBrowRotation;
-          characterGroup.children[6].rotation.x = originalRightBrowRotation;
+          leftBrow.rotation.x = originalLeftBrowRotation;
+          rightBrow.rotation.x = originalRightBrowRotation;
         }, 3000);
       }
       else if (lowerInput.includes("안녕")) {
@@ -259,7 +258,7 @@
         response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
       }
       
-      // 오직 캐릭터의 응답만 말풍선에 표시
+      // 말풍선에 오직 캐릭터의 응답만 표시
       showSpeechBubbleInChunks(response);
       inputEl.value = "";
     }
