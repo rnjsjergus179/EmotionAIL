@@ -1,18 +1,19 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>3D 캐릭터 HUD, 달력, 이메일 알림 & 말풍선 채팅</title>
+  <title>3D 캐릭터 HUD, 달력 & 말풍선 채팅</title>
   <style>
-    /* 기본 CSS Reset 및 box-sizing */
+    /* CSS Reset 및 기본 스타일 */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; font-family: Arial, sans-serif; overflow: hidden; }
     
-    /* 오른쪽 HUD: 채팅 및 구글 이메일 전송 UI */
+    /* 오른쪽 HUD: 채팅창 (이메일 관련 요소 삭제) */
     #right-hud {
       position: fixed;
-      top: 150px; /* 상단 위치 조정 (필요에 따라 변경) */
+      top: 150px; /* 필요에 따라 위치 조정 */
       right: 10px;
       width: 300px;
       padding: 10px;
@@ -20,7 +21,7 @@
       border-radius: 5px;
       z-index: 20;
     }
-    /* 채팅 영역 */
+    /* 채팅 로그 */
     #chat-log {
       height: 100px;
       overflow-y: scroll;
@@ -28,6 +29,7 @@
       padding: 5px;
       margin-top: 10px;
     }
+    /* 채팅 입력 영역 */
     #chat-input-area {
       display: flex;
       margin-top: 10px;
@@ -41,24 +43,6 @@
       padding: 5px 10px;
       font-size: 14px;
       margin-left: 5px;
-    }
-    /* 네이버 이메일 전송 UI (채팅창 하단) */
-    #google-email-section {
-      margin-top: 10px;
-      border-top: 1px solid #ccc;
-      padding-top: 10px;
-    }
-    #google-email-section input,
-    #google-email-section textarea {
-      width: 100%;
-      padding: 5px;
-      margin-bottom: 5px;
-      font-size: 14px;
-    }
-    #send-email-button {
-      width: 100%;
-      padding: 5px;
-      font-size: 14px;
     }
     /* 왼쪽 HUD: 달력 UI */
     #left-hud {
@@ -112,7 +96,7 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    /* 3D 캔버스 */
+    /* 3D 캔버스 (전체 화면 고정) */
     #canvas {
       position: fixed;
       top: 0;
@@ -122,7 +106,7 @@
       z-index: 1;
       display: block;
     }
-    /* 말풍선 */
+    /* 말풍선 스타일 */
     #speech-bubble {
       position: fixed;
       background: white;
@@ -134,23 +118,18 @@
       white-space: pre-line;
       pointer-events: none;
     }
-    /* 미디어 쿼리: 작은 화면 대응 */
+    /* 미디어 쿼리 (작은 화면 대응) */
     @media (max-width: 480px) {
-      #right-hud, #left-hud {
-        width: 90%;
-        left: 5%;
-        right: 5%;
-      }
+      #right-hud, #left-hud { width: 90%; left: 5%; right: 5%; }
     }
   </style>
   
+  <!-- Three.js 라이브러리 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script>
     /* ====================================
-       Google 로그인 & Gmail API (이전 Gmail API 관련 코드는 제거)
-       → 이 예제에서는 Node.js 서버 API를 통해 이메일 전송
+       채팅 관련 함수
     ==================================== */
-    
-    // 채팅 관련 함수
     function appendToChatLog(message) {
       const chatLog = document.getElementById("chat-log");
       chatLog.innerHTML += "<div>" + message + "</div>";
@@ -166,6 +145,7 @@
       const lowerInput = input.toLowerCase();
       if (lowerInput.includes("안녕")) {
         response = "안녕하세요, 주인님! 오늘 기분은 어떠세요?";
+        // 간단한 애니메이션 예시 (팔 회전)
         characterGroup.children[7].rotation.z = Math.PI / 4;
         setTimeout(() => { characterGroup.children[7].rotation.z = 0; }, 1000);
       } else if (lowerInput.includes("캐릭터 넌 누구야")) {
@@ -219,60 +199,21 @@
     }
     
     // 윈도우 리사이즈 이벤트: 3D 캔버스 업데이트
-    window.addEventListener("resize", function() {
+    window.addEventListener("resize", function(){
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
-    
-    // 구글 이메일 전송 기능은 이제 Node.js 서버로 대체
-    // Node.js 서버에서 /send-email API 호출 (서버 주소를 본인에 맞게 수정)
-    function sendEmail() {
-      const recipient = document.getElementById("email-recipient").value.trim();
-      const subject = document.getElementById("email-subject").value.trim();
-      const message = document.getElementById("email-message").value.trim();
-      
-      if (!recipient || !subject || !message) {
-        alert("모든 이메일 필드를 입력해주세요.");
-        return;
-      }
-      
-      // 예시: 로컬 테스트 시 http://localhost:3000 사용, 배포 시 URL 변경
-      fetch('http://localhost:3000/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: recipient, subject, message })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          alert("이메일 전송 성공!");
-        } else {
-          alert("이메일 전송 실패: " + data.error);
-        }
-      })
-      .catch(err => {
-        alert("이메일 전송 중 오류: " + err.message);
-      });
-    }
   </script>
 </head>
 <body>
-  <!-- 오른쪽 HUD: 채팅 및 구글 이메일 전송 UI -->
+  <!-- 오른쪽 HUD: 채팅 UI (이메일 관련 요소 삭제됨) -->
   <div id="right-hud">
     <h3>채팅창</h3>
     <div id="chat-log"></div>
     <div id="chat-input-area">
       <input type="text" id="chat-input" placeholder="채팅 입력..." />
       <button id="send-chat-button" onclick="sendChat()">전송</button>
-    </div>
-    <!-- 구글 이메일 전송 UI (채팅창 하단) -->
-    <div id="google-email-section">
-      <h4>네이버 이메일 전송</h4>
-      <input type="email" id="email-recipient" placeholder="수신자 이메일" />
-      <input type="text" id="email-subject" placeholder="제목" />
-      <textarea id="email-message" rows="3" placeholder="내용"></textarea>
-      <button id="send-email-button" onclick="sendEmail()">이메일 보내기</button>
     </div>
   </div>
   
@@ -533,7 +474,7 @@
       else { sunOpacity = 0; moonOpacity = 1; }
       sun.material.opacity = sunOpacity;
       moon.material.opacity = moonOpacity;
-      const isDay = t >= 7 && t < 17;
+      const isDay = (t >= 7 && t < 17);
       scene.background = new THREE.Color(isDay ? 0x87CEEB : 0x000033);
       stars.forEach(s => s.visible = !isDay);
       fireflies.forEach(f => f.visible = !isDay);
