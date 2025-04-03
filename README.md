@@ -49,7 +49,7 @@
       cursor: pointer;
     }
     
-    /* 왼쪽 HUD: 달력 UI – 상단 위치 50px, 너비 280px, 고해상도 느낌 */
+    /* 왼쪽 HUD: 달력 UI – 상단 위치 50px, 너비 280px */
     #left-hud {
       position: fixed;
       top: 50px;
@@ -77,7 +77,7 @@
     #month-year-label { font-weight: bold; font-size: 14px; }
     #year-select { font-size: 12px; padding: 2px; margin-left: 5px; }
     
-    /* 달력 액션 버튼 영역: 하루일정 삭제, 바탕화면 저장 */
+    /* 달력 액션 버튼 영역: 하루일정 삭제 및 바탕화면 저장 */
     #calendar-actions {
       margin-top: 5px;
       text-align: center;
@@ -89,7 +89,7 @@
       cursor: pointer;
     }
     
-    /* 달력 그리드: 고해상도 느낌, 세로 크기 축소 */
+    /* 달력 그리드: 고해상도 느낌, 셀 높이 축소 */
     #calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
@@ -99,7 +99,7 @@
       background: #fff;
       border: 1px solid #ccc;
       border-radius: 4px;
-      min-height: 25px;  /* 셀 높이를 25px로 축소 */
+      min-height: 25px;  /* 셀 높이 축소 (20~25px) */
       font-size: 10px;
       padding: 2px;
       position: relative;
@@ -145,6 +145,7 @@
       pointer-events: none;
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
+    
     /* 미디어 쿼리 (작은 화면 대응) */
     @media (max-width: 480px) {
       #right-hud, #left-hud { width: 90%; left: 5%; right: 5%; }
@@ -153,6 +154,7 @@
   
   <!-- Three.js 라이브러리 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  
   <script>
     /* ====================================
        채팅 및 Gemini AI 관련 함수
@@ -201,7 +203,7 @@
       inputEl.value = "";
     }
     
-    // Gemini API를 호출하여 AI 응답을 받는 함수
+    // Gemini API 호출 – 제공해주신 API 키 사용
     async function sendAIChat() {
       const inputEl = document.getElementById("chat-input");
       const input = inputEl.value.trim();
@@ -217,20 +219,18 @@
       inputEl.value = "";
     }
     
-    // Gemini API 호출 함수 (API 키 포함)
     async function askGemini(promptText) {
-      const apiKey = "AIzaSyCiaecF2rng7LBdxTsrNb9i1CToOA9o7io";
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
-      const response = await fetch(url, {
+      const apiKey = "AIzaSyAvfN9krRcDuvg5E5mt5BAtOcKZrSUcV2A";
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          // 요청 body는 Gemini API 최신 스펙에 맞게 수정 필요
           contents: [{ parts: [{ text: promptText }] }]
         })
       });
       const data = await response.json();
-      console.log("Gemini 응답 데이터:", data);
+      console.log("Gemini API 응답:", data);
       return data.candidates?.[0]?.content?.parts?.[0]?.text || "응답 없음";
     }
     
