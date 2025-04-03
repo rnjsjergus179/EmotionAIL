@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -6,11 +7,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>3D 캐릭터 HUD, 달력 & 말풍선 채팅</title>
   <style>
-    /* 기본 리셋 및 스타일 */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; font-family: Arial, sans-serif; overflow: hidden; }
     
-    /* 오른쪽 HUD: 채팅 UI (채팅 로그는 숨김) */
     #right-hud {
       position: fixed;
       top: 150px;
@@ -42,7 +41,6 @@
       font-size: 14px;
     }
     
-    /* 왼쪽 HUD: 달력 UI */
     #left-hud {
       position: fixed;
       top: 50px;
@@ -109,7 +107,6 @@
       white-space: nowrap;
     }
     
-    /* 3D 캔버스 및 말풍선 */
     #canvas {
       position: fixed;
       top: 0;
@@ -132,7 +129,6 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
     
-    /* 튜토리얼 오버레이 */
     #tutorial-overlay {
       position: fixed;
       top: 0;
@@ -164,28 +160,24 @@
     }
   </style>
   
-  <!-- Three.js 라이브러리 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   
   <script>
-    /* 보안 조치: 우클릭 및 복사 방지 (복사 시 날씨 API 키를 HIDDEN으로 치환) */
     document.addEventListener("contextmenu", event => event.preventDefault());
-    let blockUntil = 0; // 차단 해제 시각 (밀리초)
+    let blockUntil = 0;
     document.addEventListener("copy", function(e) {
       e.preventDefault();
       let selectedText = window.getSelection().toString();
       selectedText = selectedText.replace(/396bfaf4974ab9c336b3fb46e15242da/g, "HIDDEN");
       e.clipboardData.setData("text/plain", selectedText);
       if (Date.now() < blockUntil) return;
-      blockUntil = Date.now() + 3600000; // 1시간 차단
+      blockUntil = Date.now() + 3600000;
       showSpeechBubbleInChunks("1시간동안 차단됩니다.");
     });
     
-    /* 날씨 API 키 (항상 보이도록 수정) */
     const weatherKey = "396bfaf4974ab9c336b3fb46e15242da";
     let currentWeather = "";
     
-    /* 파일 저장 함수 (브라우저 기본 다운로드 방식) */
     function saveFile() {
       const content = "파일 저장 완료";
       const filename = "saved_file.txt";
@@ -198,7 +190,6 @@
       document.body.removeChild(link);
     }
     
-    /* 캘린더 저장 함수 (현재 달력 이벤트를 JSON 파일로 저장) */
     function saveCalendar() {
       const daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
       const calendarData = {};
@@ -218,7 +209,6 @@
       document.body.removeChild(dlAnchorElem);
     }
     
-    /* 채팅 및 날씨 API 통합 함수 */
     async function sendChat() {
       const inputEl = document.getElementById("chat-input");
       const input = inputEl.value.trim();
@@ -294,6 +284,45 @@
           characterGroup.children[7].rotation.z = 0;
           head.rotation.y = 0;
         }, 3000);
+      }
+      else if (lowerInput.includes("하루일정 삭제해줘") || lowerInput.includes("일정 삭제")) {
+        const dayStr = prompt("삭제할 하루일정의 날짜(일)를 입력하세요 (예: 15):");
+        if (dayStr) {
+          const dayNum = parseInt(dayStr);
+          const eventDiv = document.getElementById(`event-${currentYear}-${currentMonth+1}-${dayNum}`);
+          if (eventDiv) {
+            eventDiv.textContent = "";
+            response = `${currentYear}-${currentMonth+1}-${dayNum} 일정이 삭제되었습니다.`;
+          } else {
+            response = "해당 날짜의 셀이 없습니다. 현재 달에 있는 날짜를 입력해주세요.";
+          }
+        } else {
+          response = "날짜를 입력하지 않았습니다.";
+        }
+      }
+      else if (lowerInput.includes("입력하게 보여줘") || lowerInput.includes("일정 입력")) {
+        const dayStr = prompt("일정을 입력할 날짜(일)를 입력하세요 (예: 15):");
+        if (dayStr) {
+          const dayNum = parseInt(dayStr);
+          const eventDiv = document.getElementById(`event-${currentYear}-${currentMonth+1}-${dayNum}`);
+          if (eventDiv) {
+            const eventText = prompt(`${currentYear}-${currentMonth+1}-${dayNum} 일정 입력:`);
+            if (eventText) {
+              if (eventDiv.textContent) {
+                eventDiv.textContent += "; " + eventText;
+              } else {
+                eventDiv.textContent = eventText;
+              }
+              response = `${currentYear}-${currentMonth+1}-${dayNum}에 일정이 추가되었습니다.`;
+            } else {
+              response = "일정을 입력하지 않았습니다.";
+            }
+          } else {
+            response = "해당 날짜의 셀이 없습니다. 현재 달에 있는 날짜를 입력해주세요.";
+          }
+        } else {
+          response = "날짜를 입력하지 않았습니다.";
+        }
       }
       else {
         response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
@@ -376,7 +405,6 @@
   </script>
 </head>
 <body>
-  <!-- 오른쪽 HUD: 채팅 UI (채팅 로그 숨김, 전송 버튼 제거) -->
   <div id="right-hud">
     <h3>채팅창</h3>
     <div id="chat-log"></div>
@@ -385,7 +413,6 @@
     </div>
   </div>
   
-  <!-- 왼쪽 HUD: 달력 UI -->
   <div id="left-hud">
     <h3>캘린더</h3>
     <div id="calendar-container">
@@ -403,10 +430,8 @@
     </div>
   </div>
   
-  <!-- 말풍선 (3D 캐릭터 말풍선) -->
   <div id="speech-bubble"></div>
   
-  <!-- 튜토리얼 오버레이 -->
   <div id="tutorial-overlay">
     <div id="tutorial-content">
       <h2>사용법 안내</h2>
@@ -416,11 +441,9 @@
     </div>
   </div>
   
-  <!-- 3D 캔버스 -->
   <canvas id="canvas"></canvas>
   
   <script>
-    /* Three.js 3D 씬 설정 및 애니메이션 */
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("canvas"), alpha: true });
@@ -465,9 +488,26 @@
     const backgroundGroup = new THREE.Group();
     scene.add(backgroundGroup);
     function createBuilding(width, height, depth, color) {
+      const buildingGroup = new THREE.Group();
       const geometry = new THREE.BoxGeometry(width, height, depth);
       const material = new THREE.MeshStandardMaterial({ color: color, roughness: 0.7, metalness: 0.1 });
-      return new THREE.Mesh(geometry, material);
+      const building = new THREE.Mesh(geometry, material);
+      buildingGroup.add(building);
+      
+      const windowMat = new THREE.MeshStandardMaterial({ color: 0x87CEEB });
+      for (let y = 1; y < height - 1; y += 2) {
+        for (let x = -width/2 + 0.5; x < width/2; x += 1) {
+          const window = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.8, 0.1), windowMat);
+          window.position.set(x, y - height/2, depth/2 + 0.01);
+          buildingGroup.add(window);
+        }
+      }
+      const doorMat = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+      const door = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 0.1), doorMat);
+      door.position.set(0, -height/2 + 1, depth/2 + 0.01);
+      buildingGroup.add(door);
+      
+      return buildingGroup;
     }
     function createHouse(width, height, depth, baseColor, roofColor) {
       const houseGroup = new THREE.Group();
@@ -480,6 +520,19 @@
       roof.position.y = -2 + height + (height * 0.6)/2;
       roof.rotation.y = Math.PI/4;
       houseGroup.add(roof);
+      
+      const windowMat = new THREE.MeshStandardMaterial({ color: 0xFFFFE0 });
+      const window1 = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.1), windowMat);
+      window1.position.set(-width/4, -2 + height/2, depth/2 + 0.01);
+      const window2 = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.1), windowMat);
+      window2.position.set(width/4, -2 + height/2, depth/2 + 0.01);
+      houseGroup.add(window1, window2);
+      
+      const doorMat = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+      const door = new THREE.Mesh(new THREE.BoxGeometry(1, 1.5, 0.1), doorMat);
+      door.position.set(0, -2 + height/4, depth/2 + 0.01);
+      houseGroup.add(door);
+      
       return houseGroup;
     }
     for (let i = 0; i < 10; i++) {
@@ -608,10 +661,10 @@
       const now = new Date();
       const headWorldPos = new THREE.Vector3();
       head.getWorldPosition(headWorldPos);
-      const orbitCenter = headWorldPos.clone().add(new THREE.Vector3(0, 2, 0));
+      const orbitCenter = headWorldPos.clone().add(new THREE.Vector3(0, 5, -5));
       const totalMin = now.getHours() * 60 + now.getMinutes();
       const angle = (totalMin / 1440) * Math.PI * 2;
-      const radius = 3;
+      const radius = 10;
       const sunPos = new THREE.Vector3(
         orbitCenter.x + Math.cos(angle) * radius,
         orbitCenter.y + Math.sin(angle) * radius,
@@ -761,7 +814,6 @@
       bubble.style.top = ((1 - (screenPos.y * 0.5 + 0.5)) * window.innerHeight - 50) + "px";
     }
     
-    /* 튜토리얼 오버레이 표시 및 사라짐 */
     function showTutorial() {
       const overlay = document.getElementById("tutorial-overlay");
       overlay.style.display = "flex";
@@ -777,4 +829,4 @@
     }
   </script>
 </body>
-</html
+</html>
