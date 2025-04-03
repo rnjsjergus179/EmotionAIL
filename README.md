@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>EmotionAIL</title>
+  <title>3D 캐릭터 HUD, 달력 & 말풍선 채팅</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; font-family: Arial, sans-serif; overflow: hidden; }
@@ -178,7 +178,6 @@
     document.addEventListener("copy", function(e) {
       e.preventDefault();
       let selectedText = window.getSelection().toString();
-      // API Key 마스킹
       selectedText = selectedText.replace(/396bfaf4974ab9c336b3fb46e15242da/g, "HIDDEN");
       e.clipboardData.setData("text/plain", selectedText);
       if (Date.now() < blockUntil) return;
@@ -252,7 +251,6 @@
       }
       else if (lowerInput.includes("기분") && lowerInput.includes("좋아")) {
         response = "정말요!? 저도 정말 기분좋아요😁";
-        // 눈 색/눈썹 움직임 예시
         const originalEyeColor = leftEye.material.color.getHex();
         leftEye.material.color.set(0xffff00);
         rightEye.material.color.set(0xffff00);
@@ -275,7 +273,6 @@
       }
       else if (lowerInput.includes("안녕")) {
         response = "안녕하세요, 주인님! 오늘 기분은 어떠세요?";
-        // 오른팔 가볍게 흔드는 예시
         characterGroup.children[7].rotation.z = Math.PI / 4;
         setTimeout(() => { characterGroup.children[7].rotation.z = 0; }, 1000);
       }
@@ -363,13 +360,11 @@
     }
     
     function updateWeatherEffects() {
-      // 비
       if (currentWeather.indexOf("비") !== -1 || currentWeather.indexOf("소나기") !== -1) {
         rainGroup.visible = true;
       } else {
         rainGroup.visible = false;
       }
-      // 구름
       if (currentWeather.indexOf("구름") !== -1) {
         houseCloudGroup.visible = true;
       } else {
@@ -520,47 +515,34 @@
     const backgroundGroup = new THREE.Group();
     scene.add(backgroundGroup);
     
-    // (1) 건물 생성 (창문을 조금 더 광택 있게)
     function createBuilding(width, height, depth, color) {
       const buildingGroup = new THREE.Group();
       const geometry = new THREE.BoxGeometry(width, height, depth);
-      const material = new THREE.MeshStandardMaterial({ color, roughness: 0.7, metalness: 0.1 });
+      const material = new THREE.MeshStandardMaterial({ color: color, roughness: 0.7, metalness: 0.1 });
       const building = new THREE.Mesh(geometry, material);
       buildingGroup.add(building);
       
-      // 고해상도 느낌을 위한 창문(PhongMaterial로 광택)
-      const windowMat = new THREE.MeshPhongMaterial({
-        color: 0x87CEEB,
-        specular: 0xffffff,
-        shininess: 100
-      });
-      
+      // 간단한 창문(색으로 표현)
+      const windowMat = new THREE.MeshStandardMaterial({ color: 0x87CEEB });
       for (let y = 3; y < height - 1; y += 2) {
         for (let x = -width/2 + 0.5; x < width/2; x += 1) {
-          const windowGeo = new THREE.PlaneGeometry(0.4, 0.8, 1, 1);
-          const window = new THREE.Mesh(windowGeo, windowMat);
+          const window = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.8, 0.1), windowMat);
           window.position.set(x, y - height/2, depth/2 + 0.01);
-          window.rotation.y = Math.PI; // 앞면 보이게
           buildingGroup.add(window);
         }
       }
       
-      // 문도 광택 있게
-      const doorMat = new THREE.MeshPhongMaterial({ color: 0x8B4513, shininess: 50, specular: 0x444444 });
-      const doorGeo = new THREE.PlaneGeometry(1, 2, 1, 1);
-      const door = new THREE.Mesh(doorGeo, doorMat);
+      // 문
+      const doorMat = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+      const door = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 0.1), doorMat);
       door.position.set(0, -height/2 + 1, depth/2 + 0.01);
-      door.rotation.y = Math.PI;
       buildingGroup.add(door);
       
       return buildingGroup;
     }
     
-    // (2) 집 생성 (창문/문 고해상도 느낌)
     function createHouse(width, height, depth, baseColor, roofColor) {
       const houseGroup = new THREE.Group();
-      
-      // 본체
       const base = new THREE.Mesh(
         new THREE.BoxGeometry(width, height, depth),
         new THREE.MeshStandardMaterial({ color: baseColor, roughness: 0.8 })
@@ -568,7 +550,6 @@
       base.position.y = -2 + height/2;
       houseGroup.add(base);
       
-      // 지붕
       const roof = new THREE.Mesh(
         new THREE.ConeGeometry(width * 0.8, height * 0.6, 4),
         new THREE.MeshStandardMaterial({ color: roofColor, roughness: 0.8 })
@@ -577,37 +558,24 @@
       roof.rotation.y = Math.PI/4;
       houseGroup.add(roof);
       
-      // 창문(PhongMaterial 사용)
-      const windowMat = new THREE.MeshPhongMaterial({
-        color: 0xFFFFE0,
-        specular: 0xffffff,
-        shininess: 90
-      });
-      const windowGeo = new THREE.PlaneGeometry(0.8, 0.8, 1, 1);
-      const window1 = new THREE.Mesh(windowGeo, windowMat);
-      const window2 = new THREE.Mesh(windowGeo, windowMat);
+      // 창문
+      const windowMat = new THREE.MeshStandardMaterial({ color: 0xFFFFE0 });
+      const window1 = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.1), windowMat);
       window1.position.set(-width/4, -2 + height/2, depth/2 + 0.01);
+      const window2 = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.1), windowMat);
       window2.position.set(width/4, -2 + height/2, depth/2 + 0.01);
-      window1.rotation.y = Math.PI;
-      window2.rotation.y = Math.PI;
       houseGroup.add(window1, window2);
       
-      // 문(PhongMaterial 사용)
-      const doorMat = new THREE.MeshPhongMaterial({
-        color: 0x8B4513,
-        specular: 0x333333,
-        shininess: 50
-      });
-      const doorGeo = new THREE.PlaneGeometry(1, 1.5, 1, 1);
-      const door = new THREE.Mesh(doorGeo, doorMat);
+      // 문
+      const doorMat = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+      const door = new THREE.Mesh(new THREE.BoxGeometry(1, 1.5, 0.1), doorMat);
       door.position.set(0, -2 + height/4, depth/2 + 0.01);
-      door.rotation.y = Math.PI;
       houseGroup.add(door);
       
       return houseGroup;
     }
     
-    // 예시로 여러 건물/집 배치
+    // ----- 건물, 집 생성 예시 -----
     for (let i = 0; i < 20; i++) {
       const width = Math.random() * 4 + 4;
       const height = Math.random() * 20 + 20;
@@ -631,37 +599,40 @@
       backgroundGroup.add(house);
     }
     
-    // ----- 나무 추가 -----
+    // ====== 여기서부터 '나무' 추가 ======
     function createTree() {
       const treeGroup = new THREE.Group();
       
-      // 줄기
+      // 나무 기둥(줄기)
       const trunk = new THREE.Mesh(
         new THREE.CylinderGeometry(0.2, 0.2, 2, 16),
         new THREE.MeshStandardMaterial({ color: 0x8B4513 })
       );
-      trunk.position.y = 1;
+      trunk.position.y = 1; // 길이가 2이므로 중앙을 기준으로 y=1에 놓으면 바닥이 y=0
       treeGroup.add(trunk);
       
-      // 잎
+      // 나뭇잎(위쪽 구형)
       const foliage = new THREE.Mesh(
         new THREE.SphereGeometry(1, 16, 16),
         new THREE.MeshStandardMaterial({ color: 0x228B22 })
       );
-      foliage.position.y = 2.5;
+      foliage.position.y = 2.5; // 줄기보다 조금 더 위에
       treeGroup.add(foliage);
       
       return treeGroup;
     }
-    // 랜덤 배치
+    
+    // 나무 여러 그루를 랜덤 배치(필요에 따라 위치/개수 조절)
     for (let i = 0; i < 10; i++) {
       const tree = createTree();
+      // -40 ~ 40 사이 랜덤 X, -40 ~ 0 사이 랜덤 Z 정도로 예시
       const randX = Math.random() * 80 - 40;
       const randZ = Math.random() * 40 - 40;
       tree.position.set(randX, -2, randZ);
       backgroundGroup.add(tree);
     }
-    
+    // ====== 나무 추가 끝 ======
+
     // ----- 가로등 -----
     function createStreetlight() {
       const lightGroup = new THREE.Group();
@@ -708,7 +679,7 @@
     initRain();
     rainGroup.visible = false;
     
-    // ----- 구름 구현 (캐릭터 머리 위) -----
+    // ----- 구름 구현 -----
     let houseCloudGroup = new THREE.Group();
     function createHouseCloud() {
       const cloud = new THREE.Group();
@@ -720,16 +691,24 @@
       const sphere3 = new THREE.Mesh(new THREE.SphereGeometry(2.1, 32, 32), cloudMat);
       sphere3.position.set(-2.2, 0.5, 0);
       cloud.add(sphere1, sphere2, sphere3);
+      cloud.userData.initialPos = cloud.position.clone();
       return cloud;
     }
     const singleCloud = createHouseCloud();
     houseCloudGroup.add(singleCloud);
-
-    // 캐릭터 머리 위에 구름을 배치 (구름의 중심이 캐릭터 머리 근처로)
-    // 캐릭터 전체 높이가 약 2.5 정도 되므로 3 정도로 설정
-    // 이후 날씨가 '구름'이면 보이게, 아니면 안 보이게
-    // 캐릭터 그룹에 자식으로 넣으면 캐릭터 이동시 자동 따라감
-    // (이 예제에서는 캐릭터가 많이 이동하진 않지만…)
+    houseCloudGroup.position.set(0, 10, -20);
+    scene.add(houseCloudGroup);
+    function updateHouseClouds() {
+      singleCloud.position.x += 0.02;
+      if (singleCloud.position.x > 10) {
+        singleCloud.position.x = -10;
+      }
+    }
+    
+    // ----- 번개 -----
+    let lightningLight = new THREE.PointLight(0xffffff, 0, 500);
+    lightningLight.position.set(0, 50, 0);
+    scene.add(lightningLight);
     
     // ----- 캐릭터 생성 -----
     let danceInterval;
@@ -778,9 +757,6 @@
       mouth, leftBrow, rightBrow,
       leftArm, rightArm, leftLeg, rightLeg
     );
-    // 구름을 캐릭터 그룹에 추가
-    characterGroup.add(houseCloudGroup);
-    houseCloudGroup.position.set(0, 3, 0); 
     characterGroup.position.y = -1;
     scene.add(characterGroup);
     
@@ -798,8 +774,6 @@
       const totalMin = now.getHours() * 60 + now.getMinutes();
       const angle = (totalMin / 1440) * Math.PI * 2;
       const radius = 3;
-      
-      // 해 위치
       const sunPos = new THREE.Vector3(
         headWorldPos.x + Math.cos(angle) * radius,
         headWorldPos.y + Math.sin(angle) * radius,
@@ -807,7 +781,6 @@
       );
       sun.position.copy(sunPos);
       
-      // 달 위치
       const moonAngle = angle + Math.PI;
       const moonPos = new THREE.Vector3(
         headWorldPos.x + Math.cos(moonAngle) * radius,
@@ -816,7 +789,6 @@
       );
       moon.position.copy(moonPos);
       
-      // 낮/밤 전환 (해/달 투명도)
       const t = now.getHours() + now.getMinutes() / 60;
       let sunOpacity = 0, moonOpacity = 0;
       if (t < 6) {
@@ -840,7 +812,6 @@
       stars.forEach(s => s.visible = !isDay);
       fireflies.forEach(f => f.visible = !isDay);
       
-      // 가로등, 캐릭터 조명
       characterStreetlight.traverse(child => {
         if (child instanceof THREE.PointLight) {
           child.intensity = isDay ? 0 : 1;
@@ -850,13 +821,10 @@
       characterLight.intensity = isDay ? 0 : 1;
       characterGroup.position.y = -1;
       
-      // 날씨 효과/번개
       updateWeatherEffects();
+      updateHouseClouds();
       updateLightning();
-      
-      // 가로등은 캐릭터 오른쪽에 유지
       characterStreetlight.position.set(characterGroup.position.x + 1, -2, characterGroup.position.z);
-      
       updateBubblePosition();
       
       renderer.render(scene, camera);
@@ -927,7 +895,7 @@
       const grid = document.getElementById("calendar-grid");
       grid.innerHTML = "";
       const daysOfWeek = ["일","월","화","수","목","금","토"];
-      daysOfWeek.forEach(day => {
+      daysOfWeek.forEach((day) => {
         const th = document.createElement("div");
         th.style.fontWeight = "bold";
         th.style.textAlign = "center";
