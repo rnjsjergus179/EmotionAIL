@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>3D 캐릭터 HUD, 달력 & 말풍선 채팅</title>
+  <title>3D 캐릭터 HUD, 달력, 채팅 & 말풍선</title>
   <style>
     /* CSS Reset 및 기본 스타일 */
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -13,7 +13,7 @@
     /* 오른쪽 HUD: 채팅창 (이메일 관련 요소 삭제) */
     #right-hud {
       position: fixed;
-      top: 150px; /* 필요에 따라 위치 조정 */
+      top: 150px; /* 오른쪽 HUD는 그대로 둠 */
       right: 10px;
       width: 300px;
       padding: 10px;
@@ -29,7 +29,7 @@
       padding: 5px;
       margin-top: 10px;
     }
-    /* 채팅 입력 영역 */
+    /* 채팅 입력 영역: 입력창, 전송 버튼, AI 응답 버튼 한 줄 */
     #chat-input-area {
       display: flex;
       margin-top: 10px;
@@ -39,15 +39,15 @@
       padding: 5px;
       font-size: 14px;
     }
-    #send-chat-button {
+    #send-chat-button, #ai-chat-button {
       padding: 5px 10px;
       font-size: 14px;
       margin-left: 5px;
     }
-    /* 왼쪽 HUD: 달력 UI */
+    /* 왼쪽 HUD: 달력 UI – 상단 위치를 50px로 조정 */
     #left-hud {
       position: fixed;
-      top: 150px;
+      top: 50px;
       left: 10px;
       width: 320px;
       padding: 10px;
@@ -68,6 +68,16 @@
     #calendar-header button { padding: 2px 6px; font-size: 12px; }
     #month-year-label { font-weight: bold; font-size: 14px; }
     #year-select { font-size: 12px; padding: 2px; margin-left: 5px; }
+    /* 추가: 달력 액션 버튼 영역 */
+    #calendar-actions {
+      margin-top: 5px;
+      text-align: center;
+    }
+    #calendar-actions button {
+      margin: 2px;
+      padding: 5px 8px;
+      font-size: 12px;
+    }
     #calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
@@ -145,7 +155,6 @@
       const lowerInput = input.toLowerCase();
       if (lowerInput.includes("안녕")) {
         response = "안녕하세요, 주인님! 오늘 기분은 어떠세요?";
-        // 간단한 애니메이션 예시 (팔 회전)
         characterGroup.children[7].rotation.z = Math.PI / 4;
         setTimeout(() => { characterGroup.children[7].rotation.z = 0; }, 1000);
       } else if (lowerInput.includes("캐릭터 넌 누구야")) {
@@ -174,29 +183,32 @@
       showSpeechBubbleInChunks(response);
       inputEl.value = "";
     }
+    
+    // AI 응답 버튼용 함수 (구글 AI API 연동 예시; 실제 API 엔드포인트로 교체 필요)
+    async function sendAIChat() {
+      const inputEl = document.getElementById("chat-input");
+      const input = inputEl.value.trim();
+      if (!input) return;
+      // 예시: 실제 API 호출 대신 간단한 시뮬레이션 (1초 후에 "AI 응답: ..." 반환)
+      appendToChatLog("사용자: " + input);
+      appendToChatLog("AI: (처리 중...)");
+      const aiResponse = await getAIResponse(input);
+      appendToChatLog("AI: " + aiResponse);
+      inputEl.value = "";
+    }
+    
+    // 구글 AI API 호출 예시 (실제 API 엔드포인트 및 인증 필요; 여기서는 단순 시뮬레이션)
+    function getAIResponse(input) {
+      return new Promise(resolve => {
+        setTimeout(() => {
+          resolve("이건 AI가 처리한 답변입니다. (입력: " + input + ")");
+        }, 1000);
+      });
+    }
+    
     document.getElementById("chat-input").addEventListener("keydown", function(e) {
       if (e.key === "Enter") sendChat();
     });
-    
-    function showSpeechBubbleInChunks(text, chunkSize = 15, delay = 3000) {
-      const bubble = document.getElementById("speech-bubble");
-      const chunks = [];
-      for (let i = 0; i < text.length; i += chunkSize) {
-        chunks.push(text.slice(i, i + chunkSize));
-      }
-      let index = 0;
-      function showNextChunk() {
-        if (index < chunks.length) {
-          bubble.textContent = chunks[index];
-          bubble.style.display = "block";
-          index++;
-          setTimeout(showNextChunk, delay);
-        } else {
-          setTimeout(() => { bubble.style.display = "none"; }, 3000);
-        }
-      }
-      showNextChunk();
-    }
     
     // 윈도우 리사이즈 이벤트: 3D 캔버스 업데이트
     window.addEventListener("resize", function(){
@@ -207,13 +219,14 @@
   </script>
 </head>
 <body>
-  <!-- 오른쪽 HUD: 채팅 UI (이메일 관련 요소 삭제됨) -->
+  <!-- 오른쪽 HUD: 채팅 UI -->
   <div id="right-hud">
     <h3>채팅창</h3>
     <div id="chat-log"></div>
     <div id="chat-input-area">
       <input type="text" id="chat-input" placeholder="채팅 입력..." />
       <button id="send-chat-button" onclick="sendChat()">전송</button>
+      <button id="ai-chat-button" onclick="sendAIChat()">AI 응답</button>
     </div>
   </div>
   
@@ -226,6 +239,11 @@
         <span id="month-year-label"></span>
         <button id="next-month">▶</button>
         <select id="year-select"></select>
+      </div>
+      <!-- 추가: 달력 액션 버튼 영역 -->
+      <div id="calendar-actions">
+        <button id="add-day-event">하루일정 추가</button>
+        <button id="save-calendar">바탕화면 저장</button>
       </div>
       <div id="calendar-grid"></div>
     </div>
@@ -508,7 +526,7 @@
     animate();
     
     /* ====================================
-       달력 UI 관련 함수
+       달력 UI 관련 함수 및 추가 기능
     ==================================== */
     let currentYear, currentMonth;
     function initCalendar() {
@@ -531,15 +549,55 @@
         currentYear = parseInt(e.target.value);
         renderCalendar(currentYear, currentMonth);
       });
+      
+      // 하루일정 추가 버튼 이벤트
+      document.getElementById("add-day-event").addEventListener("click", () => {
+        const dayStr = prompt("하루일정을 추가할 날짜(일)를 입력하세요 (예: 15):");
+        const eventText = prompt("일정 내용을 입력하세요:");
+        if(dayStr && eventText) {
+          const dayNum = parseInt(dayStr);
+          // 현재 달력에 해당 날짜의 이벤트 div id는 "event-YYYY-M-D"
+          const eventDiv = document.getElementById(`event-${currentYear}-${currentMonth+1}-${dayNum}`);
+          if(eventDiv) {
+            if(eventDiv.textContent) {
+              eventDiv.textContent += "; " + eventText;
+            } else {
+              eventDiv.textContent = eventText;
+            }
+          } else {
+            alert("해당 날짜의 셀이 없습니다. 현재 달에 있는 날짜를 입력해주세요.");
+          }
+        }
+      });
+      
+      // 바탕화면 저장 버튼 이벤트 (현재 달력의 모든 이벤트를 JSON 파일로 다운로드)
+      document.getElementById("save-calendar").addEventListener("click", () => {
+        const daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
+        const calendarData = {};
+        for(let d = 1; d <= daysInMonth; d++){
+          const eventDiv = document.getElementById(`event-${currentYear}-${currentMonth+1}-${d}`);
+          if(eventDiv && eventDiv.textContent.trim() !== ""){
+            calendarData[`${currentYear}-${currentMonth+1}-${d}`] = eventDiv.textContent;
+          }
+        }
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(calendarData, null, 2));
+        const dlAnchorElem = document.createElement("a");
+        dlAnchorElem.setAttribute("href", dataStr);
+        dlAnchorElem.setAttribute("download", "calendar_events.json");
+        dlAnchorElem.style.display = "none";
+        document.body.appendChild(dlAnchorElem);
+        dlAnchorElem.click();
+        document.body.removeChild(dlAnchorElem);
+      });
     }
     function populateYearSelect() {
       const yearSelect = document.getElementById("year-select");
       yearSelect.innerHTML = "";
-      for (let y = 2020; y <= 2070; y++) {
+      for(let y = 2020; y <= 2070; y++) {
         const option = document.createElement("option");
         option.value = y;
         option.textContent = y;
-        if (y === currentYear) option.selected = true;
+        if(y === currentYear) option.selected = true;
         yearSelect.appendChild(option);
       }
     }
@@ -558,25 +616,35 @@
       });
       const firstDay = new Date(year, month, 1).getDay();
       const daysInMonth = new Date(year, month+1, 0).getDate();
-      for (let i = 0; i < firstDay; i++) {
+      for(let i = 0; i < firstDay; i++) {
         grid.appendChild(document.createElement("div"));
       }
-      for (let d = 1; d <= daysInMonth; d++) {
+      for(let d = 1; d <= daysInMonth; d++) {
         const cell = document.createElement("div");
         cell.innerHTML = `<div class="day-number">${d}</div>
                           <div class="event" id="event-${year}-${month+1}-${d}"></div>`;
         cell.addEventListener("click", () => {
           const eventText = prompt(`${year}-${month+1}-${d} 일정 입력:`);
-          if (eventText) { addEventToDay(`${year}-${month+1}-${d}`, eventText); }
+          if(eventText) {
+            const eventDiv = document.getElementById(`event-${year}-${month+1}-${d}`);
+            if(eventDiv.textContent) {
+              eventDiv.textContent += "; " + eventText;
+            } else {
+              eventDiv.textContent = eventText;
+            }
+          }
         });
         grid.appendChild(cell);
       }
     }
     function addEventToDay(dateStr, eventText) {
       const eventDiv = document.getElementById(`event-${dateStr}`);
-      if (eventDiv) {
-        if (eventDiv.textContent) { eventDiv.textContent += "; " + eventText; }
-        else { eventDiv.textContent = eventText; }
+      if(eventDiv) {
+        if(eventDiv.textContent) {
+          eventDiv.textContent += "; " + eventText;
+        } else {
+          eventDiv.textContent = eventText;
+        }
       }
     }
     window.addEventListener("load", () => {
