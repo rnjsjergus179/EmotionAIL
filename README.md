@@ -6,11 +6,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>3D 캐릭터 HUD, 달력 & 말풍선 채팅</title>
   <style>
-    /* CSS Reset 및 기본 스타일 */
+    /* 기본 리셋 및 스타일 */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; font-family: Arial, sans-serif; overflow: hidden; }
-
-    /* 오른쪽 HUD: 채팅창 */
+    
+    /* 오른쪽 HUD: 채팅 UI (채팅 로그는 숨김) */
     #right-hud {
       position: fixed;
       top: 150px;
@@ -22,7 +22,6 @@
       box-shadow: 0 4px 8px rgba(0,0,0,0.2);
       z-index: 20;
     }
-    /* 채팅 로그 - 숨김 처리 */
     #chat-log {
       display: none;
       height: 100px;
@@ -33,7 +32,6 @@
       border-radius: 3px;
       background: #fff;
     }
-    /* 채팅 입력 영역 */
     #chat-input-area {
       display: flex;
       margin-top: 10px;
@@ -50,7 +48,7 @@
       cursor: pointer;
     }
     
-    /* 왼쪽 HUD: 달력 UI – 상단 위치 50px, 너비 280px */
+    /* 왼쪽 HUD: 달력 UI */
     #left-hud {
       position: fixed;
       top: 50px;
@@ -65,8 +63,6 @@
       overflow-y: auto;
     }
     #left-hud h3 { margin-bottom: 5px; }
-    
-    /* 달력 UI 내부 스타일 */
     #calendar-container { margin-top: 10px; }
     #calendar-header {
       display: flex;
@@ -77,8 +73,6 @@
     #calendar-header button { padding: 2px 6px; font-size: 12px; cursor: pointer; }
     #month-year-label { font-weight: bold; font-size: 14px; }
     #year-select { font-size: 12px; padding: 2px; margin-left: 5px; }
-    
-    /* 달력 액션 버튼 영역: 하루일정 삭제 및 바탕화면 저장 */
     #calendar-actions {
       margin-top: 5px;
       text-align: center;
@@ -89,8 +83,6 @@
       font-size: 12px;
       cursor: pointer;
     }
-    
-    /* 달력 그리드: 고해상도 느낌, 셀 높이 축소 */
     #calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
@@ -123,7 +115,7 @@
       white-space: nowrap;
     }
     
-    /* 3D 캔버스 (전체 화면 고정) */
+    /* 3D 캔버스 및 말풍선 */
     #canvas {
       position: fixed;
       top: 0;
@@ -133,7 +125,6 @@
       z-index: 1;
       display: block;
     }
-    /* 말풍선 스타일 */
     #speech-bubble {
       position: fixed;
       background: white;
@@ -147,7 +138,6 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
     
-    /* 미디어 쿼리 (작은 화면 대응) */
     @media (max-width: 480px) {
       #right-hud, #left-hud { width: 90%; left: 5%; right: 5%; }
     }
@@ -157,15 +147,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   
   <script>
-    // 날씨 API 관련 키 (OpenWeatherMap API 사용)
+    // 날씨 API 키 (OpenWeatherMap API 사용)
     const weatherKey = "396bfaf4974ab9c336b3fb46e15242da";
+    // 전역 변수에 날씨 상태를 저장 ("맑음", "비", "구름 낀" 등)
+    let currentWeather = "";
     
-    /* ====================================
-       채팅 및 날씨 API 통합 관련 함수
-       - 채팅창에서는 입력 후 메시지가 보이지 않고,
-         캐릭터 말풍선으로만 응답이 표시됩니다.
-       - 엔터키 입력 시 전송되고, 날씨 관련 입력이면 실제 API 호출 후 결과를 반영합니다.
-    ==================================== */
+    /* 채팅 및 날씨 API 통합 함수 */
     async function sendChat() {
       const inputEl = document.getElementById("chat-input");
       const input = inputEl.value.trim();
@@ -174,7 +161,7 @@
       let response = "";
       const lowerInput = input.toLowerCase();
       
-      // 날씨 관련 문의 시 실제 날씨 API 호출 (예: "날씨 알려줘", "오늘 날씨", "날씨맑아?" 등)
+      // 날씨 관련 문의일 경우
       if (lowerInput.includes("날씨") &&
          (lowerInput.includes("알려") || lowerInput.includes("어때") ||
           lowerInput.includes("뭐야") || lowerInput.includes("어떻게") || lowerInput.includes("맑아"))) {
@@ -203,12 +190,12 @@
         response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
       }
       
-      // 채팅 로그에는 메시지를 남기지 않고, 캐릭터 말풍선으로만 응답 표시
+      // 캐릭터 말풍선에 응답 표시
       showSpeechBubbleInChunks(response);
       inputEl.value = "";
     }
     
-    // OpenWeatherMap API를 호출하여 서울의 날씨 정보를 가져오는 함수
+    // OpenWeatherMap API를 호출하여 서울의 날씨 정보를 가져오고, currentWeather 업데이트
     async function getWeather() {
       try {
         const city = "Seoul";
@@ -218,9 +205,37 @@
         const data = await res.json();
         const description = data.weather[0].description;
         const temp = data.main.temp;
+        currentWeather = description; // 날씨 상태 업데이트
         return `오늘 ${city}의 날씨는 ${description}이며, 온도는 ${temp}°C입니다.`;
       } catch (err) {
+        currentWeather = "";
         return "날씨 정보를 가져오지 못했습니다.";
+      }
+    }
+    
+    // currentWeather에 따라 비, 구름 효과 연동
+    function updateWeatherEffects() {
+      // 비 효과: "비" 또는 "소나기" 포함
+      if (currentWeather.indexOf("비") !== -1 || currentWeather.indexOf("소나기") !== -1) {
+        rainGroup.visible = true;
+      } else {
+        rainGroup.visible = false;
+      }
+      // 구름 효과: "구름" 포함
+      if (currentWeather.indexOf("구름") !== -1) {
+        houseCloudGroup.visible = true;
+      } else {
+        houseCloudGroup.visible = false;
+      }
+    }
+    
+    // 번개 효과 (currentWeather에 "번개" 또는 "뇌우"가 포함되면)
+    function updateLightning() {
+      if (currentWeather.indexOf("번개") !== -1 || currentWeather.indexOf("뇌우") !== -1) {
+        if (Math.random() < 0.001) {
+          lightningLight.intensity = 5;
+          setTimeout(() => { lightningLight.intensity = 0; }, 100);
+        }
       }
     }
     
@@ -244,12 +259,12 @@
       showNextChunk();
     }
     
-    // 엔터키 입력 시 sendChat 호출 (입력 후 텍스트는 보이지 않음)
+    // 엔터키 입력 시 sendChat 호출
     document.getElementById("chat-input").addEventListener("keydown", function(e) {
       if (e.key === "Enter") sendChat();
     });
     
-    // 윈도우 리사이즈 이벤트: 3D 캔버스 업데이트
+    // 창 크기 변경 시 3D 캔버스 업데이트
     window.addEventListener("resize", function(){
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
@@ -258,7 +273,7 @@
   </script>
 </head>
 <body>
-  <!-- 오른쪽 HUD: 채팅 UI (채팅 로그는 숨김) -->
+  <!-- 오른쪽 HUD: 채팅 UI (채팅 로그 숨김) -->
   <div id="right-hud">
     <h3>채팅창</h3>
     <div id="chat-log"></div>
@@ -293,10 +308,7 @@
   <canvas id="canvas"></canvas>
   
   <script>
-    /* ====================================
-       Three.js 3D 씬 설정 (캐릭터, 배경, 날씨 효과 등)
-    ==================================== */
-    let currentWeather = "";
+    /* Three.js 3D 씬 설정 및 애니메이션 */
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("canvas"), alpha: true });
@@ -309,17 +321,16 @@
     scene.add(directionalLight);
     scene.add(new THREE.AmbientLight(0x333333));
     
-    // 태양 객체
+    // 태양과 달 객체
     const sunMaterial = new THREE.MeshStandardMaterial({ color: 0xffcc00, emissive: 0xff9900, transparent: true, opacity: 0 });
     const sun = new THREE.Mesh(new THREE.SphereGeometry(1.5, 64, 64), sunMaterial);
     scene.add(sun);
     
-    // 달 객체
     const moonMaterial = new THREE.MeshStandardMaterial({ color: 0xcccccc, emissive: 0x222222, transparent: true, opacity: 1 });
     const moon = new THREE.Mesh(new THREE.SphereGeometry(1.2, 64, 64), moonMaterial);
     scene.add(moon);
     
-    // 별, 반딧불 생성
+    // 별과 반딧불
     const stars = [], fireflies = [];
     for (let i = 0; i < 100; i++) {
       const star = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
@@ -334,7 +345,7 @@
       fireflies.push(firefly);
     }
     
-    // 고해상도 콩크리트 바닥 (Y = -2)
+    // 바닥
     const floorGeometry = new THREE.PlaneGeometry(200, 200, 128, 128);
     const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 1, metalness: 0 });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
@@ -342,7 +353,7 @@
     floor.position.y = -2;
     scene.add(floor);
     
-    // 배경 그룹 (빌딩, 집, 가로등)
+    // 배경: 빌딩, 집, 가로등
     const backgroundGroup = new THREE.Group();
     scene.add(backgroundGroup);
     function createBuilding(width, height, depth, color) {
@@ -363,7 +374,6 @@
       houseGroup.add(roof);
       return houseGroup;
     }
-    // 빌딩 배치 (5열×2행)
     for (let i = 0; i < 10; i++) {
       const width = Math.random() * 2 + 2;
       const height = Math.random() * 10 + 10;
@@ -376,7 +386,6 @@
       building.position.set(x, -2 + height/2, z);
       backgroundGroup.add(building);
     }
-    // 집 배치 (1행, 캐릭터 뒤쪽, Z = -5)
     for (let i = 0; i < 5; i++) {
       const width = Math.random() * 2 + 3;
       const height = Math.random() * 2 + 3;
@@ -387,7 +396,6 @@
       house.position.set(x, 0, z);
       backgroundGroup.add(house);
     }
-    // 단일 가로등: 캐릭터 옆에 배치
     function createStreetlight() {
       const lightGroup = new THREE.Group();
       const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 4, 8),
@@ -407,7 +415,7 @@
     characterStreetlight.position.set(1, -2, 0);
     scene.add(characterStreetlight);
     
-    // 날씨 효과 – 비
+    // 날씨 효과 – 비 (rainGroup)
     let rainGroup = new THREE.Group();
     scene.add(rainGroup);
     function initRain() {
@@ -427,7 +435,7 @@
     initRain();
     rainGroup.visible = false;
     
-    // 날씨 효과 – 구름
+    // 날씨 효과 – 구름 (houseCloudGroup)
     let houseCloudGroup = new THREE.Group();
     function createHouseCloud() {
       const cloud = new THREE.Group();
@@ -455,16 +463,8 @@
     let lightningLight = new THREE.PointLight(0xffffff, 0, 500);
     lightningLight.position.set(0, 50, 0);
     scene.add(lightningLight);
-    function updateWeatherEffects() {
-      if (currentWeather.indexOf("비") !== -1 || currentWeather.indexOf("소나기") !== -1) {
-        rainGroup.visible = true;
-      } else { rainGroup.visible = false; }
-      if (currentWeather.indexOf("구름") !== -1) {
-        houseCloudGroup.visible = true;
-      } else { houseCloudGroup.visible = false; }
-    }
     
-    // 캐릭터 생성
+    /* 캐릭터 생성 */
     const characterGroup = new THREE.Group();
     const charBody = new THREE.Mesh(new THREE.BoxGeometry(1, 1.5, 0.5),
                                     new THREE.MeshStandardMaterial({ color: 0x00cc66 }));
@@ -498,9 +498,7 @@
     const characterLight = new THREE.PointLight(0xffee88, 1, 15);
     scene.add(characterLight);
     
-    /* ====================================
-       애니메이션 루프 (3D 씬 업데이트)
-    ==================================== */
+    /* 애니메이션 루프 */
     function animate() {
       requestAnimationFrame(animate);
       
@@ -549,22 +547,10 @@
       characterGroup.position.y = -1;
       characterGroup.rotation.x = 0;
       
-      if (rainGroup.visible) {
-        const rainPoints = rainGroup.children[0];
-        const positions = rainPoints.geometry.attributes.position.array;
-        for (let i = 0; i < positions.length; i += 3) {
-          positions[i + 1] -= 0.5;
-          if (positions[i + 1] < 0) { positions[i + 1] = Math.random() * 50 + 20; }
-        }
-        rainPoints.geometry.attributes.position.needsUpdate = true;
-      }
-      if (currentWeather.indexOf("번개") !== -1 || currentWeather.indexOf("뇌우") !== -1) {
-        if (Math.random() < 0.001) {
-          lightningLight.intensity = 5;
-          setTimeout(() => { lightningLight.intensity = 0; }, 100);
-        }
-      }
+      // 날씨 효과 업데이트
+      updateWeatherEffects();
       updateHouseClouds();
+      updateLightning();
       characterStreetlight.position.set(characterGroup.position.x + 1, -2, characterGroup.position.z);
       updateBubblePosition();
       
@@ -572,9 +558,7 @@
     }
     animate();
     
-    /* ====================================
-       달력 UI 관련 함수 및 추가 기능
-    ==================================== */
+    /* 달력 UI 관련 함수들 */
     let currentYear, currentMonth;
     function initCalendar() {
       const now = new Date();
@@ -597,7 +581,6 @@
         renderCalendar(currentYear, currentMonth);
       });
       
-      // 하루일정 삭제 버튼 이벤트
       document.getElementById("delete-day-event").addEventListener("click", () => {
         const dayStr = prompt("삭제할 하루일정의 날짜(일)를 입력하세요 (예: 15):");
         if(dayStr) {
@@ -612,7 +595,6 @@
         }
       });
       
-      // 바탕화면 저장 버튼 (현재 달력 이벤트들을 JSON 파일로 다운로드)
       document.getElementById("save-calendar").addEventListener("click", () => {
         const daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
         const calendarData = {};
@@ -693,7 +675,7 @@
       initCalendar();
     });
     
-    // 말풍선 위치 업데이트 (3D 캐릭터 머리 기준)
+    // 말풍선 위치 업데이트 (캐릭터 머리 기준)
     function updateBubblePosition() {
       const bubble = document.getElementById("speech-bubble");
       const headWorldPos = new THREE.Vector3();
