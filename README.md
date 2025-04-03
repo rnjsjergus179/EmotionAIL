@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>3D 캐릭터 HUD, 달력 & 말풍선 채팅</title>
+  <title>3D 캐릭터 HUD, 달력 & 말풍선 채팅 (Gemini AI 통합)</title>
   <style>
     /* CSS Reset 및 기본 스타일 */
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -49,7 +48,7 @@
       cursor: pointer;
     }
     
-    /* 왼쪽 HUD: 달력 UI – 상단 위치 50px, 너비 280px */
+    /* 왼쪽 HUD: 달력 UI – 상단 위치 50px, 너비 280px, 고해상도 느낌 */
     #left-hud {
       position: fixed;
       top: 50px;
@@ -99,7 +98,7 @@
       background: #fff;
       border: 1px solid #ccc;
       border-radius: 4px;
-      min-height: 25px;
+      min-height: 25px;  /* 셀 높이를 25px로 축소 */
       font-size: 10px;
       padding: 2px;
       position: relative;
@@ -206,28 +205,42 @@
       showSpeechBubbleInChunks(response);
       inputEl.value = "";
     }
-    document.getElementById("chat-input").addEventListener("keydown", function(e) {
-      if (e.key === "Enter") sendChat();
-    });
     
-    // AI 응답 버튼 (구글 AI API 시뮬레이션)
+    // AI 응답 버튼: Gemini API를 사용하여 응답을 받아옴
     async function sendAIChat() {
       const inputEl = document.getElementById("chat-input");
       const input = inputEl.value.trim();
       if (!input) return;
       appendToChatLog("사용자: " + input);
       appendToChatLog("AI: (처리 중...)");
-      const aiResponse = await getAIResponse(input);
-      appendToChatLog("AI: " + aiResponse);
+      try {
+        const aiResponse = await askGemini(input);
+        appendToChatLog("AI: " + aiResponse);
+      } catch (err) {
+        appendToChatLog("AI: 오류 발생 (" + err.message + ")");
+      }
       inputEl.value = "";
     }
-    function getAIResponse(input) {
-      return new Promise(resolve => {
-        setTimeout(() => {
-          resolve("이건 AI가 처리한 답변입니다. (입력: " + input + ")");
-        }, 1000);
+    
+    // Gemini API 호출 (실제 엔드포인트와 제공된 API 키 사용)
+    async function askGemini(promptText) {
+      const apiKey = "AIzaSyCiaecF2rng7LBdxTsrNb9i1CToOA9o7io";
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: promptText }] }]
+        })
       });
+      const data = await response.json();
+      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "응답 없음";
+      return reply;
     }
+    
+    document.getElementById("chat-input").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") sendChat();
+    });
     
     function showSpeechBubbleInChunks(text, chunkSize = 15, delay = 3000) {
       const bubble = document.getElementById("speech-bubble");
@@ -280,7 +293,6 @@
         <select id="year-select"></select>
       </div>
       <div id="calendar-actions">
-        <!-- 하루일정 추가 버튼은 삭제하고, 대신 하루일정 삭제 버튼 추가 -->
         <button id="delete-day-event">하루일정 삭제</button>
         <button id="save-calendar">바탕화면 저장</button>
       </div>
@@ -295,11 +307,6 @@
   <canvas id="canvas"></canvas>
   
   <script>
-    /* ====================================
-       구글 AI API 시뮬레이션 (예시)
-    ==================================== */
-    // (위의 AI 관련 함수는 그대로 사용)
-    
     /* ====================================
        Three.js 3D 씬 설정 (캐릭터, 배경, 날씨 효과 등)
     ==================================== */
@@ -601,14 +608,14 @@
         renderCalendar(currentYear, currentMonth);
       });
       
-      // 하루일정 삭제 버튼 이벤트
+      // 하루일정 삭제 버튼
       document.getElementById("delete-day-event").addEventListener("click", () => {
         const dayStr = prompt("삭제할 하루일정의 날짜(일)를 입력하세요 (예: 15):");
         if(dayStr) {
           const dayNum = parseInt(dayStr);
           const eventDiv = document.getElementById(`event-${currentYear}-${currentMonth+1}-${dayNum}`);
           if(eventDiv) {
-            eventDiv.textContent = "";  // 해당 날짜의 일정 삭제
+            eventDiv.textContent = "";
             alert(`${currentYear}-${currentMonth+1}-${dayNum} 일정이 삭제되었습니다. 다시 입력할 수 있습니다.`);
           } else {
             alert("해당 날짜의 셀이 없습니다. 현재 달에 있는 날짜를 입력해주세요.");
