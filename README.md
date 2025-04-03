@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -140,14 +141,23 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   
   <script>
-    // 날씨 API 키 (OpenWeatherMap API 사용)
-    const weatherKey = "396bfaf4974ab9c336b3fb46e15242da";
-    // 전역 변수: 날씨 상태 ("맑음", "비", "구름 낀" 등)
+    /* 보안 조치: 우클릭, 복사 방지 */
+    document.addEventListener("contextmenu", event => event.preventDefault());
+    document.addEventListener("copy", function(e) {
+      alert("코드 복사가 감지되었습니다. 기능이 차단됩니다.");
+      document.body.innerHTML = "";
+      e.preventDefault();
+    });
+    
+    /* 날씨 API 키는 URL에 ?auth=1 파라미터가 있을 때만 실제 키 사용 */
+    const weatherKey = (window.location.search.indexOf("auth=1") !== -1) 
+                         ? "396bfaf4974ab9c336b3fb46e15242da" 
+                         : "";
     let currentWeather = "";
     
-    /* 파일 저장 함수 (브라우저 기본 다운로드 방식) */
+    /* 파일 저장 함수 (파일은 기본 다운로드 폴더에 저장) */
     function saveFile() {
-      const content = "파일 저장 완료"; // 필요에 따라 파일 내용을 수정하세요.
+      const content = "파일 저장 완료";
       const filename = "saved_file.txt";
       const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
       const link = document.createElement("a");
@@ -205,7 +215,7 @@
           lowerInput.includes("뭐야") || lowerInput.includes("어떻게") || lowerInput.includes("맑아"))) {
         response = await getWeather();
       }
-      // 기분 관련 (키워드에 "기분"과 "좋아"가 모두 포함된 경우)
+      // 기분 관련 (입력에 "기분"과 "좋아"가 모두 포함되면)
       else if (lowerInput.includes("기분") && lowerInput.includes("좋아")) {
         response = "정말요!? 저도 정말 기분좋아요😁";
         // 눈 반짝임 효과
@@ -721,24 +731,6 @@
         });
         grid.appendChild(cell);
       }
-    }
-    function saveCalendar() {
-      const daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
-      const calendarData = {};
-      for(let d = 1; d <= daysInMonth; d++){
-        const eventDiv = document.getElementById(`event-${currentYear}-${currentMonth+1}-${d}`);
-        if(eventDiv && eventDiv.textContent.trim() !== ""){
-          calendarData[`${currentYear}-${currentMonth+1}-${d}`] = eventDiv.textContent;
-        }
-      }
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(calendarData, null, 2));
-      const dlAnchorElem = document.createElement("a");
-      dlAnchorElem.setAttribute("href", dataStr);
-      dlAnchorElem.setAttribute("download", "calendar_events.json");
-      dlAnchorElem.style.display = "none";
-      document.body.appendChild(dlAnchorElem);
-      dlAnchorElem.click();
-      document.body.removeChild(dlAnchorElem);
     }
     function addEventToDay(dateStr, eventText) {
       const eventDiv = document.getElementById(`event-${dateStr}`);
