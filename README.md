@@ -184,12 +184,13 @@
         response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
       }
       
-      // 캐릭터 말풍선에 응답 표시
-      showSpeechBubbleInChunks(response);
+      // 사용자 메시지와 캐릭터 응답을 함께 말풍선에 표시
+      const combinedMessage = "사용자: " + input + "\n캐릭터: " + response;
+      showSpeechBubbleInChunks(combinedMessage);
       inputEl.value = "";
     }
     
-    // OpenWeatherMap API 호출 및 날씨 정보 가져오기 (서울 기준)
+    // OpenWeatherMap API를 호출하여 서울의 날씨 정보를 가져오고, currentWeather 업데이트
     async function getWeather() {
       try {
         const city = "Seoul";
@@ -199,7 +200,7 @@
         const data = await res.json();
         const description = data.weather[0].description;
         const temp = data.main.temp;
-        currentWeather = description; // 전역 날씨 상태 업데이트
+        currentWeather = description;
         return `오늘 ${city}의 날씨는 ${description}이며, 온도는 ${temp}°C입니다.`;
       } catch (err) {
         currentWeather = "";
@@ -209,13 +210,11 @@
     
     // currentWeather에 따라 비, 구름 효과 연동
     function updateWeatherEffects() {
-      // 비 효과: "비" 또는 "소나기" 포함 시
       if (currentWeather.indexOf("비") !== -1 || currentWeather.indexOf("소나기") !== -1) {
         rainGroup.visible = true;
       } else {
         rainGroup.visible = false;
       }
-      // 구름 효과: "구름" 포함 시
       if (currentWeather.indexOf("구름") !== -1) {
         houseCloudGroup.visible = true;
       } else {
@@ -223,7 +222,7 @@
       }
     }
     
-    // 번개 효과 (랜덤 발생)
+    // 번개 효과 (랜덤)
     function updateLightning() {
       if (currentWeather.indexOf("번개") !== -1 || currentWeather.indexOf("뇌우") !== -1) {
         if (Math.random() < 0.001) {
@@ -233,6 +232,7 @@
       }
     }
     
+    // 말풍선을 일정 크기로 쪼개서 순차적으로 표시
     function showSpeechBubbleInChunks(text, chunkSize = 15, delay = 3000) {
       const bubble = document.getElementById("speech-bubble");
       const chunks = [];
@@ -253,7 +253,7 @@
       showNextChunk();
     }
     
-    // 엔터키 입력 시 sendChat() 호출 (버튼은 삭제됨)
+    // 엔터키 입력 시 sendChat() 호출 (전송 버튼은 삭제됨)
     document.getElementById("chat-input").addEventListener("keydown", function(e) {
       if (e.key === "Enter") sendChat();
     });
@@ -267,7 +267,7 @@
   </script>
 </head>
 <body>
-  <!-- 오른쪽 HUD: 채팅 UI (채팅 로그는 숨김, 전송 버튼 삭제) -->
+  <!-- 오른쪽 HUD: 채팅 UI (채팅 로그 숨김, 전송 버튼 삭제) -->
   <div id="right-hud">
     <h3>채팅창</h3>
     <div id="chat-log"></div>
