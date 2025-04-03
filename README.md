@@ -132,8 +132,24 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
     
-    @media (max-width: 480px) {
-      #right-hud, #left-hud { width: 90%; left: 5%; right: 5%; }
+    /* 튜토리얼 오버레이 – 간단 설명 */
+    #tutorial {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      color: #fff;
+      padding: 20px;
+      z-index: 100;
+      text-align: center;
+      font-size: 16px;
+      line-height: 1.5;
+      animation: slideUp 1s ease-out forwards;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
     }
   </style>
   
@@ -141,267 +157,13 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   
   <script>
-    /* 보안 조치: 우클릭 및 복사 방지 (복사 시 날씨 API 키를 HIDDEN으로 치환) */
-    document.addEventListener("contextmenu", event => event.preventDefault());
-    let blockUntil = 0; // 차단 해제 시각 (밀리초)
-    document.addEventListener("copy", function(e) {
-      e.preventDefault();
-      let selectedText = window.getSelection().toString();
-      // 날씨 API 키가 복사되는 것을 방지
-      selectedText = selectedText.replace(/396bfaf4974ab9c336b3fb46e15242da/g, "HIDDEN");
-      e.clipboardData.setData("text/plain", selectedText);
-      // 복사 시 차단 처리
-      if (Date.now() < blockUntil) return;
-      blockUntil = Date.now() + 3600000; // 1시간 차단
-      showSpeechBubbleInChunks("1시간동안 차단됩니다.");
-    });
+    // 날씨 API 키 하드코딩 (항상 사용됨)
+    const weatherKey = "396bfaf4974ab9c336b3fb46e15242da";
     
-    /* 날씨 API 키는 URL에 ?auth=1 파라미터가 있을 때만 노출, 그 외엔 빈 문자열 */
-    const weatherKey = (window.location.search.indexOf("auth=1") !== -1) 
-                         ? "396bfaf4974ab9c336b3fb46e15242da" 
-                         : "";
+    /* ====================================
+       3D 씬, 달력, 채팅 및 날씨 통합 설정
+    ==================================== */
     let currentWeather = "";
-    
-    /* 파일 저장 함수 (브라우저 기본 다운로드 방식) */
-    function saveFile() {
-      const content = "파일 저장 완료";
-      const filename = "saved_file.txt";
-      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-    
-    /* 캘린더 저장 함수 (현재 달력 이벤트를 JSON 파일로 저장) */
-    function saveCalendar() {
-      const daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
-      const calendarData = {};
-      for (let d = 1; d <= daysInMonth; d++){
-        const eventDiv = document.getElementById(`event-${currentYear}-${currentMonth+1}-${d}`);
-        if (eventDiv && eventDiv.textContent.trim() !== "") {
-          calendarData[`${currentYear}-${currentMonth+1}-${d}`] = eventDiv.textContent;
-        }
-      }
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(calendarData, null, 2));
-      const dlAnchorElem = document.createElement("a");
-      dlAnchorElem.setAttribute("href", dataStr);
-      dlAnchorElem.setAttribute("download", "calendar_events.json");
-      dlAnchorElem.style.display = "none";
-      document.body.appendChild(dlAnchorElem);
-      dlAnchorElem.click();
-      document.body.removeChild(dlAnchorElem);
-    }
-    
-    /* 채팅 및 날씨 API 통합 함수 */
-    async function sendChat() {
-      const inputEl = document.getElementById("chat-input");
-      const input = inputEl.value.trim();
-      
-      // 차단 중이면
-      if (Date.now() < blockUntil) {
-        showSpeechBubbleInChunks("1시간동안 차단됩니다.");
-        inputEl.value = "";
-        return;
-      }
-      
-      if (!input) return;
-      
-      let response = "";
-      const lowerInput = input.toLowerCase();
-      
-      // 파일 저장 관련
-      if (lowerInput.includes("파일 저장해줘")) {
-        response = "네, 알겠습니다. 파일 저장하겠습니다.";
-        saveFile();
-      }
-      // 캘린더 저장 관련 (여러 형태 지원)
-      else if ((lowerInput.includes("캘린더") && lowerInput.includes("저장")) ||
-               lowerInput.includes("일정저장") ||
-               lowerInput.includes("하루일과저장")) {
-        response = "네, 알겠습니다. 캘린더 저장하겠습니다.";
-        saveCalendar();
-      }
-      // 날씨 관련 문의
-      else if (lowerInput.includes("날씨") &&
-         (lowerInput.includes("알려") || lowerInput.includes("어때") ||
-          lowerInput.includes("뭐야") || lowerInput.includes("어떻게") || lowerInput.includes("맑아"))) {
-        response = await getWeather();
-      }
-      // 기분 관련 (입력에 "기분"과 "좋아"가 모두 포함되면)
-      else if (lowerInput.includes("기분") && lowerInput.includes("좋아")) {
-        response = "정말요!? 저도 정말 기분좋아요😁";
-        // 눈 반짝임 효과
-        const originalEyeColor = leftEye.material.color.getHex();
-        leftEye.material.color.set(0xffff00);
-        rightEye.material.color.set(0xffff00);
-        setTimeout(() => {
-          leftEye.material.color.set(originalEyeColor);
-          rightEye.material.color.set(originalEyeColor);
-        }, 500);
-        // 눈썹 움직임 효과
-        const originalLeftBrowRotation = leftBrow.rotation.x;
-        const originalRightBrowRotation = rightBrow.rotation.x;
-        const eyebrowInterval = setInterval(() => {
-          const angle = Math.sin(Date.now() * 0.005) * 0.3;
-          leftBrow.rotation.x = originalLeftBrowRotation + angle;
-          rightBrow.rotation.x = originalRightBrowRotation + angle;
-        }, 50);
-        setTimeout(() => {
-          clearInterval(eyebrowInterval);
-          leftBrow.rotation.x = originalLeftBrowRotation;
-          rightBrow.rotation.x = originalRightBrowRotation;
-        }, 3000);
-      }
-      else if (lowerInput.includes("안녕")) {
-        response = "안녕하세요, 주인님! 오늘 기분은 어떠세요?";
-        characterGroup.children[7].rotation.z = Math.PI / 4;
-        setTimeout(() => { characterGroup.children[7].rotation.z = 0; }, 1000);
-      }
-      else if (lowerInput.includes("캐릭터 넌 누구야")) {
-        response = "저는 당신의 개인 비서에요.";
-      }
-      else if (lowerInput.includes("일정")) {
-        response = "캘린더는 왼쪽에서 확인하세요.";
-      }
-      else if (lowerInput.includes("캐릭터 춤춰줘")) {
-        response = "춤출게요!";
-        if (danceInterval) clearInterval(danceInterval);
-        danceInterval = setInterval(() => {
-          characterGroup.children[7].rotation.z = Math.sin(Date.now() * 0.01) * Math.PI / 4;
-          head.rotation.y = Math.sin(Date.now() * 0.01) * Math.PI / 8;
-        }, 50);
-        setTimeout(() => {
-          clearInterval(danceInterval);
-          characterGroup.children[7].rotation.z = 0;
-          head.rotation.y = 0;
-        }, 3000);
-      }
-      else {
-        response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
-      }
-      
-      // 오직 캐릭터의 응답만 말풍선에 표시
-      showSpeechBubbleInChunks(response);
-      inputEl.value = "";
-    }
-    
-    // OpenWeatherMap API 호출 및 날씨 정보 업데이트 (서울 기준)
-    async function getWeather() {
-      try {
-        const city = "Seoul";
-        const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${weatherKey}&units=metric&lang=kr`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("날씨 API 호출 실패");
-        const data = await res.json();
-        const description = data.weather[0].description;
-        const temp = data.main.temp;
-        currentWeather = description;
-        return `오늘 ${city}의 날씨는 ${description}이며, 온도는 ${temp}°C입니다.`;
-      } catch (err) {
-        currentWeather = "";
-        return "날씨 정보를 가져오지 못했습니다.";
-      }
-    }
-    
-    // currentWeather에 따라 비, 구름 효과 연동
-    function updateWeatherEffects() {
-      if (currentWeather.indexOf("비") !== -1 || currentWeather.indexOf("소나기") !== -1) {
-        rainGroup.visible = true;
-      } else {
-        rainGroup.visible = false;
-      }
-      if (currentWeather.indexOf("구름") !== -1) {
-        houseCloudGroup.visible = true;
-      } else {
-        houseCloudGroup.visible = false;
-      }
-    }
-    
-    // 번개 효과 (랜덤)
-    function updateLightning() {
-      if (currentWeather.indexOf("번개") !== -1 || currentWeather.indexOf("뇌우") !== -1) {
-        if (Math.random() < 0.001) {
-          lightningLight.intensity = 5;
-          setTimeout(() => { lightningLight.intensity = 0; }, 100);
-        }
-      }
-    }
-    
-    // 말풍선을 일정 크기로 쪼개서 순차적으로 표시
-    function showSpeechBubbleInChunks(text, chunkSize = 15, delay = 3000) {
-      const bubble = document.getElementById("speech-bubble");
-      const chunks = [];
-      for (let i = 0; i < text.length; i += chunkSize) {
-        chunks.push(text.slice(i, i + chunkSize));
-      }
-      let index = 0;
-      function showNextChunk() {
-        if (index < chunks.length) {
-          bubble.textContent = chunks[index];
-          bubble.style.display = "block";
-          index++;
-          setTimeout(showNextChunk, delay);
-        } else {
-          setTimeout(() => { bubble.style.display = "none"; }, 3000);
-        }
-      }
-      showNextChunk();
-    }
-    
-    // DOMContentLoaded 후에 엔터키 이벤트 등록 (전송 버튼은 제거됨)
-    window.addEventListener("DOMContentLoaded", function() {
-      document.getElementById("chat-input").addEventListener("keydown", function(e) {
-        if (e.key === "Enter") sendChat();
-      });
-    });
-    
-    // 창 크기 변경 시 3D 캔버스 업데이트
-    window.addEventListener("resize", function(){
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-  </script>
-</head>
-<body>
-  <!-- 오른쪽 HUD: 채팅 UI (채팅 로그 숨김, 전송 버튼 제거) -->
-  <div id="right-hud">
-    <h3>채팅창</h3>
-    <div id="chat-log"></div>
-    <div id="chat-input-area">
-      <input type="text" id="chat-input" placeholder="채팅 입력..." />
-    </div>
-  </div>
-  
-  <!-- 왼쪽 HUD: 달력 UI -->
-  <div id="left-hud">
-    <h3>캘린더</h3>
-    <div id="calendar-container">
-      <div id="calendar-header">
-        <button id="prev-month">◀</button>
-        <span id="month-year-label"></span>
-        <button id="next-month">▶</button>
-        <select id="year-select"></select>
-      </div>
-      <div id="calendar-actions">
-        <button id="delete-day-event">하루일정 삭제</button>
-        <button id="save-calendar">바탕화면 저장</button>
-      </div>
-      <div id="calendar-grid"></div>
-    </div>
-  </div>
-  
-  <!-- 말풍선 (3D 캐릭터 말풍선) -->
-  <div id="speech-bubble"></div>
-  
-  <!-- 3D 캔버스 -->
-  <canvas id="canvas"></canvas>
-  
-  <script>
-    /* Three.js 3D 씬 설정 및 애니메이션 */
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("canvas"), alpha: true });
@@ -438,7 +200,7 @@
       fireflies.push(firefly);
     }
     
-    // 바닥
+    // 고해상도 바닥
     const floorGeometry = new THREE.PlaneGeometry(200, 200, 128, 128);
     const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 1, metalness: 0 });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
@@ -467,6 +229,7 @@
       houseGroup.add(roof);
       return houseGroup;
     }
+    // 빌딩 배치 (5열×2행)
     for (let i = 0; i < 10; i++) {
       const width = Math.random() * 2 + 2;
       const height = Math.random() * 10 + 10;
@@ -479,6 +242,7 @@
       building.position.set(x, -2 + height/2, z);
       backgroundGroup.add(building);
     }
+    // 집 배치 (1행, 캐릭터 뒤쪽, Z = -5)
     for (let i = 0; i < 5; i++) {
       const width = Math.random() * 2 + 3;
       const height = Math.random() * 2 + 3;
@@ -489,6 +253,7 @@
       house.position.set(x, 0, z);
       backgroundGroup.add(house);
     }
+    // 단일 가로등: 캐릭터 옆에 배치
     function createStreetlight() {
       const lightGroup = new THREE.Group();
       const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 4, 8),
@@ -596,10 +361,132 @@
     characterGroup.add(charBody, head, leftEye, rightEye, mouth, leftBrow, rightBrow, leftArm, rightArm, leftLeg, rightLeg);
     characterGroup.position.y = -1;
     scene.add(characterGroup);
+    
     const characterLight = new THREE.PointLight(0xffee88, 1, 15);
     scene.add(characterLight);
     
-    /* 애니메이션 루프 */
+    // 말풍선 관련 함수
+    function updateBubblePosition() {
+      const bubble = document.getElementById("speech-bubble");
+      const headWorldPos = new THREE.Vector3();
+      head.getWorldPosition(headWorldPos);
+      const screenPos = headWorldPos.project(camera);
+      bubble.style.left = ((screenPos.x * 0.5 + 0.5) * window.innerWidth) + "px";
+      bubble.style.top = ((1 - (screenPos.y * 0.5 + 0.5)) * window.innerHeight - 50) + "px";
+    }
+    function showSpeechBubbleInChunks(text, chunkSize = 15, delay = 3000) {
+      const bubble = document.getElementById("speech-bubble");
+      const chunks = [];
+      for (let i = 0; i < text.length; i += chunkSize) {
+        chunks.push(text.slice(i, i + chunkSize));
+      }
+      let index = 0;
+      function showNextChunk() {
+        if (index < chunks.length) {
+          bubble.textContent = chunks[index];
+          bubble.style.display = "block";
+          index++;
+          setTimeout(showNextChunk, delay);
+        } else {
+          setTimeout(() => { bubble.style.display = "none"; }, 3000);
+        }
+      }
+      showNextChunk();
+    }
+    
+    /* 채팅 전송 – 엔터키 이벤트로 동작 */
+    async function sendChat() {
+      const inputEl = document.getElementById("chat-input");
+      const input = inputEl.value.trim();
+      if (!input) return;
+      let response = "";
+      const lowerInput = input.toLowerCase();
+      
+      if (lowerInput.includes("안녕")) {
+        response = "안녕하세요, 주인님! 오늘 기분은 어떠세요?";
+        characterGroup.children[7].rotation.z = Math.PI/4;
+        setTimeout(() => { characterGroup.children[7].rotation.z = 0; }, 1000);
+      }
+      else if (lowerInput.includes("캐릭터 넌 누구야")) {
+        response = "저는 당신의 개인 비서에요.";
+      }
+      else if (lowerInput.includes("일정")) {
+        response = "캘린더는 좌측에서 확인하세요.";
+      }
+      else if (lowerInput.includes("날씨") && (lowerInput.includes("알려") || lowerInput.includes("어때"))) {
+        response = await getWeather();
+      }
+      else if (lowerInput.includes("알려줘") || lowerInput.includes("알려주세요")) {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString();
+        response = `${timeStr} 기준, 오늘 일정은 "예시 일정1, 예시 일정2"입니다.`;
+      }
+      else if (lowerInput.includes("캐릭터 춤춰줘")) {
+        response = "춤출게요!";
+        danceInterval = setInterval(() => {
+          characterGroup.children[7].rotation.z = Math.sin(Date.now() * 0.01) * Math.PI/4;
+          head.rotation.y = Math.sin(Date.now() * 0.01) * Math.PI/8;
+        }, 50);
+        setTimeout(() => {
+          clearInterval(danceInterval);
+          characterGroup.children[7].rotation.z = 0;
+          head.rotation.y = 0;
+        }, 3000);
+      }
+      else {
+        response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
+      }
+      
+      showSpeechBubbleInChunks(response);
+      inputEl.value = "";
+    }
+    
+    document.getElementById("chat-input").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") sendChat();
+    });
+    
+    /* OpenWeatherMap API 호출 */
+    async function getWeather() {
+      try {
+        const city = "Seoul";
+        const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${weatherKey}&units=metric&lang=kr`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("날씨 API 호출 실패");
+        const data = await res.json();
+        const description = data.weather[0].description;
+        const temp = data.main.temp;
+        currentWeather = description;
+        return `오늘 ${city}의 날씨는 ${description}이며, 온도는 ${temp}°C입니다.`;
+      } catch (err) {
+        currentWeather = "";
+        return "날씨 정보를 가져오지 못했습니다.";
+      }
+    }
+    
+    function updateWeatherEffects() {
+      if (currentWeather.indexOf("비") !== -1 || currentWeather.indexOf("소나기") !== -1) {
+        rainGroup.visible = true;
+      } else {
+        rainGroup.visible = false;
+      }
+      if (currentWeather.indexOf("구름") !== -1) {
+        houseCloudGroup.visible = true;
+      } else {
+        houseCloudGroup.visible = false;
+      }
+    }
+    function updateLightning() {
+      if (currentWeather.indexOf("번개") !== -1 || currentWeather.indexOf("뇌우") !== -1) {
+        if (Math.random() < 0.001) {
+          lightningLight.intensity = 5;
+          setTimeout(() => { lightningLight.intensity = 0; }, 100);
+        }
+      }
+    }
+    
+    /* ====================================
+       애니메이션 루프 (3D 씬 업데이트)
+    ==================================== */
     function animate() {
       requestAnimationFrame(animate);
       
@@ -625,7 +512,7 @@
       );
       moon.position.copy(moonPos);
       
-      const t = now.getHours() + now.getMinutes() / 60;
+      const t = now.getHours() + now.getMinutes()/60;
       let sunOpacity = 0, moonOpacity = 0;
       if (t < 6) { sunOpacity = 0; moonOpacity = 1; }
       else if (t < 7) { let factor = (t - 6); sunOpacity = factor; moonOpacity = 1 - factor; }
@@ -641,25 +528,65 @@
       fireflies.forEach(f => f.visible = !isDay);
       
       characterStreetlight.traverse(child => {
-        if (child instanceof THREE.PointLight) { child.intensity = isDay ? 0 : 1; }
+        if(child instanceof THREE.PointLight) { child.intensity = isDay ? 0 : 1; }
       });
       characterLight.position.copy(characterGroup.position).add(new THREE.Vector3(0, 5, 0));
       characterLight.intensity = isDay ? 0 : 1;
       characterGroup.position.y = -1;
       characterGroup.rotation.x = 0;
       
-      // 날씨 효과 업데이트
       updateWeatherEffects();
       updateHouseClouds();
       updateLightning();
       characterStreetlight.position.set(characterGroup.position.x + 1, -2, characterGroup.position.z);
       updateBubblePosition();
       
+      if (rainGroup.visible) {
+        const rainPoints = rainGroup.children[0];
+        const positions = rainPoints.geometry.attributes.position.array;
+        for (let i = 0; i < positions.length; i += 3) {
+          positions[i+1] -= 0.5;
+          if (positions[i+1] < 0) { positions[i+1] = Math.random() * 50 + 20; }
+        }
+        rainPoints.geometry.attributes.position.needsUpdate = true;
+      }
+      
       renderer.render(scene, camera);
     }
     animate();
     
-    /* 달력 UI 관련 함수들 */
+    /* ====================================
+       튜토리얼 오버레이 – 간단 설명 (4초 후 자동 사라짐)
+    ==================================== */
+    function showTutorial() {
+      const tutorial = document.createElement("div");
+      tutorial.id = "tutorial";
+      tutorial.innerHTML = "이 화면은 3D 캐릭터, 달력, 채팅, 날씨 정보를 제공합니다.<br>좌측 달력에서 날짜를 클릭해 일정을 입력하고, 우측 채팅창에 명령어(예: '알려줘', '캐릭터 넌 누구야')를 입력해보세요.<br>이 버전은 구버전이며 계속 업데이트 예정입니다.";
+      document.body.appendChild(tutorial);
+      setTimeout(() => {
+        tutorial.style.transition = "opacity 1s";
+        tutorial.style.opacity = 0;
+        setTimeout(() => { tutorial.remove(); }, 1000);
+      }, 4000);
+    }
+    
+    window.addEventListener("load", () => {
+      initCalendar();
+      showTutorial();
+    });
+    
+    /* ====================================
+       창 크기 변경 시 3D 캔버스 업데이트
+    ==================================== */
+    window.addEventListener("resize", function(){
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+    
+    /* ====================================
+       달력 UI 관련 함수들
+    ==================================== */
     let currentYear, currentMonth;
     function initCalendar() {
       const now = new Date();
@@ -689,7 +616,7 @@
           const eventDiv = document.getElementById(`event-${currentYear}-${currentMonth+1}-${dayNum}`);
           if(eventDiv) {
             eventDiv.textContent = "";
-            alert(`${currentYear}-${currentMonth+1}-${dayNum} 일정이 삭제되었습니다. 다시 입력할 수 있습니다.`);
+            alert(`${currentYear}-${currentMonth+1}-${dayNum} 일정이 삭제되었습니다.`);
           } else {
             alert("해당 날짜의 셀이 없습니다. 현재 달에 있는 날짜를 입력해주세요.");
           }
@@ -742,33 +669,32 @@
             } else {
               eventDiv.textContent = eventText;
             }
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString();
+            const calendarMessage = `${timeStr} 기준, 오늘 일정: ${eventDiv.textContent}`;
+            console.log("캘린더 저장 메시지:", calendarMessage);
           }
         });
         grid.appendChild(cell);
       }
     }
-    function addEventToDay(dateStr, eventText) {
-      const eventDiv = document.getElementById(`event-${dateStr}`);
-      if(eventDiv) {
-        if(eventDiv.textContent) {
-          eventDiv.textContent += "; " + eventText;
-        } else {
-          eventDiv.textContent = eventText;
+    function saveCalendar() {
+      const daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
+      const calendarData = {};
+      for (let d = 1; d <= daysInMonth; d++){
+        const eventDiv = document.getElementById(`event-${currentYear}-${currentMonth+1}-${d}`);
+        if (eventDiv && eventDiv.textContent.trim() !== "") {
+          calendarData[`${currentYear}-${currentMonth+1}-${d}`] = eventDiv.textContent;
         }
       }
-    }
-    window.addEventListener("load", () => {
-      initCalendar();
-    });
-    
-    // 말풍선 위치 업데이트 (캐릭터 머리 기준)
-    function updateBubblePosition() {
-      const bubble = document.getElementById("speech-bubble");
-      const headWorldPos = new THREE.Vector3();
-      head.getWorldPosition(headWorldPos);
-      const screenPos = headWorldPos.project(camera);
-      bubble.style.left = ((screenPos.x * 0.5 + 0.5) * window.innerWidth) + "px";
-      bubble.style.top = ((1 - (screenPos.y * 0.5 + 0.5)) * window.innerHeight - 50) + "px";
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(calendarData, null, 2));
+      const dlAnchorElem = document.createElement("a");
+      dlAnchorElem.setAttribute("href", dataStr);
+      dlAnchorElem.setAttribute("download", "calendar_events.json");
+      dlAnchorElem.style.display = "none";
+      document.body.appendChild(dlAnchorElem);
+      dlAnchorElem.click();
+      document.body.removeChild(dlAnchorElem);
     }
   </script>
 </body>
