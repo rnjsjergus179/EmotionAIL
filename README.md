@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -234,7 +233,13 @@
       let response = "";
       const lowerInput = input.toLowerCase();
       
-      if (lowerInput.includes("파일 저장해줘")) {
+      if (lowerInput.includes("시간") || lowerInput.includes("몇시") || lowerInput.includes("현재시간")) {
+        const now = new Date();
+        const hours = now.getHours();
+        const minutes = now.getMinutes();
+        response = `현재 시간은 ${hours}시 ${minutes}분입니다.`;
+      }
+      else if (lowerInput.includes("파일 저장해줘")) {
         response = "네, 알겠습니다. 파일 저장하겠습니다.";
         saveFile();
       }
@@ -461,7 +466,6 @@
   <canvas id="canvas"></canvas>
   
   <script>
-    // ----- Three.js 기본 설정 -----
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("canvas"), alpha: true });
@@ -474,7 +478,6 @@
     scene.add(directionalLight);
     scene.add(new THREE.AmbientLight(0x333333));
     
-    // ----- 해/달 구현 -----
     const sunMaterial = new THREE.MeshStandardMaterial({ color: 0xffcc00, emissive: 0xff9900, transparent: true, opacity: 0 });
     const sun = new THREE.Mesh(new THREE.SphereGeometry(1.5, 64, 64), sunMaterial);
     scene.add(sun);
@@ -485,25 +488,18 @@
     
     const stars = [], fireflies = [];
     for (let i = 0; i < 200; i++) {
-      const star = new THREE.Mesh(
-        new THREE.SphereGeometry(0.03, 8, 8),
-        new THREE.MeshBasicMaterial({ color: 0xffffff })
-      );
+      const star = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
       star.position.set((Math.random()-0.5)*100, (Math.random()-0.5)*60, -20);
       scene.add(star);
       stars.push(star);
     }
     for (let i = 0; i < 60; i++) {
-      const firefly = new THREE.Mesh(
-        new THREE.SphereGeometry(0.05, 8, 8),
-        new THREE.MeshBasicMaterial({ color: 0xffff99 })
-      );
+      const firefly = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffff99 }));
       firefly.position.set((Math.random()-0.5)*40, (Math.random()-0.5)*20, -10);
       scene.add(firefly);
       fireflies.push(firefly);
     }
     
-    // ----- 바닥 -----
     const floorGeometry = new THREE.PlaneGeometry(400, 400, 128, 128);
     const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 1, metalness: 0 });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
@@ -511,10 +507,8 @@
     floor.position.y = -2;
     scene.add(floor);
     
-    // ----- 건물/배경 그룹 -----
     const backgroundGroup = new THREE.Group();
     scene.add(backgroundGroup);
-    
     function createBuilding(width, height, depth, color) {
       const buildingGroup = new THREE.Group();
       const geometry = new THREE.BoxGeometry(width, height, depth);
@@ -522,7 +516,6 @@
       const building = new THREE.Mesh(geometry, material);
       buildingGroup.add(building);
       
-      // 간단한 창문(색으로 표현)
       const windowMat = new THREE.MeshStandardMaterial({ color: 0x87CEEB });
       for (let y = 3; y < height - 1; y += 2) {
         for (let x = -width/2 + 0.5; x < width/2; x += 1) {
@@ -531,8 +524,6 @@
           buildingGroup.add(window);
         }
       }
-      
-      // 문
       const doorMat = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
       const door = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 0.1), doorMat);
       door.position.set(0, -height/2 + 1, depth/2 + 0.01);
@@ -540,25 +531,18 @@
       
       return buildingGroup;
     }
-    
     function createHouse(width, height, depth, baseColor, roofColor) {
       const houseGroup = new THREE.Group();
-      const base = new THREE.Mesh(
-        new THREE.BoxGeometry(width, height, depth),
-        new THREE.MeshStandardMaterial({ color: baseColor, roughness: 0.8 })
-      );
+      const base = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth),
+                                  new THREE.MeshStandardMaterial({ color: baseColor, roughness: 0.8 }));
       base.position.y = -2 + height/2;
       houseGroup.add(base);
-      
-      const roof = new THREE.Mesh(
-        new THREE.ConeGeometry(width * 0.8, height * 0.6, 4),
-        new THREE.MeshStandardMaterial({ color: roofColor, roughness: 0.8 })
-      );
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(width * 0.8, height * 0.6, 4),
+                                  new THREE.MeshStandardMaterial({ color: roofColor, roughness: 0.8 }));
       roof.position.y = -2 + height + (height * 0.6)/2;
       roof.rotation.y = Math.PI/4;
       houseGroup.add(roof);
       
-      // 창문
       const windowMat = new THREE.MeshStandardMaterial({ color: 0xFFFFE0 });
       const window1 = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.1), windowMat);
       window1.position.set(-width/4, -2 + height/2, depth/2 + 0.01);
@@ -566,7 +550,6 @@
       window2.position.set(width/4, -2 + height/2, depth/2 + 0.01);
       houseGroup.add(window1, window2);
       
-      // 문
       const doorMat = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
       const door = new THREE.Mesh(new THREE.BoxGeometry(1, 1.5, 0.1), doorMat);
       door.position.set(0, -2 + height/4, depth/2 + 0.01);
@@ -574,8 +557,6 @@
       
       return houseGroup;
     }
-    
-    // ----- 건물, 집 생성 예시 -----
     for (let i = 0; i < 20; i++) {
       const width = Math.random() * 4 + 4;
       const height = Math.random() * 20 + 20;
@@ -598,58 +579,16 @@
       house.position.set(x, 0, z);
       backgroundGroup.add(house);
     }
-    
-    // ====== 여기서부터 '나무' 추가 ======
-    function createTree() {
-      const treeGroup = new THREE.Group();
-      
-      // 나무 기둥(줄기)
-      const trunk = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.2, 0.2, 2, 16),
-        new THREE.MeshStandardMaterial({ color: 0x8B4513 })
-      );
-      trunk.position.y = 1; // 길이가 2이므로 중앙을 기준으로 y=1에 놓으면 바닥이 y=0
-      treeGroup.add(trunk);
-      
-      // 나뭇잎(위쪽 구형)
-      const foliage = new THREE.Mesh(
-        new THREE.SphereGeometry(1, 16, 16),
-        new THREE.MeshStandardMaterial({ color: 0x228B22 })
-      );
-      foliage.position.y = 2.5; // 줄기보다 조금 더 위에
-      treeGroup.add(foliage);
-      
-      return treeGroup;
-    }
-    
-    // 나무 여러 그루를 랜덤 배치(필요에 따라 위치/개수 조절)
-    for (let i = 0; i < 10; i++) {
-      const tree = createTree();
-      // -40 ~ 40 사이 랜덤 X, -40 ~ 0 사이 랜덤 Z 정도로 예시
-      const randX = Math.random() * 80 - 40;
-      const randZ = Math.random() * 40 - 40;
-      tree.position.set(randX, -2, randZ);
-      backgroundGroup.add(tree);
-    }
-    // ====== 나무 추가 끝 ======
-
-    // ----- 가로등 -----
     function createStreetlight() {
       const lightGroup = new THREE.Group();
-      const pole = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.1, 0.1, 4, 8),
-        new THREE.MeshBasicMaterial({ color: 0x333333 })
-      );
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 4, 8),
+                                    new THREE.MeshBasicMaterial({ color: 0x333333 }));
       pole.position.y = 2;
       lightGroup.add(pole);
-      
-      const lamp = new THREE.Mesh(
-        new THREE.SphereGeometry(0.2, 8, 8),
-        new THREE.MeshBasicMaterial({ color: 0xffcc00 })
-      );
+      const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8),
+                                    new THREE.MeshBasicMaterial({ color: 0xffcc00 }));
       lamp.position.y = 4.2;
       lightGroup.add(lamp);
-      
       const lampLight = new THREE.PointLight(0xffcc00, 1, 10);
       lampLight.position.set(0, 4.2, 0);
       lightGroup.add(lampLight);
@@ -659,7 +598,6 @@
     characterStreetlight.position.set(1, -2, 0);
     scene.add(characterStreetlight);
     
-    // ----- 비 표현 -----
     let rainGroup = new THREE.Group();
     scene.add(rainGroup);
     function initRain() {
@@ -679,7 +617,6 @@
     initRain();
     rainGroup.visible = false;
     
-    // ----- 구름 구현 -----
     let houseCloudGroup = new THREE.Group();
     function createHouseCloud() {
       const cloud = new THREE.Group();
@@ -700,71 +637,62 @@
     scene.add(houseCloudGroup);
     function updateHouseClouds() {
       singleCloud.position.x += 0.02;
-      if (singleCloud.position.x > 10) {
-        singleCloud.position.x = -10;
-      }
+      if (singleCloud.position.x > 10) { singleCloud.position.x = -10; }
     }
     
-    // ----- 번개 -----
     let lightningLight = new THREE.PointLight(0xffffff, 0, 500);
     lightningLight.position.set(0, 50, 0);
     scene.add(lightningLight);
     
-    // ----- 캐릭터 생성 -----
-    let danceInterval;
     const characterGroup = new THREE.Group();
-    
-    const charBody = new THREE.Mesh(
-      new THREE.BoxGeometry(1, 1.5, 0.5),
-      new THREE.MeshStandardMaterial({ color: 0x00cc66 })
-    );
-    const head = new THREE.Mesh(
-      new THREE.SphereGeometry(0.5, 32, 32),
-      new THREE.MeshStandardMaterial({ color: 0xffcc66 })
-    );
+    const charBody = new THREE.Mesh(new THREE.BoxGeometry(1, 1.5, 0.5),
+                                    new THREE.MeshStandardMaterial({ color: 0x00cc66 }));
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32),
+                                new THREE.MeshStandardMaterial({ color: 0xffcc66 }));
     head.position.y = 1.2;
-    
     const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
     const leftEye = new THREE.Mesh(new THREE.SphereGeometry(0.07, 16, 16), eyeMat);
     const rightEye = new THREE.Mesh(new THREE.SphereGeometry(0.07, 16, 16), eyeMat);
     leftEye.position.set(-0.2, 1.3, 0.45);
     rightEye.position.set(0.2, 1.3, 0.45);
-    
-    const mouth = new THREE.Mesh(
-      new THREE.BoxGeometry(0.2, 0.05, 0.05),
-      new THREE.MeshStandardMaterial({ color: 0xff3366 })
-    );
+    const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.05, 0.05),
+                                 new THREE.MeshStandardMaterial({ color: 0xff3366 }));
     mouth.position.set(0, 1.1, 0.51);
-    
     const leftBrow = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.05, 0.05), eyeMat);
     const rightBrow = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.05, 0.05), eyeMat);
     leftBrow.position.set(-0.2, 1.45, 0.45);
     rightBrow.position.set(0.2, 1.45, 0.45);
-    
     const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1, 0.2), charBody.material);
     const rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1, 0.2), charBody.material);
     leftArm.position.set(-0.7, 0.4, 0);
     rightArm.position.set(0.7, 0.4, 0);
-    
     const legMat = new THREE.MeshStandardMaterial({ color: 0x3366cc });
     const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1, 0.3), legMat);
     const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1, 0.3), legMat);
     leftLeg.position.set(-0.35, -1, 0);
     rightLeg.position.set(0.35, -1, 0);
-    
-    characterGroup.add(
-      charBody, head, leftEye, rightEye,
-      mouth, leftBrow, rightBrow,
-      leftArm, rightArm, leftLeg, rightLeg
-    );
+    characterGroup.add(charBody, head, leftEye, rightEye, mouth, leftBrow, rightBrow, leftArm, rightArm, leftLeg, rightLeg);
     characterGroup.position.y = -1;
     scene.add(characterGroup);
-    
-    // 캐릭터 주변 조명
     const characterLight = new THREE.PointLight(0xffee88, 1, 15);
     scene.add(characterLight);
     
-    // ----- 애니메이션 루프 -----
+    function createTree() {
+      const treeGroup = new THREE.Group();
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 2, 16), new THREE.MeshStandardMaterial({ color: 0x8B4513 }));
+      trunk.position.y = -1;
+      const foliage = new THREE.Mesh(new THREE.ConeGeometry(1, 3, 16), new THREE.MeshStandardMaterial({ color: 0x228B22 }));
+      foliage.position.y = 0.5;
+      treeGroup.add(trunk, foliage);
+      return treeGroup;
+    }
+
+    for (let i = 0; i < 10; i++) {
+      const tree = createTree();
+      tree.position.set(-50 + i * 10, -2, -15);
+      scene.add(tree);
+    }
+
     function animate() {
       requestAnimationFrame(animate);
       
@@ -791,19 +719,11 @@
       
       const t = now.getHours() + now.getMinutes() / 60;
       let sunOpacity = 0, moonOpacity = 0;
-      if (t < 6) {
-        sunOpacity = 0; moonOpacity = 1;
-      } else if (t < 7) {
-        let factor = (t - 6);
-        sunOpacity = factor; moonOpacity = 1 - factor;
-      } else if (t < 17) {
-        sunOpacity = 1; moonOpacity = 0;
-      } else if (t < 18) {
-        let factor = (t - 17);
-        sunOpacity = 1 - factor; moonOpacity = factor;
-      } else {
-        sunOpacity = 0; moonOpacity = 1;
-      }
+      if (t < 6) { sunOpacity = 0; moonOpacity = 1; }
+      else if (t < 7) { let factor = (t - 6); sunOpacity = factor; moonOpacity = 1 - factor; }
+      else if (t < 17) { sunOpacity = 1; moonOpacity = 0; }
+      else if (t < 18) { let factor = (t - 17); sunOpacity = 1 - factor; moonOpacity = factor; }
+      else { sunOpacity = 0; moonOpacity = 1; }
       sun.material.opacity = sunOpacity;
       moon.material.opacity = moonOpacity;
       
@@ -813,13 +733,12 @@
       fireflies.forEach(f => f.visible = !isDay);
       
       characterStreetlight.traverse(child => {
-        if (child instanceof THREE.PointLight) {
-          child.intensity = isDay ? 0 : 1;
-        }
+        if (child instanceof THREE.PointLight) { child.intensity = isDay ? 0 : 1; }
       });
       characterLight.position.copy(characterGroup.position).add(new THREE.Vector3(0, 5, 0));
       characterLight.intensity = isDay ? 0 : 1;
       characterGroup.position.y = -1;
+      characterGroup.rotation.x = 0;
       
       updateWeatherEffects();
       updateHouseClouds();
@@ -831,7 +750,6 @@
     }
     animate();
     
-    // ----- 달력 초기화 -----
     let currentYear, currentMonth;
     function initCalendar() {
       const now = new Date();
@@ -841,18 +759,12 @@
       renderCalendar(currentYear, currentMonth);
       document.getElementById("prev-month").addEventListener("click", () => {
         currentMonth--;
-        if (currentMonth < 0) {
-          currentMonth = 11;
-          currentYear--;
-        }
+        if (currentMonth < 0) { currentMonth = 11; currentYear--; }
         renderCalendar(currentYear, currentMonth);
       });
       document.getElementById("next-month").addEventListener("click", () => {
         currentMonth++;
-        if (currentMonth > 11) {
-          currentMonth = 0;
-          currentYear++;
-        }
+        if (currentMonth > 11) { currentMonth = 0; currentYear++; }
         renderCalendar(currentYear, currentMonth);
       });
       document.getElementById("year-select").addEventListener("change", (e) => {
