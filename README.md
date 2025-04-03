@@ -141,21 +141,28 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   
   <script>
-    /* 보안 조치: 우클릭, 복사 방지 */
+    /* 보안 조치: 우클릭 및 복사 방지 (복사 시 날씨 API 키를 HIDDEN으로 치환) */
     document.addEventListener("contextmenu", event => event.preventDefault());
+    let blockUntil = 0; // 차단 해제 시각 (밀리초)
     document.addEventListener("copy", function(e) {
-      alert("코드 복사가 감지되었습니다. 기능이 차단됩니다.");
-      document.body.innerHTML = "";
       e.preventDefault();
+      let selectedText = window.getSelection().toString();
+      // 날씨 API 키가 복사되는 것을 방지
+      selectedText = selectedText.replace(/396bfaf4974ab9c336b3fb46e15242da/g, "HIDDEN");
+      e.clipboardData.setData("text/plain", selectedText);
+      // 복사 시 차단 처리
+      if (Date.now() < blockUntil) return;
+      blockUntil = Date.now() + 3600000; // 1시간 차단
+      showSpeechBubbleInChunks("1시간동안 차단됩니다.");
     });
     
-    /* 날씨 API 키는 URL에 ?auth=1 파라미터가 있을 때만 실제 키 사용 */
+    /* 날씨 API 키는 URL에 ?auth=1 파라미터가 있을 때만 노출, 그 외엔 빈 문자열 */
     const weatherKey = (window.location.search.indexOf("auth=1") !== -1) 
                          ? "396bfaf4974ab9c336b3fb46e15242da" 
                          : "";
     let currentWeather = "";
     
-    /* 파일 저장 함수 (파일은 기본 다운로드 폴더에 저장) */
+    /* 파일 저장 함수 (브라우저 기본 다운로드 방식) */
     function saveFile() {
       const content = "파일 저장 완료";
       const filename = "saved_file.txt";
@@ -192,6 +199,14 @@
     async function sendChat() {
       const inputEl = document.getElementById("chat-input");
       const input = inputEl.value.trim();
+      
+      // 차단 중이면
+      if (Date.now() < blockUntil) {
+        showSpeechBubbleInChunks("1시간동안 차단됩니다.");
+        inputEl.value = "";
+        return;
+      }
+      
       if (!input) return;
       
       let response = "";
@@ -202,7 +217,7 @@
         response = "네, 알겠습니다. 파일 저장하겠습니다.";
         saveFile();
       }
-      // 캘린더 저장 관련 (여러 형태의 명령어 지원)
+      // 캘린더 저장 관련 (여러 형태 지원)
       else if ((lowerInput.includes("캘린더") && lowerInput.includes("저장")) ||
                lowerInput.includes("일정저장") ||
                lowerInput.includes("하루일과저장")) {
@@ -268,7 +283,7 @@
         response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
       }
       
-      // 말풍선에 오직 캐릭터의 응답만 표시
+      // 오직 캐릭터의 응답만 말풍선에 표시
       showSpeechBubbleInChunks(response);
       inputEl.value = "";
     }
@@ -352,7 +367,7 @@
   </script>
 </head>
 <body>
-  <!-- 오른쪽 HUD: 채팅 UI (채팅 로그 숨김, 전송 버튼 삭제) -->
+  <!-- 오른쪽 HUD: 채팅 UI (채팅 로그 숨김, 전송 버튼 제거) -->
   <div id="right-hud">
     <h3>채팅창</h3>
     <div id="chat-log"></div>
