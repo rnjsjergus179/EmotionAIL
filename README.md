@@ -190,7 +190,7 @@
       inputEl.value = "";
     }
     
-    // OpenWeatherMap API를 호출하여 서울의 날씨 정보를 가져오고, currentWeather 업데이트
+    // OpenWeatherMap API 호출 및 날씨 정보 가져오기 (서울 기준)
     async function getWeather() {
       try {
         const city = "Seoul";
@@ -253,9 +253,11 @@
       showNextChunk();
     }
     
-    // 엔터키 입력 시 sendChat() 호출 (전송 버튼은 삭제됨)
-    document.getElementById("chat-input").addEventListener("keydown", function(e) {
-      if (e.key === "Enter") sendChat();
+    // DOMContentLoaded 이후에 엔터키 이벤트 등록
+    window.addEventListener("DOMContentLoaded", function() {
+      document.getElementById("chat-input").addEventListener("keydown", function(e) {
+        if (e.key === "Enter") sendChat();
+      });
     });
     
     // 창 크기 변경 시 3D 캔버스 업데이트
