@@ -21,7 +21,7 @@
       z-index: 20;
     }
     #chat-log {
-      display: none; /* 필요하면 block으로 바꿀 수 있습니다. */
+      display: none;
       height: 100px;
       overflow-y: scroll;
       border: 1px solid #ccc;
@@ -170,7 +170,6 @@
     }
   </style>
   
-  <!-- Three.js CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   
   <script>
@@ -179,7 +178,7 @@
     document.addEventListener("copy", function(e) {
       e.preventDefault();
       let selectedText = window.getSelection().toString();
-      // API Key 마스킹 예시
+      // API Key 마스킹
       selectedText = selectedText.replace(/396bfaf4974ab9c336b3fb46e15242da/g, "HIDDEN");
       e.clipboardData.setData("text/plain", selectedText);
       if (Date.now() < blockUntil) return;
@@ -236,40 +235,24 @@
       let response = "";
       const lowerInput = input.toLowerCase();
       
-      // 파일 저장
       if (lowerInput.includes("파일 저장해줘")) {
         response = "네, 알겠습니다. 파일 저장하겠습니다.";
         saveFile();
       }
-      // 캘린더 저장
       else if ((lowerInput.includes("캘린더") && lowerInput.includes("저장")) ||
                lowerInput.includes("일정저장") ||
                lowerInput.includes("하루일과저장")) {
         response = "네, 알겠습니다. 캘린더 저장하겠습니다.";
         saveCalendar();
       }
-      // 날씨
       else if (lowerInput.includes("날씨") &&
-               (lowerInput.includes("알려") || lowerInput.includes("어때") ||
-                lowerInput.includes("뭐야") || lowerInput.includes("어떻게") || lowerInput.includes("맑아"))) {
+         (lowerInput.includes("알려") || lowerInput.includes("어때") ||
+          lowerInput.includes("뭐야") || lowerInput.includes("어떻게") || lowerInput.includes("맑아"))) {
         response = await getWeather();
       }
-      // 시간
-      else if (
-        lowerInput.includes("시간") ||
-        lowerInput.includes("현재 시간") ||
-        lowerInput.includes("시간알려줘") ||
-        lowerInput.includes("시간 뭐야")
-      ) {
-        const now = new Date();
-        const hours = now.getHours();
-        const minutes = now.getMinutes();
-        response = `지금 시각은 ${hours}시 ${minutes}분이에요!`;
-      }
-      // 기분
       else if (lowerInput.includes("기분") && lowerInput.includes("좋아")) {
         response = "정말요!? 저도 정말 기분좋아요😁";
-        // 눈 색/눈썹 움직임
+        // 눈 색/눈썹 움직임 예시
         const originalEyeColor = leftEye.material.color.getHex();
         leftEye.material.color.set(0xffff00);
         rightEye.material.color.set(0xffff00);
@@ -277,7 +260,6 @@
           leftEye.material.color.set(originalEyeColor);
           rightEye.material.color.set(originalEyeColor);
         }, 500);
-        
         const originalLeftBrowRotation = leftBrow.rotation.x;
         const originalRightBrowRotation = rightBrow.rotation.x;
         const eyebrowInterval = setInterval(() => {
@@ -291,22 +273,18 @@
           rightBrow.rotation.x = originalRightBrowRotation;
         }, 3000);
       }
-      // 인사
       else if (lowerInput.includes("안녕")) {
         response = "안녕하세요, 주인님! 오늘 기분은 어떠세요?";
         // 오른팔 가볍게 흔드는 예시
         characterGroup.children[7].rotation.z = Math.PI / 4;
         setTimeout(() => { characterGroup.children[7].rotation.z = 0; }, 1000);
       }
-      // 캐릭터 누구
       else if (lowerInput.includes("캐릭터 넌 누구야")) {
-        response = "저는 당신의 개인 비서 캐릭터랍니다!";
+        response = "저는 당신의 개인 비서에요.";
       }
-      // 일정(캘린더)
       else if (lowerInput.includes("일정")) {
-        response = "캘린더는 왼쪽에서 확인하실 수 있어요.";
+        response = "캘린더는 왼쪽에서 확인하세요.";
       }
-      // 춤
       else if (lowerInput.includes("캐릭터 춤춰줘")) {
         response = "춤출게요!";
         if (danceInterval) clearInterval(danceInterval);
@@ -320,7 +298,6 @@
           head.rotation.y = 0;
         }, 3000);
       }
-      // 일정 삭제
       else if (lowerInput.includes("하루일정 삭제해줘") || lowerInput.includes("일정 삭제")) {
         const dayStr = prompt("삭제할 하루일정의 날짜(일)를 입력하세요 (예: 15):");
         if (dayStr) {
@@ -330,13 +307,12 @@
             eventDiv.textContent = "";
             response = `${currentYear}-${currentMonth+1}-${dayNum} 일정이 삭제되었습니다.`;
           } else {
-            response = "해당 날짜 셀이 없습니다. 현재 달에 있는 날짜만 입력해주세요.";
+            response = "해당 날짜의 셀이 없습니다. 현재 달에 있는 날짜를 입력해주세요.";
           }
         } else {
-          response = "날짜를 입력하지 않았어요.";
+          response = "날짜를 입력하지 않았습니다.";
         }
       }
-      // 일정 입력
       else if (lowerInput.includes("입력하게 보여줘") || lowerInput.includes("일정 입력")) {
         const dayStr = prompt("일정을 입력할 날짜(일)를 입력하세요 (예: 15):");
         if (dayStr) {
@@ -352,16 +328,15 @@
               }
               response = `${currentYear}-${currentMonth+1}-${dayNum}에 일정이 추가되었습니다.`;
             } else {
-              response = "일정을 입력하지 않았어요.";
+              response = "일정을 입력하지 않았습니다.";
             }
           } else {
-            response = "해당 날짜 셀이 없습니다. 현재 달에 있는 날짜만 입력해주세요.";
+            response = "해당 날짜의 셀이 없습니다. 현재 달에 있는 날짜를 입력해주세요.";
           }
         } else {
-          response = "날짜를 입력하지 않았어요.";
+          response = "날짜를 입력하지 않았습니다.";
         }
       }
-      // 그 외
       else {
         response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
       }
@@ -380,10 +355,10 @@
         const description = data.weather[0].description;
         const temp = data.main.temp;
         currentWeather = description;
-        return `오늘 ${city}의 날씨는 ${description}이고, 온도는 ${temp}°C입니다.`;
+        return `오늘 ${city}의 날씨는 ${description}이며, 온도는 ${temp}°C입니다.`;
       } catch (err) {
         currentWeather = "";
-        return "날씨 정보를 가져오지 못했어요.";
+        return "날씨 정보를 가져오지 못했습니다.";
       }
     }
     
@@ -476,8 +451,8 @@
     <div id="tutorial-content">
       <h2>사용법 안내</h2>
       <p><strong>캐릭터:</strong> 채팅창에 "안녕", "캐릭터 춤춰줘" 등을 입력해 보세요.</p>
-      <p><strong>채팅창:</strong> "날씨 알려줘", "파일 저장해줘", "시간 알려줘" 등으로 명령해 보세요.</p>
-      <p><strong>캘린더:</strong> 왼쪽에서 날짜를 클릭해 일정을 추가하거나, 버튼으로 저장/삭제할 수 있습니다.</p>
+      <p><strong>채팅창:</strong> 오른쪽에서 "날씨 알려줘", "파일 저장해줘" 등으로 명령할 수 있습니다.</p>
+      <p><strong>캘린더:</strong> 왼쪽에서 날짜를 클릭해 일정을 추가하거나, 버튼으로 저장/삭제하세요.</p>
     </div>
   </div>
   
@@ -506,11 +481,11 @@
     
     // ----- 해/달 구현 -----
     const sunMaterial = new THREE.MeshStandardMaterial({ color: 0xffcc00, emissive: 0xff9900, transparent: true, opacity: 0 });
-    const sun = new THREE.Mesh(new THREE.SphereGeometry(1.5, 32, 32), sunMaterial);
+    const sun = new THREE.Mesh(new THREE.SphereGeometry(1.5, 64, 64), sunMaterial);
     scene.add(sun);
     
     const moonMaterial = new THREE.MeshStandardMaterial({ color: 0xcccccc, emissive: 0x222222, transparent: true, opacity: 1 });
-    const moon = new THREE.Mesh(new THREE.SphereGeometry(1.2, 32, 32), moonMaterial);
+    const moon = new THREE.Mesh(new THREE.SphereGeometry(1.2, 64, 64), moonMaterial);
     scene.add(moon);
     
     const stars = [], fireflies = [];
@@ -533,44 +508,46 @@
       fireflies.push(firefly);
     }
     
-    // ----- 콘크리트 바닥(바닥) -----
+    // ----- 바닥 -----
     const floorGeometry = new THREE.PlaneGeometry(400, 400, 128, 128);
-    // 콘크리트 느낌으로 그레이 컬러 설정
     const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 1, metalness: 0 });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI/2;
-    floor.position.y = -2; 
+    floor.position.y = -2;
     scene.add(floor);
     
     // ----- 건물/배경 그룹 -----
     const backgroundGroup = new THREE.Group();
     scene.add(backgroundGroup);
     
-    // 건물(빌딩) 생성 함수 (창문/문 포함)
+    // (1) 건물 생성 (창문을 조금 더 광택 있게)
     function createBuilding(width, height, depth, color) {
       const buildingGroup = new THREE.Group();
-      
-      // 본체
       const geometry = new THREE.BoxGeometry(width, height, depth);
       const material = new THREE.MeshStandardMaterial({ color, roughness: 0.7, metalness: 0.1 });
       const building = new THREE.Mesh(geometry, material);
       buildingGroup.add(building);
       
-      // 창문(2D) - MeshBasicMaterial 사용
-      const windowMat = new THREE.MeshBasicMaterial({ color: 0x87CEEB });
+      // 고해상도 느낌을 위한 창문(PhongMaterial로 광택)
+      const windowMat = new THREE.MeshPhongMaterial({
+        color: 0x87CEEB,
+        specular: 0xffffff,
+        shininess: 100
+      });
+      
       for (let y = 3; y < height - 1; y += 2) {
         for (let x = -width/2 + 0.5; x < width/2; x += 1) {
-          const windowGeo = new THREE.PlaneGeometry(0.4, 0.8);
-          const windowPlane = new THREE.Mesh(windowGeo, windowMat);
-          windowPlane.position.set(x, y - height/2, depth/2 + 0.01);
-          windowPlane.rotation.y = Math.PI; 
-          buildingGroup.add(windowPlane);
+          const windowGeo = new THREE.PlaneGeometry(0.4, 0.8, 1, 1);
+          const window = new THREE.Mesh(windowGeo, windowMat);
+          window.position.set(x, y - height/2, depth/2 + 0.01);
+          window.rotation.y = Math.PI; // 앞면 보이게
+          buildingGroup.add(window);
         }
       }
       
-      // 문(2D)
-      const doorMat = new THREE.MeshBasicMaterial({ color: 0x8B4513 });
-      const doorGeo = new THREE.PlaneGeometry(1, 2);
+      // 문도 광택 있게
+      const doorMat = new THREE.MeshPhongMaterial({ color: 0x8B4513, shininess: 50, specular: 0x444444 });
+      const doorGeo = new THREE.PlaneGeometry(1, 2, 1, 1);
       const door = new THREE.Mesh(doorGeo, doorMat);
       door.position.set(0, -height/2 + 1, depth/2 + 0.01);
       door.rotation.y = Math.PI;
@@ -579,7 +556,7 @@
       return buildingGroup;
     }
     
-    // 집 생성 함수 (창문/문 포함)
+    // (2) 집 생성 (창문/문 고해상도 느낌)
     function createHouse(width, height, depth, baseColor, roofColor) {
       const houseGroup = new THREE.Group();
       
@@ -588,8 +565,7 @@
         new THREE.BoxGeometry(width, height, depth),
         new THREE.MeshStandardMaterial({ color: baseColor, roughness: 0.8 })
       );
-      // house 바닥이 y = -2(바닥) 에 닿도록 위치할 것이므로, 중앙 높이를 0으로 시작하지 않고 아래에서 조정
-      base.position.y = 0;
+      base.position.y = -2 + height/2;
       houseGroup.add(base);
       
       // 지붕
@@ -597,50 +573,163 @@
         new THREE.ConeGeometry(width * 0.8, height * 0.6, 4),
         new THREE.MeshStandardMaterial({ color: roofColor, roughness: 0.8 })
       );
-      roof.position.y = (height / 2) + (height * 0.6) / 2;
+      roof.position.y = -2 + height + (height * 0.6)/2;
       roof.rotation.y = Math.PI/4;
       houseGroup.add(roof);
       
-      // 창문(2D)
-      const windowMat = new THREE.MeshBasicMaterial({ color: 0x87CEEB });
-      for (let y = 1.5; y < height - 1; y += 1.5) {
-        for (let x = -width/2 + 1; x <= width/2 - 1; x += 1.5) {
-          const winGeo = new THREE.PlaneGeometry(0.6, 0.6);
-          const win = new THREE.Mesh(winGeo, windowMat);
-          win.position.set(x, y - (height/2), depth/2 + 0.01);
-          win.rotation.y = Math.PI;
-          houseGroup.add(win);
-        }
-      }
+      // 창문(PhongMaterial 사용)
+      const windowMat = new THREE.MeshPhongMaterial({
+        color: 0xFFFFE0,
+        specular: 0xffffff,
+        shininess: 90
+      });
+      const windowGeo = new THREE.PlaneGeometry(0.8, 0.8, 1, 1);
+      const window1 = new THREE.Mesh(windowGeo, windowMat);
+      const window2 = new THREE.Mesh(windowGeo, windowMat);
+      window1.position.set(-width/4, -2 + height/2, depth/2 + 0.01);
+      window2.position.set(width/4, -2 + height/2, depth/2 + 0.01);
+      window1.rotation.y = Math.PI;
+      window2.rotation.y = Math.PI;
+      houseGroup.add(window1, window2);
       
-      // 문(2D)
-      const doorMat = new THREE.MeshBasicMaterial({ color: 0x8B4513 });
-      const doorGeo = new THREE.PlaneGeometry(1, 1.5);
+      // 문(PhongMaterial 사용)
+      const doorMat = new THREE.MeshPhongMaterial({
+        color: 0x8B4513,
+        specular: 0x333333,
+        shininess: 50
+      });
+      const doorGeo = new THREE.PlaneGeometry(1, 1.5, 1, 1);
       const door = new THREE.Mesh(doorGeo, doorMat);
-      door.position.set(0, -height/2 + 0.75, depth/2 + 0.01);
+      door.position.set(0, -2 + height/4, depth/2 + 0.01);
       door.rotation.y = Math.PI;
       houseGroup.add(door);
       
       return houseGroup;
     }
     
-    // ----- 빌딩/집을 바닥에 고정된 상태로 생성하기 -----
-    // 빌딩 1
-    const building1 = createBuilding(6, 20, 6, 0x666666);
-    // 빌딩 바닥이 y=-2 에 맞도록 => 가운데 y좌표 = -2 + (빌딩 높이/2)
-    building1.position.set(-10, -2 + 20/2, -20);
-    backgroundGroup.add(building1);
+    // 예시로 여러 건물/집 배치
+    for (let i = 0; i < 20; i++) {
+      const width = Math.random() * 4 + 4;
+      const height = Math.random() * 20 + 20;
+      const depth = Math.random() * 4 + 4;
+      const building = createBuilding(width, height, depth, 0x555555);
+      const col = i % 10;
+      const row = Math.floor(i / 10);
+      const x = -50 + col * 10;
+      const z = -30 - row * 20;
+      building.position.set(x, -2 + height/2, z);
+      backgroundGroup.add(building);
+    }
+    for (let i = 0; i < 10; i++) {
+      const width = Math.random() * 4 + 6;
+      const height = Math.random() * 4 + 6;
+      const depth = Math.random() * 4 + 6;
+      const house = createHouse(width, height, depth, 0xa0522d, 0x8b0000);
+      const x = -40 + i * 10;
+      const z = -10;
+      house.position.set(x, 0, z);
+      backgroundGroup.add(house);
+    }
     
-    // 빌딩 2
-    const building2 = createBuilding(6, 25, 6, 0x444444);
-    building2.position.set(10, -2 + 25/2, -20);
-    backgroundGroup.add(building2);
+    // ----- 나무 추가 -----
+    function createTree() {
+      const treeGroup = new THREE.Group();
+      
+      // 줄기
+      const trunk = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.2, 0.2, 2, 16),
+        new THREE.MeshStandardMaterial({ color: 0x8B4513 })
+      );
+      trunk.position.y = 1;
+      treeGroup.add(trunk);
+      
+      // 잎
+      const foliage = new THREE.Mesh(
+        new THREE.SphereGeometry(1, 16, 16),
+        new THREE.MeshStandardMaterial({ color: 0x228B22 })
+      );
+      foliage.position.y = 2.5;
+      treeGroup.add(foliage);
+      
+      return treeGroup;
+    }
+    // 랜덤 배치
+    for (let i = 0; i < 10; i++) {
+      const tree = createTree();
+      const randX = Math.random() * 80 - 40;
+      const randZ = Math.random() * 40 - 40;
+      tree.position.set(randX, -2, randZ);
+      backgroundGroup.add(tree);
+    }
     
-    // 집(기본 높이 8)
-    const myHouse = createHouse(6, 8, 6, 0xa0522d, 0x8b0000);
-    // 집 바닥이 y=-2 에 맞도록 => 가운데 y좌표 = -2 + (집 높이/2)
-    myHouse.position.set(0, -2 + 8/2, -10);
-    backgroundGroup.add(myHouse);
+    // ----- 가로등 -----
+    function createStreetlight() {
+      const lightGroup = new THREE.Group();
+      const pole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.1, 0.1, 4, 8),
+        new THREE.MeshBasicMaterial({ color: 0x333333 })
+      );
+      pole.position.y = 2;
+      lightGroup.add(pole);
+      
+      const lamp = new THREE.Mesh(
+        new THREE.SphereGeometry(0.2, 8, 8),
+        new THREE.MeshBasicMaterial({ color: 0xffcc00 })
+      );
+      lamp.position.y = 4.2;
+      lightGroup.add(lamp);
+      
+      const lampLight = new THREE.PointLight(0xffcc00, 1, 10);
+      lampLight.position.set(0, 4.2, 0);
+      lightGroup.add(lampLight);
+      return lightGroup;
+    }
+    const characterStreetlight = createStreetlight();
+    characterStreetlight.position.set(1, -2, 0);
+    scene.add(characterStreetlight);
+    
+    // ----- 비 표현 -----
+    let rainGroup = new THREE.Group();
+    scene.add(rainGroup);
+    function initRain() {
+      const rainCount = 2000;
+      const rainGeometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(rainCount * 3);
+      for (let i = 0; i < rainCount; i++) {
+        positions[i * 3] = Math.random() * 200 - 100;
+        positions[i * 3 + 1] = Math.random() * 100;
+        positions[i * 3 + 2] = Math.random() * 200 - 100;
+      }
+      rainGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+      const rainMaterial = new THREE.PointsMaterial({ color: 0xaaaaee, size: 0.1, transparent: true, opacity: 0.6 });
+      const rainParticles = new THREE.Points(rainGeometry, rainMaterial);
+      rainGroup.add(rainParticles);
+    }
+    initRain();
+    rainGroup.visible = false;
+    
+    // ----- 구름 구현 (캐릭터 머리 위) -----
+    let houseCloudGroup = new THREE.Group();
+    function createHouseCloud() {
+      const cloud = new THREE.Group();
+      const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 });
+      const sphere1 = new THREE.Mesh(new THREE.SphereGeometry(2, 32, 32), cloudMat);
+      sphere1.position.set(0, 0, 0);
+      const sphere2 = new THREE.Mesh(new THREE.SphereGeometry(1.8, 32, 32), cloudMat);
+      sphere2.position.set(2.2, 0.7, 0);
+      const sphere3 = new THREE.Mesh(new THREE.SphereGeometry(2.1, 32, 32), cloudMat);
+      sphere3.position.set(-2.2, 0.5, 0);
+      cloud.add(sphere1, sphere2, sphere3);
+      return cloud;
+    }
+    const singleCloud = createHouseCloud();
+    houseCloudGroup.add(singleCloud);
+
+    // 캐릭터 머리 위에 구름을 배치 (구름의 중심이 캐릭터 머리 근처로)
+    // 캐릭터 전체 높이가 약 2.5 정도 되므로 3 정도로 설정
+    // 이후 날씨가 '구름'이면 보이게, 아니면 안 보이게
+    // 캐릭터 그룹에 자식으로 넣으면 캐릭터 이동시 자동 따라감
+    // (이 예제에서는 캐릭터가 많이 이동하진 않지만…)
     
     // ----- 캐릭터 생성 -----
     let danceInterval;
@@ -689,105 +778,15 @@
       mouth, leftBrow, rightBrow,
       leftArm, rightArm, leftLeg, rightLeg
     );
-    
+    // 구름을 캐릭터 그룹에 추가
+    characterGroup.add(houseCloudGroup);
+    houseCloudGroup.position.set(0, 3, 0); 
     characterGroup.position.y = -1;
     scene.add(characterGroup);
-    
-    // 나무를 캐릭터 옆에 하나만
-    function createTree() {
-      const treeGroup = new THREE.Group();
-      const trunk = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.2, 0.2, 2, 8),
-        new THREE.MeshStandardMaterial({ color: 0x8B4513 })
-      );
-      trunk.position.y = 1;
-      treeGroup.add(trunk);
-      
-      const foliage = new THREE.Mesh(
-        new THREE.SphereGeometry(1, 16, 16),
-        new THREE.MeshStandardMaterial({ color: 0x228B22 })
-      );
-      foliage.position.y = 2.5;
-      treeGroup.add(foliage);
-      
-      return treeGroup;
-    }
-    const singleTree = createTree();
-    singleTree.position.set(3, -2, 0);
-    scene.add(singleTree);
-    
-    // ----- 가로등 -----
-    function createStreetlight() {
-      const lightGroup = new THREE.Group();
-      const pole = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.1, 0.1, 4, 8),
-        new THREE.MeshBasicMaterial({ color: 0x333333 })
-      );
-      pole.position.y = 2;
-      lightGroup.add(pole);
-      
-      const lamp = new THREE.Mesh(
-        new THREE.SphereGeometry(0.2, 8, 8),
-        new THREE.MeshBasicMaterial({ color: 0xffcc00 })
-      );
-      lamp.position.y = 4.2;
-      lightGroup.add(lamp);
-      
-      const lampLight = new THREE.PointLight(0xffcc00, 1, 10);
-      lampLight.position.set(0, 4.2, 0);
-      lightGroup.add(lampLight);
-      return lightGroup;
-    }
-    const characterStreetlight = createStreetlight();
-    characterStreetlight.position.set(1, -2, 0);
-    scene.add(characterStreetlight);
-    
-    // ----- 비 표현 -----
-    let rainGroup = new THREE.Group();
-    scene.add(rainGroup);
-    function initRain() {
-      const rainCount = 2000;
-      const rainGeometry = new THREE.BufferGeometry();
-      const positions = new Float32Array(rainCount * 3);
-      for (let i = 0; i < rainCount; i++) {
-        positions[i * 3] = Math.random() * 200 - 100;
-        positions[i * 3 + 1] = Math.random() * 100;
-        positions[i * 3 + 2] = Math.random() * 200 - 100;
-      }
-      rainGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-      const rainMaterial = new THREE.PointsMaterial({ color: 0xaaaaee, size: 0.1, transparent: true, opacity: 0.6 });
-      const rainParticles = new THREE.Points(rainGeometry, rainMaterial);
-      rainGroup.add(rainParticles);
-    }
-    initRain();
-    rainGroup.visible = false;
-    
-    // ----- 구름 (캐릭터 머리 위) -----
-    let houseCloudGroup = new THREE.Group();
-    function createHouseCloud() {
-      const cloud = new THREE.Group();
-      const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 });
-      const sphere1 = new THREE.Mesh(new THREE.SphereGeometry(2, 16, 16), cloudMat);
-      sphere1.position.set(0, 0, 0);
-      const sphere2 = new THREE.Mesh(new THREE.SphereGeometry(1.8, 16, 16), cloudMat);
-      sphere2.position.set(2.2, 0.7, 0);
-      const sphere3 = new THREE.Mesh(new THREE.SphereGeometry(2.1, 16, 16), cloudMat);
-      sphere3.position.set(-2.2, 0.5, 0);
-      cloud.add(sphere1, sphere2, sphere3);
-      return cloud;
-    }
-    const singleCloud = createHouseCloud();
-    houseCloudGroup.add(singleCloud);
-    houseCloudGroup.position.set(0, 4, 0);
-    characterGroup.add(houseCloudGroup);
     
     // 캐릭터 주변 조명
     const characterLight = new THREE.PointLight(0xffee88, 1, 15);
     scene.add(characterLight);
-    
-    // 번개 조명 (필요 시 번쩍이게)
-    const lightningLight = new THREE.PointLight(0xffffff, 0, 100);
-    scene.add(lightningLight);
     
     // ----- 애니메이션 루프 -----
     function animate() {
@@ -851,15 +850,11 @@
       characterLight.intensity = isDay ? 0 : 1;
       characterGroup.position.y = -1;
       
-      // 구름 살짝 움직이는 느낌
-      const time = Date.now() * 0.001;
-      houseCloudGroup.position.x = Math.sin(time) * 0.5;
-      
       // 날씨 효과/번개
       updateWeatherEffects();
       updateLightning();
       
-      // 가로등은 캐릭터 오른쪽 일정 위치
+      // 가로등은 캐릭터 오른쪽에 유지
       characterStreetlight.position.set(characterGroup.position.x + 1, -2, characterGroup.position.z);
       
       updateBubblePosition();
@@ -867,15 +862,6 @@
       renderer.render(scene, camera);
     }
     animate();
-    
-    function updateBubblePosition() {
-      const bubble = document.getElementById("speech-bubble");
-      const headWorldPos = new THREE.Vector3();
-      head.getWorldPosition(headWorldPos);
-      const screenPos = headWorldPos.project(camera);
-      bubble.style.left = ((screenPos.x * 0.5 + 0.5) * window.innerWidth) + "px";
-      bubble.style.top = ((1 - (screenPos.y * 0.5 + 0.5)) * window.innerHeight - 50) + "px";
-    }
     
     // ----- 달력 초기화 -----
     let currentYear, currentMonth;
@@ -915,7 +901,7 @@
             eventDiv.textContent = "";
             alert(`${currentYear}-${currentMonth+1}-${dayNum} 일정이 삭제되었습니다. 다시 입력할 수 있습니다.`);
           } else {
-            alert("해당 날짜 셀이 없습니다. 현재 달에 있는 날짜를 입력해주세요.");
+            alert("해당 날짜의 셀이 없습니다. 현재 달에 있는 날짜를 입력해주세요.");
           }
         }
       });
@@ -975,6 +961,15 @@
       initCalendar();
       showTutorial();
     });
+    
+    function updateBubblePosition() {
+      const bubble = document.getElementById("speech-bubble");
+      const headWorldPos = new THREE.Vector3();
+      head.getWorldPosition(headWorldPos);
+      const screenPos = headWorldPos.project(camera);
+      bubble.style.left = ((screenPos.x * 0.5 + 0.5) * window.innerWidth) + "px";
+      bubble.style.top = ((1 - (screenPos.y * 0.5 + 0.5)) * window.innerHeight - 50) + "px";
+    }
     
     function showTutorial() {
       const overlay = document.getElementById("tutorial-overlay");
