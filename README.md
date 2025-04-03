@@ -146,6 +146,19 @@
     // 전역 변수: 날씨 상태 ("맑음", "비", "구름 낀" 등)
     let currentWeather = "";
     
+    /* 파일 저장 함수 - 브라우저 다운로드 방식으로 저장 */
+    function saveFile() {
+      const content = "파일 저장 완료"; // 저장할 파일 내용 (원하는 내용으로 수정 가능)
+      const filename = "saved_file.txt";
+      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    
     /* 채팅 및 날씨 API 통합 함수 */
     async function sendChat() {
       const inputEl = document.getElementById("chat-input");
@@ -155,20 +168,29 @@
       let response = "";
       const lowerInput = input.toLowerCase();
       
+      // "파일 저장해줘" 입력 시
+      if (lowerInput.includes("파일 저장해줘")) {
+        response = "네, 알겠습니다. 파일 저장하겠습니다.";
+        saveFile();
+      }
       // 날씨 관련 문의
-      if (lowerInput.includes("날씨") &&
+      else if (lowerInput.includes("날씨") &&
          (lowerInput.includes("알려") || lowerInput.includes("어때") ||
           lowerInput.includes("뭐야") || lowerInput.includes("어떻게") || lowerInput.includes("맑아"))) {
         response = await getWeather();
-      } else if (lowerInput.includes("안녕")) {
+      }
+      else if (lowerInput.includes("안녕")) {
         response = "안녕하세요, 주인님! 오늘 기분은 어떠세요?";
         characterGroup.children[7].rotation.z = Math.PI / 4;
         setTimeout(() => { characterGroup.children[7].rotation.z = 0; }, 1000);
-      } else if (lowerInput.includes("캐릭터 넌 누구야")) {
+      }
+      else if (lowerInput.includes("캐릭터 넌 누구야")) {
         response = "저는 당신의 개인 비서에요.";
-      } else if (lowerInput.includes("일정")) {
+      }
+      else if (lowerInput.includes("일정")) {
         response = "캘린더는 왼쪽에서 확인하세요.";
-      } else if (lowerInput.includes("캐릭터 춤춰줘")) {
+      }
+      else if (lowerInput.includes("캐릭터 춤춰줘")) {
         response = "춤출게요!";
         if (danceInterval) clearInterval(danceInterval);
         danceInterval = setInterval(() => {
@@ -180,16 +202,17 @@
           characterGroup.children[7].rotation.z = 0;
           head.rotation.y = 0;
         }, 3000);
-      } else {
+      }
+      else {
         response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
       }
       
-      // 오직 캐릭터의 응답만 말풍선에 표시 (사용자 메시지는 제외)
+      // 오직 캐릭터의 응답만 말풍선에 표시
       showSpeechBubbleInChunks(response);
       inputEl.value = "";
     }
     
-    // OpenWeatherMap API 호출하여 서울 날씨 정보 가져오기
+    // OpenWeatherMap API 호출 (서울 기준) 및 날씨 정보 업데이트
     async function getWeather() {
       try {
         const city = "Seoul";
