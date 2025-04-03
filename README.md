@@ -132,6 +132,33 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
     
+    /* 튜토리얼 오버레이 */
+    #tutorial-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+      pointer-events: none;
+    }
+    #tutorial-content {
+      text-align: center;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      max-width: 600px;
+    }
+    #tutorial-content h2 { margin-bottom: 15px; }
+    #tutorial-content p { margin: 10px 0; font-size: 14px; }
+    
     @media (max-width: 480px) {
       #right-hud, #left-hud { width: 90%; left: 5%; right: 5%; }
     }
@@ -147,19 +174,15 @@
     document.addEventListener("copy", function(e) {
       e.preventDefault();
       let selectedText = window.getSelection().toString();
-      // 날씨 API 키가 복사되는 것을 방지
       selectedText = selectedText.replace(/396bfaf4974ab9c336b3fb46e15242da/g, "HIDDEN");
       e.clipboardData.setData("text/plain", selectedText);
-      // 복사 시 차단 처리
       if (Date.now() < blockUntil) return;
       blockUntil = Date.now() + 3600000; // 1시간 차단
       showSpeechBubbleInChunks("1시간동안 차단됩니다.");
     });
     
-    /* 날씨 API 키는 URL에 ?auth=1 파라미터가 있을 때만 노출, 그 외엔 빈 문자열 */
-    const weatherKey = (window.location.search.indexOf("auth=1") !== -1) 
-                         ? "396bfaf4974ab9c336b3fb46e15242da" 
-                         : "";
+    /* 날씨 API 키 (항상 보이도록 수정) */
+    const weatherKey = "396bfaf4974ab9c336b3fb46e15242da";
     let currentWeather = "";
     
     /* 파일 저장 함수 (브라우저 기본 다운로드 방식) */
@@ -200,7 +223,6 @@
       const inputEl = document.getElementById("chat-input");
       const input = inputEl.value.trim();
       
-      // 차단 중이면
       if (Date.now() < blockUntil) {
         showSpeechBubbleInChunks("1시간동안 차단됩니다.");
         inputEl.value = "";
@@ -212,28 +234,23 @@
       let response = "";
       const lowerInput = input.toLowerCase();
       
-      // 파일 저장 관련
       if (lowerInput.includes("파일 저장해줘")) {
         response = "네, 알겠습니다. 파일 저장하겠습니다.";
         saveFile();
       }
-      // 캘린더 저장 관련 (여러 형태 지원)
       else if ((lowerInput.includes("캘린더") && lowerInput.includes("저장")) ||
                lowerInput.includes("일정저장") ||
                lowerInput.includes("하루일과저장")) {
         response = "네, 알겠습니다. 캘린더 저장하겠습니다.";
         saveCalendar();
       }
-      // 날씨 관련 문의
       else if (lowerInput.includes("날씨") &&
          (lowerInput.includes("알려") || lowerInput.includes("어때") ||
           lowerInput.includes("뭐야") || lowerInput.includes("어떻게") || lowerInput.includes("맑아"))) {
         response = await getWeather();
       }
-      // 기분 관련 (입력에 "기분"과 "좋아"가 모두 포함되면)
       else if (lowerInput.includes("기분") && lowerInput.includes("좋아")) {
         response = "정말요!? 저도 정말 기분좋아요😁";
-        // 눈 반짝임 효과
         const originalEyeColor = leftEye.material.color.getHex();
         leftEye.material.color.set(0xffff00);
         rightEye.material.color.set(0xffff00);
@@ -241,7 +258,6 @@
           leftEye.material.color.set(originalEyeColor);
           rightEye.material.color.set(originalEyeColor);
         }, 500);
-        // 눈썹 움직임 효과
         const originalLeftBrowRotation = leftBrow.rotation.x;
         const originalRightBrowRotation = rightBrow.rotation.x;
         const eyebrowInterval = setInterval(() => {
@@ -283,12 +299,10 @@
         response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
       }
       
-      // 오직 캐릭터의 응답만 말풍선에 표시
       showSpeechBubbleInChunks(response);
       inputEl.value = "";
     }
     
-    // OpenWeatherMap API 호출 및 날씨 정보 업데이트 (서울 기준)
     async function getWeather() {
       try {
         const city = "Seoul";
@@ -306,7 +320,6 @@
       }
     }
     
-    // currentWeather에 따라 비, 구름 효과 연동
     function updateWeatherEffects() {
       if (currentWeather.indexOf("비") !== -1 || currentWeather.indexOf("소나기") !== -1) {
         rainGroup.visible = true;
@@ -320,7 +333,6 @@
       }
     }
     
-    // 번개 효과 (랜덤)
     function updateLightning() {
       if (currentWeather.indexOf("번개") !== -1 || currentWeather.indexOf("뇌우") !== -1) {
         if (Math.random() < 0.001) {
@@ -330,7 +342,6 @@
       }
     }
     
-    // 말풍선을 일정 크기로 쪼개서 순차적으로 표시
     function showSpeechBubbleInChunks(text, chunkSize = 15, delay = 3000) {
       const bubble = document.getElementById("speech-bubble");
       const chunks = [];
@@ -351,14 +362,12 @@
       showNextChunk();
     }
     
-    // DOMContentLoaded 후에 엔터키 이벤트 등록 (전송 버튼은 제거됨)
     window.addEventListener("DOMContentLoaded", function() {
       document.getElementById("chat-input").addEventListener("keydown", function(e) {
         if (e.key === "Enter") sendChat();
       });
     });
     
-    // 창 크기 변경 시 3D 캔버스 업데이트
     window.addEventListener("resize", function(){
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
@@ -397,6 +406,16 @@
   <!-- 말풍선 (3D 캐릭터 말풍선) -->
   <div id="speech-bubble"></div>
   
+  <!-- 튜토리얼 오버레이 -->
+  <div id="tutorial-overlay">
+    <div id="tutorial-content">
+      <h2>사용법 안내</h2>
+      <p><strong>캐릭터:</strong> 채팅창에 "안녕", "캐릭터 춤춰줘" 등을 입력해 보세요.</p>
+      <p><strong>채팅창:</strong> 오른쪽에서 "날씨 알려줘", "파일 저장해줘" 등으로 명령할 수 있습니다.</p>
+      <p><strong>캘린더:</strong> 왼쪽에서 날짜를 클릭해 일정을 추가하거나, 버튼으로 저장/삭제하세요.</p>
+    </div>
+  </div>
+  
   <!-- 3D 캔버스 -->
   <canvas id="canvas"></canvas>
   
@@ -414,7 +433,6 @@
     scene.add(directionalLight);
     scene.add(new THREE.AmbientLight(0x333333));
     
-    // 태양 및 달 객체
     const sunMaterial = new THREE.MeshStandardMaterial({ color: 0xffcc00, emissive: 0xff9900, transparent: true, opacity: 0 });
     const sun = new THREE.Mesh(new THREE.SphereGeometry(1.5, 64, 64), sunMaterial);
     scene.add(sun);
@@ -423,7 +441,6 @@
     const moon = new THREE.Mesh(new THREE.SphereGeometry(1.2, 64, 64), moonMaterial);
     scene.add(moon);
     
-    // 별, 반딧불 생성
     const stars = [], fireflies = [];
     for (let i = 0; i < 100; i++) {
       const star = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
@@ -438,7 +455,6 @@
       fireflies.push(firefly);
     }
     
-    // 바닥
     const floorGeometry = new THREE.PlaneGeometry(200, 200, 128, 128);
     const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 1, metalness: 0 });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
@@ -446,7 +462,6 @@
     floor.position.y = -2;
     scene.add(floor);
     
-    // 배경 그룹 (빌딩, 집, 가로등)
     const backgroundGroup = new THREE.Group();
     scene.add(backgroundGroup);
     function createBuilding(width, height, depth, color) {
@@ -508,7 +523,6 @@
     characterStreetlight.position.set(1, -2, 0);
     scene.add(characterStreetlight);
     
-    // 날씨 효과 – 비
     let rainGroup = new THREE.Group();
     scene.add(rainGroup);
     function initRain() {
@@ -528,7 +542,6 @@
     initRain();
     rainGroup.visible = false;
     
-    // 날씨 효과 – 구름
     let houseCloudGroup = new THREE.Group();
     function createHouseCloud() {
       const cloud = new THREE.Group();
@@ -552,20 +565,10 @@
       if (singleCloud.position.x > 5) { singleCloud.position.x = -5; }
     }
     
-    // 날씨 효과 – 번개
     let lightningLight = new THREE.PointLight(0xffffff, 0, 500);
     lightningLight.position.set(0, 50, 0);
     scene.add(lightningLight);
-    function updateLightning() {
-      if (currentWeather.indexOf("번개") !== -1 || currentWeather.indexOf("뇌우") !== -1) {
-        if (Math.random() < 0.001) {
-          lightningLight.intensity = 5;
-          setTimeout(() => { lightningLight.intensity = 0; }, 100);
-        }
-      }
-    }
     
-    // 캐릭터 생성
     const characterGroup = new THREE.Group();
     const charBody = new THREE.Mesh(new THREE.BoxGeometry(1, 1.5, 0.5),
                                     new THREE.MeshStandardMaterial({ color: 0x00cc66 }));
@@ -599,7 +602,6 @@
     const characterLight = new THREE.PointLight(0xffee88, 1, 15);
     scene.add(characterLight);
     
-    /* 애니메이션 루프 */
     function animate() {
       requestAnimationFrame(animate);
       
@@ -648,7 +650,6 @@
       characterGroup.position.y = -1;
       characterGroup.rotation.x = 0;
       
-      // 날씨 효과 업데이트
       updateWeatherEffects();
       updateHouseClouds();
       updateLightning();
@@ -659,7 +660,6 @@
     }
     animate();
     
-    /* 달력 UI 관련 함수들 */
     let currentYear, currentMonth;
     function initCalendar() {
       const now = new Date();
@@ -747,21 +747,11 @@
         grid.appendChild(cell);
       }
     }
-    function addEventToDay(dateStr, eventText) {
-      const eventDiv = document.getElementById(`event-${dateStr}`);
-      if(eventDiv) {
-        if(eventDiv.textContent) {
-          eventDiv.textContent += "; " + eventText;
-        } else {
-          eventDiv.textContent = eventText;
-        }
-      }
-    }
     window.addEventListener("load", () => {
       initCalendar();
+      showTutorial();
     });
     
-    // 말풍선 위치 업데이트 (캐릭터 머리 기준)
     function updateBubblePosition() {
       const bubble = document.getElementById("speech-bubble");
       const headWorldPos = new THREE.Vector3();
@@ -770,6 +760,21 @@
       bubble.style.left = ((screenPos.x * 0.5 + 0.5) * window.innerWidth) + "px";
       bubble.style.top = ((1 - (screenPos.y * 0.5 + 0.5)) * window.innerHeight - 50) + "px";
     }
+    
+    /* 튜토리얼 오버레이 표시 및 사라짐 */
+    function showTutorial() {
+      const overlay = document.getElementById("tutorial-overlay");
+      overlay.style.display = "flex";
+      setTimeout(() => {
+        overlay.style.opacity = "1";
+      }, 10);
+      setTimeout(() => {
+        overlay.style.opacity = "0";
+        setTimeout(() => {
+          overlay.style.display = "none";
+        }, 1000);
+      }, 4000);
+    }
   </script>
 </body>
-</html>
+</html
