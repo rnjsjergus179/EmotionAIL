@@ -22,8 +22,9 @@
       box-shadow: 0 4px 8px rgba(0,0,0,0.2);
       z-index: 20;
     }
-    /* 채팅 로그 */
+    /* 채팅 로그 - 숨김 처리 */
     #chat-log {
+      display: none;
       height: 100px;
       overflow-y: scroll;
       border: 1px solid #ccc;
@@ -99,7 +100,7 @@
       background: #fff;
       border: 1px solid #ccc;
       border-radius: 4px;
-      min-height: 25px;  /* 셀 높이 축소 (20~25px) */
+      min-height: 25px;
       font-size: 10px;
       padding: 2px;
       position: relative;
@@ -156,26 +157,29 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   
   <script>
-    // 새로 추가한 키 (사용 예: 디버깅용, 혹은 다른 목적)
-    const newKey = "날시키9948482fc88fa1f5b6ad5d3e0872aaad";
+    // 날씨 API 관련 키 (예제에서는 OpenWeatherMap API 사용)
+    const weatherKey = "날시키9948482fc88fa1f5b6ad5d3e0872aaad";
     
     /* ====================================
-       채팅 관련 함수
+       채팅 및 날씨 API 통합 관련 함수
+       - 채팅창에서는 입력 후 메시지가 보이지 않고,
+         캐릭터 말풍선으로만 응답이 표시됩니다.
+       - 엔터키 입력 시 전송되고, 날씨 관련 입력이면 실제 API 호출 후 결과를 반영합니다.
     ==================================== */
-    function appendToChatLog(message) {
-      const chatLog = document.getElementById("chat-log");
-      chatLog.innerHTML += "<div>" + message + "</div>";
-      chatLog.scrollTop = chatLog.scrollHeight;
-    }
-    
-    let danceInterval = null;
     async function sendChat() {
       const inputEl = document.getElementById("chat-input");
       const input = inputEl.value.trim();
-      let response = "";
       if (!input) return;
+      
+      let response = "";
       const lowerInput = input.toLowerCase();
-      if (lowerInput.includes("안녕")) {
+      
+      // 날씨 관련 문의 시 실제 날씨 API 호출 (예: "날씨 알려줘", "오늘 날씨", "날씨맑아?" 등)
+      if (lowerInput.includes("날씨") &&
+         (lowerInput.includes("알려") || lowerInput.includes("어때") ||
+          lowerInput.includes("뭐야") || lowerInput.includes("어떻게") || lowerInput.includes("맑아"))) {
+        response = await getWeather();
+      } else if (lowerInput.includes("안녕")) {
         response = "안녕하세요, 주인님! 오늘 기분은 어떠세요?";
         characterGroup.children[7].rotation.z = Math.PI / 4;
         setTimeout(() => { characterGroup.children[7].rotation.z = 0; }, 1000);
@@ -183,8 +187,6 @@
         response = "저는 당신의 개인 비서에요.";
       } else if (lowerInput.includes("일정")) {
         response = "캘린더는 왼쪽에서 확인하세요.";
-      } else if (lowerInput.includes("날씨") && (lowerInput.includes("알려") || lowerInput.includes("어때"))) {
-        response = "현재 날씨는 맑음입니다.";
       } else if (lowerInput.includes("캐릭터 춤춰줘")) {
         response = "춤출게요!";
         if (danceInterval) clearInterval(danceInterval);
@@ -200,10 +202,26 @@
       } else {
         response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
       }
-      appendToChatLog("사용자: " + input);
-      appendToChatLog("캐릭터: " + response);
+      
+      // 채팅 로그에는 메시지를 남기지 않고, 캐릭터 말풍선으로만 응답 표시
       showSpeechBubbleInChunks(response);
       inputEl.value = "";
+    }
+    
+    // OpenWeatherMap API를 호출하여 서울의 날씨 정보를 가져오는 함수
+    async function getWeather() {
+      try {
+        const city = "Seoul";
+        const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${weatherKey}&units=metric&lang=kr`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("날씨 API 호출 실패");
+        const data = await res.json();
+        const description = data.weather[0].description;
+        const temp = data.main.temp;
+        return `오늘 ${city}의 날씨는 ${description}이며, 온도는 ${temp}°C입니다.`;
+      } catch (err) {
+        return "날씨 정보를 가져오지 못했습니다.";
+      }
     }
     
     function showSpeechBubbleInChunks(text, chunkSize = 15, delay = 3000) {
@@ -226,6 +244,11 @@
       showNextChunk();
     }
     
+    // 엔터키 입력 시 sendChat 호출 (입력 후 텍스트는 보이지 않음)
+    document.getElementById("chat-input").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") sendChat();
+    });
+    
     // 윈도우 리사이즈 이벤트: 3D 캔버스 업데이트
     window.addEventListener("resize", function(){
       camera.aspect = window.innerWidth / window.innerHeight;
@@ -235,7 +258,7 @@
   </script>
 </head>
 <body>
-  <!-- 오른쪽 HUD: 채팅 UI -->
+  <!-- 오른쪽 HUD: 채팅 UI (채팅 로그는 숨김) -->
   <div id="right-hud">
     <h3>채팅창</h3>
     <div id="chat-log"></div>
@@ -668,7 +691,6 @@
     }
     window.addEventListener("load", () => {
       initCalendar();
-      appendToChatLog("캐릭터: 환영합니다! 무엇을 도와드릴까요?");
     });
     
     // 말풍선 위치 업데이트 (3D 캐릭터 머리 기준)
