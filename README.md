@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>3D 캐릭터 HUD, 달력 & 말풍선 채팅 (고해상도 느낌)</title>
+  <title>3D 캐릭터 HUD, 달력 & 말풍선 채팅</title>
   <style>
     /* CSS Reset 및 기본 스타일 */
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -49,7 +49,7 @@
       cursor: pointer;
     }
     
-    /* 왼쪽 HUD: 달력 UI – 상단 위치 50px, 너비 280px, 고해상도 느낌으로 그림자 추가 */
+    /* 왼쪽 HUD: 달력 UI – 상단 위치 50px, 너비 280px */
     #left-hud {
       position: fixed;
       top: 50px;
@@ -63,9 +63,7 @@
       max-height: 90vh;
       overflow-y: auto;
     }
-    #left-hud h3 {
-      margin-bottom: 5px;
-    }
+    #left-hud h3 { margin-bottom: 5px; }
     
     /* 달력 UI 내부 스타일 */
     #calendar-container { margin-top: 10px; }
@@ -79,7 +77,7 @@
     #month-year-label { font-weight: bold; font-size: 14px; }
     #year-select { font-size: 12px; padding: 2px; margin-left: 5px; }
     
-    /* 달력 액션 버튼 영역 */
+    /* 달력 액션 버튼 영역: 하루일정 삭제, 바탕화면 저장 */
     #calendar-actions {
       margin-top: 5px;
       text-align: center;
@@ -91,7 +89,7 @@
       cursor: pointer;
     }
     
-    /* 달력 그리드: 고해상도 느낌 + 세로 크기 축소 */
+    /* 달력 그리드: 고해상도 느낌, 세로 크기 축소 */
     #calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
@@ -101,8 +99,8 @@
       background: #fff;
       border: 1px solid #ccc;
       border-radius: 4px;
-      min-height: 25px;  /* 세로 크기 대폭 축소 (20~25px) */
-      font-size: 10px;   /* 폰트도 작게 */
+      min-height: 25px;
+      font-size: 10px;
       padding: 2px;
       position: relative;
       cursor: pointer;
@@ -208,6 +206,9 @@
       showSpeechBubbleInChunks(response);
       inputEl.value = "";
     }
+    document.getElementById("chat-input").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") sendChat();
+    });
     
     // AI 응답 버튼 (구글 AI API 시뮬레이션)
     async function sendAIChat() {
@@ -227,10 +228,6 @@
         }, 1000);
       });
     }
-    
-    document.getElementById("chat-input").addEventListener("keydown", function(e) {
-      if (e.key === "Enter") sendChat();
-    });
     
     function showSpeechBubbleInChunks(text, chunkSize = 15, delay = 3000) {
       const bubble = document.getElementById("speech-bubble");
@@ -283,7 +280,8 @@
         <select id="year-select"></select>
       </div>
       <div id="calendar-actions">
-        <button id="add-day-event">하루일정 추가</button>
+        <!-- 하루일정 추가 버튼은 삭제하고, 대신 하루일정 삭제 버튼 추가 -->
+        <button id="delete-day-event">하루일정 삭제</button>
         <button id="save-calendar">바탕화면 저장</button>
       </div>
       <div id="calendar-grid"></div>
@@ -297,6 +295,11 @@
   <canvas id="canvas"></canvas>
   
   <script>
+    /* ====================================
+       구글 AI API 시뮬레이션 (예시)
+    ==================================== */
+    // (위의 AI 관련 함수는 그대로 사용)
+    
     /* ====================================
        Three.js 3D 씬 설정 (캐릭터, 배경, 날씨 효과 등)
     ==================================== */
@@ -391,7 +394,7 @@
       house.position.set(x, 0, z);
       backgroundGroup.add(house);
     }
-    // 단일 가로등
+    // 단일 가로등: 캐릭터 옆에 배치
     function createStreetlight() {
       const lightGroup = new THREE.Group();
       const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 4, 8),
@@ -443,6 +446,7 @@
       const sphere3 = new THREE.Mesh(new THREE.SphereGeometry(2.1, 32, 32), cloudMat);
       sphere3.position.set(-2.2, 0.5, 0);
       cloud.add(sphere1, sphere2, sphere3);
+      cloud.userData.initialPos = cloud.position.clone();
       return cloud;
     }
     const singleCloud = createHouseCloud();
@@ -528,19 +532,11 @@
       
       const t = now.getHours() + now.getMinutes() / 60;
       let sunOpacity = 0, moonOpacity = 0;
-      if (t < 6) {
-        sunOpacity = 0; moonOpacity = 1;
-      } else if (t < 7) {
-        let factor = (t - 6);
-        sunOpacity = factor; moonOpacity = 1 - factor;
-      } else if (t < 17) {
-        sunOpacity = 1; moonOpacity = 0;
-      } else if (t < 18) {
-        let factor = (t - 17);
-        sunOpacity = 1 - factor; moonOpacity = factor;
-      } else {
-        sunOpacity = 0; moonOpacity = 1;
-      }
+      if (t < 6) { sunOpacity = 0; moonOpacity = 1; }
+      else if (t < 7) { let factor = (t - 6); sunOpacity = factor; moonOpacity = 1 - factor; }
+      else if (t < 17) { sunOpacity = 1; moonOpacity = 0; }
+      else if (t < 18) { let factor = (t - 17); sunOpacity = 1 - factor; moonOpacity = factor; }
+      else { sunOpacity = 0; moonOpacity = 1; }
       sun.material.opacity = sunOpacity;
       moon.material.opacity = moonOpacity;
       
@@ -562,13 +558,10 @@
         const positions = rainPoints.geometry.attributes.position.array;
         for (let i = 0; i < positions.length; i += 3) {
           positions[i + 1] -= 0.5;
-          if (positions[i + 1] < 0) {
-            positions[i + 1] = Math.random() * 50 + 20;
-          }
+          if (positions[i + 1] < 0) { positions[i + 1] = Math.random() * 50 + 20; }
         }
         rainPoints.geometry.attributes.position.needsUpdate = true;
       }
-      
       if (currentWeather.indexOf("번개") !== -1 || currentWeather.indexOf("뇌우") !== -1) {
         if (Math.random() < 0.001) {
           lightningLight.intensity = 5;
@@ -608,19 +601,15 @@
         renderCalendar(currentYear, currentMonth);
       });
       
-      // 하루일정 추가 버튼
-      document.getElementById("add-day-event").addEventListener("click", () => {
-        const dayStr = prompt("하루일정을 추가할 날짜(일)를 입력하세요 (예: 15):");
-        const eventText = prompt("일정 내용을 입력하세요:");
-        if(dayStr && eventText) {
+      // 하루일정 삭제 버튼 이벤트
+      document.getElementById("delete-day-event").addEventListener("click", () => {
+        const dayStr = prompt("삭제할 하루일정의 날짜(일)를 입력하세요 (예: 15):");
+        if(dayStr) {
           const dayNum = parseInt(dayStr);
           const eventDiv = document.getElementById(`event-${currentYear}-${currentMonth+1}-${dayNum}`);
           if(eventDiv) {
-            if(eventDiv.textContent) {
-              eventDiv.textContent += "; " + eventText;
-            } else {
-              eventDiv.textContent = eventText;
-            }
+            eventDiv.textContent = "";  // 해당 날짜의 일정 삭제
+            alert(`${currentYear}-${currentMonth+1}-${dayNum} 일정이 삭제되었습니다. 다시 입력할 수 있습니다.`);
           } else {
             alert("해당 날짜의 셀이 없습니다. 현재 달에 있는 날짜를 입력해주세요.");
           }
