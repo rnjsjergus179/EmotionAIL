@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -104,9 +105,7 @@
       position: relative;
       cursor: pointer;
     }
-    #calendar-grid div:hover {
-      background: #e9e9e9;
-    }
+    #calendar-grid div:hover { background: #e9e9e9; }
     .day-number {
       position: absolute;
       top: 2px;
@@ -148,11 +147,7 @@
     }
     /* 미디어 쿼리 (작은 화면 대응) */
     @media (max-width: 480px) {
-      #right-hud, #left-hud {
-        width: 90%;
-        left: 5%;
-        right: 5%;
-      }
+      #right-hud, #left-hud { width: 90%; left: 5%; right: 5%; }
     }
   </style>
   
@@ -160,7 +155,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script>
     /* ====================================
-       채팅 관련 함수
+       채팅 및 Gemini AI 관련 함수
     ==================================== */
     function appendToChatLog(message) {
       const chatLog = document.getElementById("chat-log");
@@ -206,7 +201,7 @@
       inputEl.value = "";
     }
     
-    // AI 응답 버튼: Gemini API를 사용하여 응답을 받아옴
+    // Gemini API를 호출하여 AI 응답을 받는 함수
     async function sendAIChat() {
       const inputEl = document.getElementById("chat-input");
       const input = inputEl.value.trim();
@@ -222,7 +217,7 @@
       inputEl.value = "";
     }
     
-    // Gemini API 호출 (실제 엔드포인트와 제공된 API 키 사용)
+    // Gemini API 호출 함수 (API 키 포함)
     async function askGemini(promptText) {
       const apiKey = "AIzaSyCiaecF2rng7LBdxTsrNb9i1CToOA9o7io";
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
@@ -230,12 +225,13 @@
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          // 요청 body는 Gemini API 최신 스펙에 맞게 수정 필요
           contents: [{ parts: [{ text: promptText }] }]
         })
       });
       const data = await response.json();
-      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "응답 없음";
-      return reply;
+      console.log("Gemini 응답 데이터:", data);
+      return data.candidates?.[0]?.content?.parts?.[0]?.text || "응답 없음";
     }
     
     document.getElementById("chat-input").addEventListener("keydown", function(e) {
@@ -608,7 +604,7 @@
         renderCalendar(currentYear, currentMonth);
       });
       
-      // 하루일정 삭제 버튼
+      // 하루일정 삭제 버튼 이벤트
       document.getElementById("delete-day-event").addEventListener("click", () => {
         const dayStr = prompt("삭제할 하루일정의 날짜(일)를 입력하세요 (예: 15):");
         if(dayStr) {
