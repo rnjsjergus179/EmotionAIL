@@ -10,10 +10,10 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; font-family: Arial, sans-serif; overflow: hidden; }
     
-    /* 오른쪽 HUD: 채팅창 (이메일 관련 요소 삭제) */
+    /* 오른쪽 HUD: 채팅창 (이메일 관련 요소 삭제됨) */
     #right-hud {
       position: fixed;
-      top: 150px; /* 필요에 따라 위치 조정 */
+      top: 150px; /* 위치 조정 */
       right: 10px;
       width: 300px;
       padding: 10px;
@@ -39,17 +39,17 @@
       padding: 5px;
       font-size: 14px;
     }
-    #send-chat-button {
+    #send-chat-button, #ai-chat-button {
       padding: 5px 10px;
       font-size: 14px;
       margin-left: 5px;
     }
-    /* 왼쪽 HUD: 달력 UI (너비를 280px로 줄임) */
+    /* 왼쪽 HUD: 달력 UI – 상단 위치 50px */
     #left-hud {
       position: fixed;
       top: 50px;
       left: 10px;
-      width: 280px;  /* 기존 320px -> 280px로 변경 */
+      width: 280px; /* 이전보다 약간 축소된 너비 (원하는 크기에 따라 조정 가능) */
       padding: 10px;
       background: rgba(255,255,255,0.9);
       border-radius: 5px;
@@ -78,6 +78,7 @@
       padding: 5px 8px;
       font-size: 12px;
     }
+    /* 달력 그리드 스타일: 높이와 폰트 크기 축소 */
     #calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
@@ -85,8 +86,8 @@
     }
     #calendar-grid div {
       border: 1px solid #ccc;
-      min-height: 40px;
-      font-size: 12px;
+      min-height: 30px;  /* 기존 40px -> 30px로 축소 */
+      font-size: 10px;   /* 폰트 크기도 줄임 */
       padding: 2px;
       position: relative;
       cursor: pointer;
@@ -97,10 +98,11 @@
       top: 2px;
       left: 2px;
       font-weight: bold;
+      font-size: 10px; /* 축소된 폰트 크기 */
     }
     .event {
-      margin-top: 18px;
-      font-size: 10px;
+      margin-top: 14px; /* 약간 줄임 */
+      font-size: 8px;   /* 축소된 폰트 크기 */
       color: #333;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -254,6 +256,7 @@
   <script>
     /* ====================================
        구글 AI API 시뮬레이션 (예시)
+       → 실제 구글 AI API 엔드포인트로 변경 가능
     ==================================== */
     async function sendAIChat() {
       const inputEl = document.getElementById("chat-input");
