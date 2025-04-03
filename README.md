@@ -10,7 +10,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; font-family: Arial, sans-serif; overflow: hidden; }
     
-    /* 오른쪽 HUD: 채팅 UI (채팅 로그는 숨김) */
+    /* 오른쪽 HUD: 채팅 UI */
     #right-hud {
       position: fixed;
       top: 150px;
@@ -40,6 +40,13 @@
       flex: 1;
       padding: 5px;
       font-size: 14px;
+    }
+    /* 사용방법 안내 (채팅창 밑에 항상 표시) */
+    #usage-instructions {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #333;
+      text-align: center;
     }
     
     /* 왼쪽 HUD: 달력 UI */
@@ -130,26 +137,6 @@
       white-space: pre-line;
       pointer-events: none;
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
-    
-    /* 튜토리얼 오버레이 – 간단 설명 */
-    #tutorial {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      background: rgba(0, 0, 0, 0.85);
-      color: #fff;
-      padding: 20px;
-      z-index: 100;
-      text-align: center;
-      font-size: 16px;
-      line-height: 1.5;
-      animation: slideUp 1s ease-out forwards;
-    }
-    @keyframes slideUp {
-      from { transform: translateY(100%); }
-      to { transform: translateY(0); }
     }
   </style>
   
@@ -556,24 +543,15 @@
     animate();
     
     /* ====================================
-       튜토리얼 오버레이 – 간단 설명 (4초 후 자동 사라짐)
+       채팅창 밑 사용방법 안내
     ==================================== */
-    function showTutorial() {
-      const tutorial = document.createElement("div");
-      tutorial.id = "tutorial";
-      tutorial.innerHTML = "이 화면은 3D 캐릭터, 달력, 채팅, 날씨 정보를 제공합니다.<br>좌측 달력에서 날짜를 클릭해 일정을 입력하고, 우측 채팅창에 명령어(예: '알려줘', '캐릭터 넌 누구야')를 입력해보세요.<br>이 버전은 구버전이며 계속 업데이트 예정입니다.";
-      document.body.appendChild(tutorial);
-      setTimeout(() => {
-        tutorial.style.transition = "opacity 1s";
-        tutorial.style.opacity = 0;
-        setTimeout(() => { tutorial.remove(); }, 1000);
-      }, 4000);
+    function showUsageInstructions() {
+      const usageDiv = document.createElement("div");
+      usageDiv.id = "usage-instructions";
+      usageDiv.innerHTML = "사용방법: 좌측 달력에서 날짜를 클릭하여 일정을 입력하고, 우측 채팅창에 명령어(예: '알려줘', '캐릭터 넌 누구야', '캐릭터 춤춰줘')를 입력해 기능을 이용하세요. 이 버전은 구버전이며 계속 업데이트 예정입니다.";
+      document.getElementById("right-hud").appendChild(usageDiv);
     }
-    
-    window.addEventListener("load", () => {
-      initCalendar();
-      showTutorial();
-    });
+    window.addEventListener("load", showUsageInstructions);
     
     /* ====================================
        창 크기 변경 시 3D 캔버스 업데이트
