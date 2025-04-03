@@ -4,12 +4,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>3D 캐릭터 HUD, 달력 & 말풍선 채팅 (Gemini AI 통합)</title>
+  <title>3D 캐릭터 HUD, 달력 & 말풍선 채팅 (GPT-3.5 Turbo 통합)</title>
   <style>
     /* CSS Reset 및 기본 스타일 */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; font-family: Arial, sans-serif; overflow: hidden; }
-    
+
     /* 오른쪽 HUD: 채팅창 */
     #right-hud {
       position: fixed;
@@ -157,7 +157,7 @@
   
   <script>
     /* ====================================
-       채팅 및 Gemini AI 관련 함수
+       채팅 및 GPT-3.5 Turbo API 관련 함수
     ==================================== */
     function appendToChatLog(message) {
       const chatLog = document.getElementById("chat-log");
@@ -203,7 +203,7 @@
       inputEl.value = "";
     }
     
-    // Gemini API 호출 – 제공해주신 API 키 사용
+    // GPT-3.5 Turbo API 호출 – 제공해주신 API 키 사용
     async function sendAIChat() {
       const inputEl = document.getElementById("chat-input");
       const input = inputEl.value.trim();
@@ -211,7 +211,7 @@
       appendToChatLog("사용자: " + input);
       appendToChatLog("AI: (처리 중...)");
       try {
-        const aiResponse = await askGemini(input);
+        const aiResponse = await askGPT35(input);
         appendToChatLog("AI: " + aiResponse);
       } catch (err) {
         appendToChatLog("AI: 오류 발생 (" + err.message + ")");
@@ -219,19 +219,24 @@
       inputEl.value = "";
     }
     
-    async function askGemini(promptText) {
-      const apiKey = "AIzaSyAvfN9krRcDuvg5E5mt5BAtOcKZrSUcV2A";
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
+    async function askGPT35(promptText) {
+      const apiKey = "sk-proj-JPQMlbkM0GxW8vKw6XDnn-mLkq4QeWZaWQA-1W58_4nGUaBr6-DPVCo4ZEfoOQirvSz9GxA2BXT3BlbkFJM9cGJLrmakWJ-KD0ZKNfObMRonYGJzaeQc2Xn6XFab9ukqYgIAsENHKJ8rk5hVdQk1CD7vWr4";
+      const endpoint = "https://api.openai.com/v1/chat/completions";
       const response = await fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
+        },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: promptText }] }]
+          model: "gpt-3.5-turbo",
+          messages: [{ role: "user", content: promptText }],
+          temperature: 0.7
         })
       });
       const data = await response.json();
-      console.log("Gemini API 응답:", data);
-      return data.candidates?.[0]?.content?.parts?.[0]?.text || "응답 없음";
+      console.log("GPT-3.5 응답:", data);
+      return data.choices?.[0]?.message?.content || "응답 없음";
     }
     
     document.getElementById("chat-input").addEventListener("keydown", function(e) {
@@ -476,15 +481,18 @@
     
     // 캐릭터 생성
     const characterGroup = new THREE.Group();
-    const charBody = new THREE.Mesh(new THREE.BoxGeometry(1, 1.5, 0.5), new THREE.MeshStandardMaterial({ color: 0x00cc66 }));
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), new THREE.MeshStandardMaterial({ color: 0xffcc66 }));
+    const charBody = new THREE.Mesh(new THREE.BoxGeometry(1, 1.5, 0.5),
+                                    new THREE.MeshStandardMaterial({ color: 0x00cc66 }));
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32),
+                                new THREE.MeshStandardMaterial({ color: 0xffcc66 }));
     head.position.y = 1.2;
     const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
     const leftEye = new THREE.Mesh(new THREE.SphereGeometry(0.07, 16, 16), eyeMat);
     const rightEye = new THREE.Mesh(new THREE.SphereGeometry(0.07, 16, 16), eyeMat);
     leftEye.position.set(-0.2, 1.3, 0.45);
     rightEye.position.set(0.2, 1.3, 0.45);
-    const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.05, 0.05), new THREE.MeshStandardMaterial({ color: 0xff3366 }));
+    const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.05, 0.05),
+                                 new THREE.MeshStandardMaterial({ color: 0xff3366 }));
     mouth.position.set(0, 1.1, 0.51);
     const leftBrow = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.05, 0.05), eyeMat);
     const rightBrow = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.05, 0.05), eyeMat);
