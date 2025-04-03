@@ -146,9 +146,9 @@
     // 전역 변수: 날씨 상태 ("맑음", "비", "구름 낀" 등)
     let currentWeather = "";
     
-    /* 파일 저장 함수 - 브라우저 다운로드 방식으로 저장 */
+    /* 파일 저장 함수 (파일은 기본 다운로드 폴더에 저장) */
     function saveFile() {
-      const content = "파일 저장 완료"; // 저장할 파일 내용 (원하는 내용으로 수정 가능)
+      const content = "파일 저장 완료"; // 필요에 따라 저장할 내용을 변경하세요.
       const filename = "saved_file.txt";
       const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
       const link = document.createElement("a");
@@ -157,6 +157,26 @@
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+    }
+    
+    /* 캘린더 저장 함수 (현재 달력 이벤트를 JSON 파일로 저장) */
+    function saveCalendar() {
+      const daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
+      const calendarData = {};
+      for(let d = 1; d <= daysInMonth; d++){
+        const eventDiv = document.getElementById(`event-${currentYear}-${currentMonth+1}-${d}`);
+        if(eventDiv && eventDiv.textContent.trim() !== ""){
+          calendarData[`${currentYear}-${currentMonth+1}-${d}`] = eventDiv.textContent;
+        }
+      }
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(calendarData, null, 2));
+      const dlAnchorElem = document.createElement("a");
+      dlAnchorElem.setAttribute("href", dataStr);
+      dlAnchorElem.setAttribute("download", "calendar_events.json");
+      dlAnchorElem.style.display = "none";
+      document.body.appendChild(dlAnchorElem);
+      dlAnchorElem.click();
+      document.body.removeChild(dlAnchorElem);
     }
     
     /* 채팅 및 날씨 API 통합 함수 */
@@ -168,10 +188,17 @@
       let response = "";
       const lowerInput = input.toLowerCase();
       
-      // "파일 저장해줘" 입력 시
+      // 파일 저장 관련 (예: "파일 저장해줘")
       if (lowerInput.includes("파일 저장해줘")) {
         response = "네, 알겠습니다. 파일 저장하겠습니다.";
         saveFile();
+      }
+      // 캘린더 저장 관련 (예: "캘린더 저장해줘", "캘린더저장", "캘린더 일정저장", "캘린더 하루일과저장" 등)
+      else if ((lowerInput.includes("캘린더") && lowerInput.includes("저장")) ||
+               lowerInput.includes("일정저장") ||
+               lowerInput.includes("하루일과저장")) {
+        response = "네, 알겠습니다. 캘린더 저장하겠습니다.";
+        saveCalendar();
       }
       // 날씨 관련 문의
       else if (lowerInput.includes("날씨") &&
@@ -621,22 +648,7 @@
       });
       
       document.getElementById("save-calendar").addEventListener("click", () => {
-        const daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
-        const calendarData = {};
-        for(let d = 1; d <= daysInMonth; d++){
-          const eventDiv = document.getElementById(`event-${currentYear}-${currentMonth+1}-${d}`);
-          if(eventDiv && eventDiv.textContent.trim() !== ""){
-            calendarData[`${currentYear}-${currentMonth+1}-${d}`] = eventDiv.textContent;
-          }
-        }
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(calendarData, null, 2));
-        const dlAnchorElem = document.createElement("a");
-        dlAnchorElem.setAttribute("href", dataStr);
-        dlAnchorElem.setAttribute("download", "calendar_events.json");
-        dlAnchorElem.style.display = "none";
-        document.body.appendChild(dlAnchorElem);
-        dlAnchorElem.click();
-        document.body.removeChild(dlAnchorElem);
+        saveCalendar();
       });
     }
     function populateYearSelect() {
@@ -685,6 +697,24 @@
         });
         grid.appendChild(cell);
       }
+    }
+    function saveCalendar() {
+      const daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
+      const calendarData = {};
+      for(let d = 1; d <= daysInMonth; d++){
+        const eventDiv = document.getElementById(`event-${currentYear}-${currentMonth+1}-${d}`);
+        if(eventDiv && eventDiv.textContent.trim() !== ""){
+          calendarData[`${currentYear}-${currentMonth+1}-${d}`] = eventDiv.textContent;
+        }
+      }
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(calendarData, null, 2));
+      const dlAnchorElem = document.createElement("a");
+      dlAnchorElem.setAttribute("href", dataStr);
+      dlAnchorElem.setAttribute("download", "calendar_events.json");
+      dlAnchorElem.style.display = "none";
+      document.body.appendChild(dlAnchorElem);
+      dlAnchorElem.click();
+      document.body.removeChild(dlAnchorElem);
     }
     function addEventToDay(dateStr, eventText) {
       const eventDiv = document.getElementById(`event-${dateStr}`);
