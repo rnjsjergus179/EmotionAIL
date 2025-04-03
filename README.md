@@ -12,10 +12,10 @@
     
     #right-hud {
       position: fixed;
-      top: 150px;
-      right: 10px;
-      width: 300px;
-      padding: 10px;
+      top: 10%;
+      right: 1%;
+      width: 20%;
+      padding: 1%;
       background: rgba(255,255,255,0.8);
       border-radius: 5px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.2);
@@ -43,15 +43,15 @@
     
     #left-hud {
       position: fixed;
-      top: 50px;
-      left: 10px;
-      width: 280px;
-      padding: 10px;
+      top: 10%;
+      left: 1%;
+      width: 20%;
+      padding: 1%;
       background: rgba(255,255,255,0.9);
       border-radius: 5px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.2);
       z-index: 20;
-      max-height: 90vh;
+      max-height: 80vh;
       overflow-y: auto;
     }
     #left-hud h3 { margin-bottom: 5px; }
@@ -155,8 +155,19 @@
     #tutorial-content h2 { margin-bottom: 15px; }
     #tutorial-content p { margin: 10px 0; font-size: 14px; }
     
+    #version-select {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      z-index: 50;
+    }
+    #version-select select {
+      padding: 5px;
+      font-size: 12px;
+    }
+
     @media (max-width: 480px) {
-      #right-hud, #left-hud { width: 90%; left: 5%; right: 5%; }
+      #right-hud, #left-hud { width: 90%; left: 5%; right: 5%; top: 5%; }
     }
   </style>
   
@@ -441,6 +452,13 @@
     </div>
   </div>
   
+  <div id="version-select">
+    <select onchange="changeVersion(this.value)">
+      <option value="latest">최신 버전</option>
+      <option value="1.3">구버전 1.3</option>
+    </select>
+  </div>
+  
   <canvas id="canvas"></canvas>
   
   <script>
@@ -465,20 +483,20 @@
     scene.add(moon);
     
     const stars = [], fireflies = [];
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 200; i++) {
       const star = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-      star.position.set((Math.random()-0.5)*50, (Math.random()-0.5)*30, -10);
+      star.position.set((Math.random()-0.5)*100, (Math.random()-0.5)*60, -20);
       scene.add(star);
       stars.push(star);
     }
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 60; i++) {
       const firefly = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffff99 }));
-      firefly.position.set((Math.random()-0.5)*20, (Math.random()-0.5)*10, -5);
+      firefly.position.set((Math.random()-0.5)*40, (Math.random()-0.5)*20, -10);
       scene.add(firefly);
       fireflies.push(firefly);
     }
     
-    const floorGeometry = new THREE.PlaneGeometry(200, 200, 128, 128);
+    const floorGeometry = new THREE.PlaneGeometry(400, 400, 128, 128);
     const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 1, metalness: 0 });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI/2;
@@ -535,25 +553,25 @@
       
       return houseGroup;
     }
-    for (let i = 0; i < 10; i++) {
-      const width = Math.random() * 2 + 2;
-      const height = Math.random() * 10 + 10;
-      const depth = Math.random() * 2 + 2;
+    for (let i = 0; i < 20; i++) {
+      const width = Math.random() * 4 + 4;
+      const height = Math.random() * 20 + 20;
+      const depth = Math.random() * 4 + 4;
       const building = createBuilding(width, height, depth, 0x555555);
-      const col = i % 5;
-      const row = Math.floor(i / 5);
-      const x = -20 + col * 10;
-      const z = -15 - row * 10;
+      const col = i % 10;
+      const row = Math.floor(i / 10);
+      const x = -50 + col * 10;
+      const z = -30 - row * 20;
       building.position.set(x, -2 + height/2, z);
       backgroundGroup.add(building);
     }
-    for (let i = 0; i < 5; i++) {
-      const width = Math.random() * 2 + 3;
-      const height = Math.random() * 2 + 3;
-      const depth = Math.random() * 2 + 3;
+    for (let i = 0; i < 10; i++) {
+      const width = Math.random() * 4 + 6;
+      const height = Math.random() * 4 + 6;
+      const depth = Math.random() * 4 + 6;
       const house = createHouse(width, height, depth, 0xa0522d, 0x8b0000);
-      const x = -10 + i * 10;
-      const z = -5;
+      const x = -40 + i * 10;
+      const z = -10;
       house.position.set(x, 0, z);
       backgroundGroup.add(house);
     }
@@ -579,13 +597,13 @@
     let rainGroup = new THREE.Group();
     scene.add(rainGroup);
     function initRain() {
-      const rainCount = 1000;
+      const rainCount = 2000;
       const rainGeometry = new THREE.BufferGeometry();
       const positions = new Float32Array(rainCount * 3);
       for (let i = 0; i < rainCount; i++) {
-        positions[i * 3] = Math.random() * 100 - 50;
-        positions[i * 3 + 1] = Math.random() * 50;
-        positions[i * 3 + 2] = Math.random() * 100 - 50;
+        positions[i * 3] = Math.random() * 200 - 100;
+        positions[i * 3 + 1] = Math.random() * 100;
+        positions[i * 3 + 2] = Math.random() * 200 - 100;
       }
       rainGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
       const rainMaterial = new THREE.PointsMaterial({ color: 0xaaaaee, size: 0.1, transparent: true, opacity: 0.6 });
@@ -611,11 +629,11 @@
     }
     const singleCloud = createHouseCloud();
     houseCloudGroup.add(singleCloud);
-    houseCloudGroup.position.set(0, 5, -10);
+    houseCloudGroup.position.set(0, 10, -20);
     scene.add(houseCloudGroup);
     function updateHouseClouds() {
       singleCloud.position.x += 0.02;
-      if (singleCloud.position.x > 5) { singleCloud.position.x = -5; }
+      if (singleCloud.position.x > 10) { singleCloud.position.x = -10; }
     }
     
     let lightningLight = new THREE.PointLight(0xffffff, 0, 500);
@@ -659,24 +677,25 @@
       requestAnimationFrame(animate);
       
       const now = new Date();
+      const headWorldPos = new THREE.Vector3();
+      head.getWorldPosition(headWorldPos);
       const totalMin = now.getHours() * 60 + now.getMinutes();
       const angle = (totalMin / 1440) * Math.PI * 2;
-      const leftHouseX = -10;
-      const rightHouseX = 40;
-      const heightAboveRoof = 5;
-      const zPos = 0;
+      const radius = 3;
+      const sunPos = new THREE.Vector3(
+        headWorldPos.x + Math.cos(angle) * radius,
+        headWorldPos.y + Math.sin(angle) * radius,
+        headWorldPos.z
+      );
+      sun.position.copy(sunPos);
       
-      const sunX = leftHouseX + (rightHouseX - leftHouseX) * (totalMin / 1440);
-      const sunY = totalMin <= 720 ? 
-        heightAboveRoof * Math.sin(angle) : 
-        -heightAboveRoof * Math.sin(angle - Math.PI);
-      sun.position.set(sunX, sunY, zPos);
-      
-      const moonX = rightHouseX - (rightHouseX - leftHouseX) * (totalMin / 1440);
-      const moonY = totalMin <= 720 ? 
-        -heightAboveRoof * Math.sin(angle) : 
-        heightAboveRoof * Math.sin(angle - Math.PI);
-      moon.position.set(moonX, moonY, zPos);
+      const moonAngle = angle + Math.PI;
+      const moonPos = new THREE.Vector3(
+        headWorldPos.x + Math.cos(moonAngle) * radius,
+        headWorldPos.y + Math.sin(moonAngle) * radius,
+        headWorldPos.z
+      );
+      moon.position.copy(moonPos);
       
       const t = now.getHours() + now.getMinutes() / 60;
       let sunOpacity = 0, moonOpacity = 0;
@@ -824,6 +843,14 @@
           overlay.style.display = "none";
         }, 1000);
       }, 4000);
+    }
+
+    function changeVersion(version) {
+      if (version === "1.3") {
+        window.location.href = window.location.href; 
+      } else if (version === "latest") {
+        alert("최신 버전으로 이동하려면 해당 URL을 입력하세요.");
+      }
     }
   </script>
 </body>
