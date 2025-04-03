@@ -155,7 +155,7 @@
       let response = "";
       const lowerInput = input.toLowerCase();
       
-      // 날씨 관련 문의 시
+      // 날씨 관련 문의
       if (lowerInput.includes("날씨") &&
          (lowerInput.includes("알려") || lowerInput.includes("어때") ||
           lowerInput.includes("뭐야") || lowerInput.includes("어떻게") || lowerInput.includes("맑아"))) {
@@ -184,13 +184,12 @@
         response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
       }
       
-      // 사용자 메시지와 캐릭터 응답을 함께 말풍선에 표시
-      const combinedMessage = "사용자: " + input + "\n캐릭터: " + response;
-      showSpeechBubbleInChunks(combinedMessage);
+      // 오직 캐릭터의 응답만 말풍선에 표시 (사용자 메시지는 제외)
+      showSpeechBubbleInChunks(response);
       inputEl.value = "";
     }
     
-    // OpenWeatherMap API 호출 및 날씨 정보 가져오기 (서울 기준)
+    // OpenWeatherMap API 호출하여 서울 날씨 정보 가져오기
     async function getWeather() {
       try {
         const city = "Seoul";
@@ -253,7 +252,7 @@
       showNextChunk();
     }
     
-    // DOMContentLoaded 이후에 엔터키 이벤트 등록
+    // DOMContentLoaded 후에 엔터키 이벤트 등록 (전송 버튼은 제거됨)
     window.addEventListener("DOMContentLoaded", function() {
       document.getElementById("chat-input").addEventListener("keydown", function(e) {
         if (e.key === "Enter") sendChat();
