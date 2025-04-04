@@ -283,6 +283,7 @@
             lowerInput.includes("뭐야") || lowerInput.includes("어떻게") || lowerInput.includes("맑아"))) {
           const weatherData = await getWeather();
           response = weatherData.message;
+          updateMap(); // 날씨 요청 시 지도도 동일 지역으로 업데이트
         }
         else if (lowerInput.includes("시간") || lowerInput.includes("몇시") || lowerInput.includes("현재시간")) {
           const now = new Date();
@@ -439,7 +440,7 @@
     window.addEventListener("load", () => {
       initCalendar();
       showTutorial();
-      updateMap(); // 초기 지도 설정
+      updateMap(); // 페이지 로드 시 초기 지도 설정
     });
   </script>
 </head>
@@ -482,7 +483,7 @@
       <p>
         <strong>채팅창:</strong> 오른쪽에서는 파일 저장, 캘린더 저장 등의 명령어를 사용할 수 있습니다.<br>
         "지역 [지역명]" (예: "지역 인천" 또는 "인천") 입력 시 지도와 날씨가 해당 지역으로 업데이트됩니다.<br>
-        "날씨 알려줘" 입력 시 현재 설정된 지역의 날씨가 출력됩니다.
+        "날씨 알려줘" 입력 시 지도에 표시된 지역의 날씨가 출력됩니다.
       </p>
       <p><strong>캘린더:</strong> 왼쪽에서 날짜 클릭해 일정을 추가하거나, 버튼으로 저장/삭제하세요.</p>
     </div>
