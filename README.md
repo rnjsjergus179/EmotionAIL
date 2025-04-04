@@ -40,6 +40,7 @@
       font-size: 14px;
     }
     
+    /* 왼쪽 캘린더 HUD */
     #left-hud {
       position: fixed;
       top: 10%;
@@ -128,6 +129,21 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
     
+    /* 새로 추가된 HUD-3: UI 지도 영역 */
+    #hud-3 {
+      position: fixed;
+      top: 40%;
+      right: 1%;
+      width: 20%;
+      height: 25%;
+      padding: 1%;
+      background: rgba(255,255,255,0.9);
+      border-radius: 5px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      z-index: 20;
+      overflow: hidden;
+    }
+    
     #tutorial-overlay {
       position: fixed;
       top: 0;
@@ -166,7 +182,7 @@
     }
 
     @media (max-width: 480px) {
-      #right-hud, #left-hud { width: 90%; left: 5%; right: 5%; top: 5%; }
+      #right-hud, #left-hud, #hud-3 { width: 90%; left: 5%; right: 5%; top: 5%; }
     }
   </style>
   
@@ -176,7 +192,7 @@
     document.addEventListener("contextmenu", event => event.preventDefault());
     let blockUntil = 0;
     let danceInterval; // 춤 애니메이션 제어 변수
-    // 기본값은 "Seoul" (서울)로 설정되어 있지만, 사용자가 단순 지역명 입력 시 자동 업데이트됩니다.
+    // 기본 currentCity는 "Seoul" (서울)로 설정되어 있음.
     let currentCity = "Seoul";
     
     document.addEventListener("copy", function(e) {
@@ -189,7 +205,7 @@
       showSpeechBubbleInChunks("1시간동안 차단됩니다.");
     });
     
-    // 날씨 API 키를 새 값으로 변경
+    // 날씨 API 키 (변경된 키)
     const weatherKey = "2caa7fa4a66f2f8d150f1da93d306261";
     let currentWeather = "";
     
@@ -224,6 +240,11 @@
       document.body.removeChild(dlAnchorElem);
     }
     
+    // 지도 업데이트 함수: currentCity 값에 따라 구글 지도 embed iframe의 src 업데이트
+    function updateMap() {
+      document.getElementById("map-iframe").src = "https://www.google.com/maps?q=" + encodeURIComponent(currentCity) + "&output=embed";
+    }
+    
     async function sendChat() {
       const inputEl = document.getElementById("chat-input");
       const input = inputEl.value.trim();
@@ -245,11 +266,12 @@
         if(newCity) {
           currentCity = newCity;
           response = `지역이 ${newCity}(으)로 변경되었습니다.`;
+          updateMap();
         } else {
           response = "변경할 지역을 입력해주세요.";
         }
       }
-      // [2] 단순 지역명 입력 처리 (수도권 및 지방의 다양한 지역명)
+      // [2] 단순 지역명 입력 처리 (미리 정의된 지역명 목록)
       else {
         const regionList = [
           "서울", "인천", "수원", "고양", "성남", "용인", "부천", "안양", "의정부", "광명", "안산", "파주",
@@ -258,9 +280,11 @@
         if (regionList.includes(input)) {
           currentCity = input;
           response = `지역이 ${input}(으)로 변경되었습니다.`;
+          updateMap();
         }
       }
       
+      // 날씨 및 지역 관련 명령어가 아닌 경우, 나머지 채팅 명령어 처리
       if (!response) {
         if (lowerInput.includes("시간") || lowerInput.includes("몇시") || lowerInput.includes("현재시간")) {
           const now = new Date();
@@ -277,11 +301,6 @@
                  lowerInput.includes("하루일과저장")) {
           response = "네, 알겠습니다. 캘린더 저장하겠습니다.";
           saveCalendar();
-        }
-        else if (lowerInput.includes("날씨") &&
-                 (lowerInput.includes("알려") || lowerInput.includes("어때") ||
-                  lowerInput.includes("뭐야") || lowerInput.includes("어떻게") || lowerInput.includes("맑아"))) {
-          response = await getWeather();
         }
         else if (lowerInput.includes("기분") && lowerInput.includes("좋아")) {
           response = "정말요!? 저도 정말 기분좋아요😁";
@@ -316,27 +335,12 @@
         else if (lowerInput.includes("일정")) {
           response = "캘린더는 왼쪽에서 확인하세요.";
         }
-        else if (lowerInput.includes("캐릭터 춤춰줘")) {
-          response = "춤출게요!";
-          if (danceInterval) clearInterval(danceInterval);
-          danceInterval = setInterval(() => {
-            characterGroup.children[7].rotation.z = Math.sin(Date.now() * 0.01) * Math.PI / 4;
-            head.rotation.y = Math.sin(Date.now() * 0.01) * Math.PI / 8;
-          }, 50);
-          setTimeout(() => {
-            clearInterval(danceInterval);
-            characterGroup.children[7].rotation.z = 0;
-            head.rotation.y = 0;
-          }, 3000);
-        }
-        // 춤 관련 키워드 처리
-        else if (
-          lowerInput.includes("춤") ||
-          lowerInput.includes("춤춰") ||
-          lowerInput.includes("춤춰줘") ||
-          lowerInput.includes("춤춰봐") ||
-          lowerInput.includes("춤사위")
-        ) {
+        else if (lowerInput.includes("캐릭터 춤춰줘") ||
+                 lowerInput.includes("춤") ||
+                 lowerInput.includes("춤춰") ||
+                 lowerInput.includes("춤춰줘") ||
+                 lowerInput.includes("춤춰봐") ||
+                 lowerInput.includes("춤사위")) {
           response = "춤추겠습니다! 잠시만 기다려 주세요.";
           if (danceInterval) clearInterval(danceInterval);
           danceInterval = setInterval(() => {
@@ -349,45 +353,6 @@
             head.rotation.y = 0;
           }, 3000);
         }
-        else if (lowerInput.includes("하루일정 삭제해줘") || lowerInput.includes("일정 삭제")) {
-          const dayStr = prompt("삭제할 하루일정의 날짜(일)를 입력하세요 (예: 15):");
-          if (dayStr) {
-            const dayNum = parseInt(dayStr);
-            const eventDiv = document.getElementById(`event-${currentYear}-${currentMonth+1}-${dayNum}`);
-            if (eventDiv) {
-              eventDiv.textContent = "";
-              response = `${currentYear}-${currentMonth+1}-${dayNum} 일정이 삭제되었습니다.`;
-            } else {
-              response = "해당 날짜의 셀이 없습니다. 현재 달에 있는 날짜를 입력해주세요.";
-            }
-          } else {
-            response = "날짜를 입력하지 않았습니다.";
-          }
-        }
-        else if (lowerInput.includes("입력하게 보여줘") || lowerInput.includes("일정 입력")) {
-          const dayStr = prompt("일정을 입력할 날짜(일)를 입력하세요 (예: 15):");
-          if (dayStr) {
-            const dayNum = parseInt(dayStr);
-            const eventDiv = document.getElementById(`event-${currentYear}-${currentMonth+1}-${dayNum}`);
-            if (eventDiv) {
-              const eventText = prompt(`${currentYear}-${currentMonth+1}-${dayNum} 일정 입력:`);
-              if (eventText) {
-                if (eventDiv.textContent) {
-                  eventDiv.textContent += "; " + eventText;
-                } else {
-                  eventDiv.textContent = eventText;
-                }
-                response = `${currentYear}-${currentMonth+1}-${dayNum}에 일정이 추가되었습니다.`;
-              } else {
-                response = "일정을 입력하지 않았습니다.";
-              }
-            } else {
-              response = "해당 날짜의 셀이 없습니다. 현재 달에 있는 날짜를 입력해주세요.";
-            }
-          } else {
-            response = "날짜를 입력하지 않았습니다.";
-          }
-        }
         else {
           response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
         }
@@ -397,7 +362,7 @@
       inputEl.value = "";
     }
     
-    // getWeather 함수 수정: currentCity를 encodeURIComponent()로 감싸서 API 호출 시 한글 지역도 올바르게 처리하도록 함.
+    // getWeather 함수: currentCity를 encodeURIComponent()로 감싸 한글 지역명도 올바르게 처리
     async function getWeather() {
       try {
         const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(currentCity)}&appid=${weatherKey}&units=metric&lang=kr`;
@@ -460,6 +425,18 @@
       showNextChunk();
     }
     
+    // 자동으로 날씨 정보를 업데이트하여 캐릭터 말풍선에 출력하고 지도도 업데이트
+    function autoUpdateWeather() {
+      getWeather().then(response => {
+        showSpeechBubbleInChunks(response, 100, 5000);
+      });
+      setInterval(() => {
+        getWeather().then(response => {
+          showSpeechBubbleInChunks(response, 100, 5000);
+        });
+      }, 300000); // 5분마다 업데이트
+    }
+    
     window.addEventListener("DOMContentLoaded", function() {
       document.getElementById("chat-input").addEventListener("keydown", function(e) {
         if (e.key === "Enter") sendChat();
@@ -471,6 +448,44 @@
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
+    
+    // 페이지 로드 시 캘린더, 튜토리얼, 자동 날씨 업데이트 시작
+    window.addEventListener("load", () => {
+      initCalendar();
+      showTutorial();
+      autoUpdateWeather();
+    });
+    
+    function updateBubblePosition() {
+      const bubble = document.getElementById("speech-bubble");
+      const headWorldPos = new THREE.Vector3();
+      head.getWorldPosition(headWorldPos);
+      const screenPos = headWorldPos.project(camera);
+      bubble.style.left = ((screenPos.x * 0.5 + 0.5) * window.innerWidth) + "px";
+      bubble.style.top = ((1 - (screenPos.y * 0.5 + 0.5)) * window.innerHeight - 50) + "px";
+    }
+    
+    function showTutorial() {
+      const overlay = document.getElementById("tutorial-overlay");
+      overlay.style.display = "flex";
+      setTimeout(() => {
+        overlay.style.opacity = "1";
+      }, 10);
+      setTimeout(() => {
+        overlay.style.opacity = "0";
+        setTimeout(() => {
+          overlay.style.display = "none";
+        }, 1000);
+      }, 4000);
+    }
+    
+    function changeVersion(version) {
+      if (version === "1.3") {
+        window.location.href = window.location.href; 
+      } else if (version === "latest") {
+        alert("최신 버전으로 이동하려면 해당 URL을 입력하세요.");
+      }
+    }
   </script>
 </head>
 <body>
@@ -480,6 +495,11 @@
     <div id="chat-input-area">
       <input type="text" id="chat-input" placeholder="채팅 입력..." />
     </div>
+  </div>
+  
+  <!-- 새로 추가된 HUD-3: 지도 영역 -->
+  <div id="hud-3">
+    <iframe id="map-iframe" src="https://www.google.com/maps?q=Seoul&output=embed" frameborder="0" style="width:100%; height:100%; border:0;" allowfullscreen></iframe>
   </div>
   
   <div id="left-hud">
@@ -506,11 +526,12 @@
       <h2>사용법 안내</h2>
       <p><strong>캐릭터:</strong> 채팅창에 "안녕", "캐릭터 춤춰줘" 등 입력해 보세요.</p>
       <p>
-        <strong>채팅창:</strong> 오른쪽에서 "날씨 알려줘", "파일 저장해줘" 등 명령할 수 있습니다.<br>
-        또한, "지역 [지역명]" (예: "지역 수도권" 또는 "지역 부산")이나 단순히 "인천", "수원", "고양", "성남", "용인", "부천", "안양", "의정부", "광명", "안산", "파주", "부산", "대구", "광주", "대전", "울산", "제주", "전주", "청주", "포항", "여수", "김해" 등의 명령어를 입력하면 해당 지역으로 변경되어<br>
-        이후 "날씨 알려줘" 명령 시 업데이트된 지역의 날씨가 조회됩니다.
+        <strong>채팅창:</strong> 오른쪽에서는 파일 저장, 캘린더 저장 등의 명령어를 사용할 수 있습니다.<br>
+        또한, 홈페이지 접속 시 자동으로 currentCity(기본값 "Seoul") 기준 날씨 정보가 캐릭터 말풍선에 출력되고, 5분마다 업데이트됩니다.<br>
+        새로 추가된 지도 영역(HUD-3)은 currentCity 값을 기반으로 구글 지도 embed가 표시됩니다.<br>
+        (예: "지역 인천" 또는 단순히 "인천"을 입력하면 currentCity가 업데이트되어 지도도 자동 변경됩니다.)
       </p>
-      <p><strong>캘린더:</strong> 왼쪽에서 날짜 클릭해 일정을 추가하거나, 버튼으로 저장/삭제하세요.</p>
+      <p><strong>캘린더:</strong> 왼쪽에서 날짜를 클릭해 일정을 추가하거나, 버튼으로 저장/삭제하세요.</p>
     </div>
   </div>
   
@@ -920,7 +941,7 @@
         }, 1000);
       }, 4000);
     }
-    
+
     function changeVersion(version) {
       if (version === "1.3") {
         window.location.href = window.location.href; 
@@ -928,6 +949,35 @@
         alert("최신 버전으로 이동하려면 해당 URL을 입력하세요.");
       }
     }
+    
+    // 자동으로 날씨 정보를 업데이트하여 캐릭터 말풍선에 출력 (5분마다)
+    function autoUpdateWeather() {
+      getWeather().then(response => {
+        showSpeechBubbleInChunks(response, 100, 5000);
+      });
+      setInterval(() => {
+        getWeather().then(response => {
+          showSpeechBubbleInChunks(response, 100, 5000);
+        });
+      }, 300000);
+    }
+    
+    window.addEventListener("DOMContentLoaded", function() {
+      document.getElementById("chat-input").addEventListener("keydown", function(e) {
+        if (e.key === "Enter") sendChat();
+      });
+    });
+    
+    window.addEventListener("resize", function(){
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+    
+    // 페이지 로드 시 캘린더, 튜토리얼, 자동 날씨 업데이트 시작
+    window.addEventListener("load", () => {
+      autoUpdateWeather();
+    });
   </script>
 </body>
 </html>
