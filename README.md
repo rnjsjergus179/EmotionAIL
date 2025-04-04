@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -510,11 +511,11 @@
     
     function changeVersion(version) {
       if (version === "1.3") {
-        // 1.3 버전으로 이동
-        window.location.href = "https://aipersonalassistant.neocities.org/%EC%95%A0%EB%8B%88";
+        // 1.3 버전으로 이동 (URL 변경)
+        window.location.href = "https://aipersonalassistant.neocities.org/";
       } else if (version === "latest") {
-        // 현재 페이지가 1.7 버전이므로 새로고침 또는 유지
-        window.location.reload(); // 새로고침
+        // 현재 페이지가 1.7 버전이므로 새로고침
+        window.location.reload();
       }
     }
   </script>
