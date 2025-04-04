@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -129,13 +128,13 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
     
-    /* 새로 추가된 HUD-3: UI 지도 영역 */
+    /* 추가된 HUD-3: 지도 영역 (채팅창 아래에 추가됨) */
     #hud-3 {
       position: fixed;
-      top: 40%;
+      top: 70%;
       right: 1%;
       width: 20%;
-      height: 25%;
+      height: 20%;
       padding: 1%;
       background: rgba(255,255,255,0.9);
       border-radius: 5px;
@@ -284,9 +283,14 @@
         }
       }
       
-      // 날씨 및 지역 관련 명령어가 아닌 경우, 나머지 채팅 명령어 처리
+      // 날씨 관련 명령어 (예: "날씨 알려줘")
       if (!response) {
-        if (lowerInput.includes("시간") || lowerInput.includes("몇시") || lowerInput.includes("현재시간")) {
+        if (lowerInput.includes("날씨") &&
+           (lowerInput.includes("알려") || lowerInput.includes("어때") ||
+            lowerInput.includes("뭐야") || lowerInput.includes("어떻게") || lowerInput.includes("맑아"))) {
+          response = await getWeather();
+        }
+        else if (lowerInput.includes("시간") || lowerInput.includes("몇시") || lowerInput.includes("현재시간")) {
           const now = new Date();
           const hours = now.getHours();
           const minutes = now.getMinutes();
@@ -425,18 +429,6 @@
       showNextChunk();
     }
     
-    // 자동으로 날씨 정보를 업데이트하여 캐릭터 말풍선에 출력하고 지도도 업데이트
-    function autoUpdateWeather() {
-      getWeather().then(response => {
-        showSpeechBubbleInChunks(response, 100, 5000);
-      });
-      setInterval(() => {
-        getWeather().then(response => {
-          showSpeechBubbleInChunks(response, 100, 5000);
-        });
-      }, 300000); // 5분마다 업데이트
-    }
-    
     window.addEventListener("DOMContentLoaded", function() {
       document.getElementById("chat-input").addEventListener("keydown", function(e) {
         if (e.key === "Enter") sendChat();
@@ -449,11 +441,10 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
     
-    // 페이지 로드 시 캘린더, 튜토리얼, 자동 날씨 업데이트 시작
+    // 페이지 로드 시 캘린더와 튜토리얼만 초기화 (자동 날씨 업데이트는 제거)
     window.addEventListener("load", () => {
       initCalendar();
       showTutorial();
-      autoUpdateWeather();
     });
     
     function updateBubblePosition() {
@@ -497,7 +488,7 @@
     </div>
   </div>
   
-  <!-- 새로 추가된 HUD-3: 지도 영역 -->
+  <!-- 추가된 HUD-3: 지도 영역 -->
   <div id="hud-3">
     <iframe id="map-iframe" src="https://www.google.com/maps?q=Seoul&output=embed" frameborder="0" style="width:100%; height:100%; border:0;" allowfullscreen></iframe>
   </div>
@@ -527,11 +518,10 @@
       <p><strong>캐릭터:</strong> 채팅창에 "안녕", "캐릭터 춤춰줘" 등 입력해 보세요.</p>
       <p>
         <strong>채팅창:</strong> 오른쪽에서는 파일 저장, 캘린더 저장 등의 명령어를 사용할 수 있습니다.<br>
-        또한, 홈페이지 접속 시 자동으로 currentCity(기본값 "Seoul") 기준 날씨 정보가 캐릭터 말풍선에 출력되고, 5분마다 업데이트됩니다.<br>
-        새로 추가된 지도 영역(HUD-3)은 currentCity 값을 기반으로 구글 지도 embed가 표시됩니다.<br>
-        (예: "지역 인천" 또는 단순히 "인천"을 입력하면 currentCity가 업데이트되어 지도도 자동 변경됩니다.)
+        또한, "지역 [지역명]" (예: "지역 인천" 또는 단순히 "인천")을 입력하면 currentCity가 업데이트되어 지도와 날씨 조회에 반영됩니다.<br>
+        "날씨 알려줘" 명령을 입력하면 업데이트된 currentCity 기준 날씨 정보가 캐릭터 말풍선에 출력됩니다.
       </p>
-      <p><strong>캘린더:</strong> 왼쪽에서 날짜를 클릭해 일정을 추가하거나, 버튼으로 저장/삭제하세요.</p>
+      <p><strong>캘린더:</strong> 왼쪽에서 날짜 클릭해 일정을 추가하거나, 버튼으로 저장/삭제하세요.</p>
     </div>
   </div>
   
@@ -765,13 +755,13 @@
       treeGroup.add(trunk, foliage);
       return treeGroup;
     }
-
+    
     for (let i = 0; i < 10; i++) {
       const tree = createTree();
       tree.position.set(-50 + i * 10, -2, -15);
       scene.add(tree);
     }
-
+    
     function animate() {
       requestAnimationFrame(animate);
       
@@ -941,7 +931,7 @@
         }, 1000);
       }, 4000);
     }
-
+    
     function changeVersion(version) {
       if (version === "1.3") {
         window.location.href = window.location.href; 
@@ -949,35 +939,6 @@
         alert("최신 버전으로 이동하려면 해당 URL을 입력하세요.");
       }
     }
-    
-    // 자동으로 날씨 정보를 업데이트하여 캐릭터 말풍선에 출력 (5분마다)
-    function autoUpdateWeather() {
-      getWeather().then(response => {
-        showSpeechBubbleInChunks(response, 100, 5000);
-      });
-      setInterval(() => {
-        getWeather().then(response => {
-          showSpeechBubbleInChunks(response, 100, 5000);
-        });
-      }, 300000);
-    }
-    
-    window.addEventListener("DOMContentLoaded", function() {
-      document.getElementById("chat-input").addEventListener("keydown", function(e) {
-        if (e.key === "Enter") sendChat();
-      });
-    });
-    
-    window.addEventListener("resize", function(){
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-    
-    // 페이지 로드 시 캘린더, 튜토리얼, 자동 날씨 업데이트 시작
-    window.addEventListener("load", () => {
-      autoUpdateWeather();
-    });
   </script>
 </body>
 </html>
