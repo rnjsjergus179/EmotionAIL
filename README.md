@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -369,7 +368,7 @@
       inputEl.value = "";
     }
     
-    // 날씨 API와 연동하여 날씨 정보를 가져오며, '흐림' 또는 '구름'이 포함된 경우 추가 표현을 붙임
+    // 날씨 API와 연동하여 날씨 정보를 가져오며, '흐림' 또는 '구름'이 포함된 경우 추가 표현에 적절한 이모티콘을 붙임
     async function getWeather() {
       try {
         const city = "Seoul";
@@ -382,7 +381,7 @@
         currentWeather = description;
         let extraComment = "";
         if (description.indexOf("흐림") !== -1 || description.indexOf("구름") !== -1) {
-          extraComment = " 오늘은 약간 흐린 날씨네요.";
+          extraComment = " 오늘은 약간 흐린 날씨네요 ☁️";
         }
         return `오늘 ${city}의 날씨는 ${description}이며, 온도는 ${temp}°C입니다.${extraComment}`;
       } catch (err) {
