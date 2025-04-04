@@ -301,6 +301,36 @@
           head.rotation.y = 0;
         }, 3000);
       }
+      // 추가: "뭐해", "뭐하니", "뭐하고있어", "뭐함", "뭐고" 관련 키워드
+      else if (
+        lowerInput.includes("뭐해") ||
+        lowerInput.includes("뭐하니") ||
+        lowerInput.includes("뭐하고있어") ||
+        lowerInput.includes("뭐함") ||
+        lowerInput.includes("뭐고")
+      ) {
+        response = "저는 지금 당신과 대화하면서 즐거운 시간을 보내고 있어요!";
+      }
+      // 추가: "춤춰", "춤", "춤춰줘", "춤춰봐", "춤사위" 관련 키워드
+      else if (
+        lowerInput.includes("춤춰") ||
+        lowerInput.includes("춤") ||
+        lowerInput.includes("춤춰줘") ||
+        lowerInput.includes("춤춰봐") ||
+        lowerInput.includes("춤사위")
+      ) {
+        response = "춤추겠습니다! 잠시만 기다려 주세요.";
+        if (danceInterval) clearInterval(danceInterval);
+        danceInterval = setInterval(() => {
+          characterGroup.children[7].rotation.z = Math.sin(Date.now() * 0.01) * Math.PI / 4;
+          head.rotation.y = Math.sin(Date.now() * 0.01) * Math.PI / 8;
+        }, 50);
+        setTimeout(() => {
+          clearInterval(danceInterval);
+          characterGroup.children[7].rotation.z = 0;
+          head.rotation.y = 0;
+        }, 3000);
+      }
       else if (lowerInput.includes("하루일정 삭제해줘") || lowerInput.includes("일정 삭제")) {
         const dayStr = prompt("삭제할 하루일정의 날짜(일)를 입력하세요 (예: 15):");
         if (dayStr) {
@@ -781,8 +811,6 @@
           if(eventDiv) {
             eventDiv.textContent = "";
             alert(`${currentYear}-${currentMonth+1}-${dayNum} 일정이 삭제되었습니다. 다시 입력할 수 있습니다.`);
-          } else {
-            alert("해당 날짜의 셀이 없습니다. 현재 달에 있는 날짜를 입력해주세요.");
           }
         }
       });
@@ -875,4 +903,4 @@
     }
   </script>
 </body>
-</html>
+</html>.
