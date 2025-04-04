@@ -239,7 +239,7 @@
       let response = "";
       const lowerInput = input.toLowerCase();
       
-      // [1] 기존 "지역 [지역명]" 명령 처리
+      // [1] "지역 [지역명]" 명령 처리
       if (lowerInput.startsWith("지역 ")) {
         const newCity = lowerInput.replace("지역", "").trim();
         if(newCity) {
@@ -249,7 +249,7 @@
           response = "변경할 지역을 입력해주세요.";
         }
       }
-      // [2] 단순 지역명 입력 처리 (수도권 및 지방의 여러 지역명을 추가)
+      // [2] 단순 지역명 입력 처리 (수도권 및 지방의 다양한 지역명)
       else {
         const regionList = [
           "서울", "인천", "수원", "고양", "성남", "용인", "부천", "안양", "의정부", "광명", "안산", "파주",
@@ -397,10 +397,10 @@
       inputEl.value = "";
     }
     
-    // currentCity 전역변수를 이용하여 날씨 API와 연동 (날씨 설명에 '흐림' 또는 '구름'이 포함되면 구름 이모티콘 추가)
+    // getWeather 함수 수정: currentCity를 encodeURIComponent()로 감싸서 API 호출 시 한글 지역도 올바르게 처리하도록 함.
     async function getWeather() {
       try {
-        const url = `https://api.openweathermap.org/data/2.5/weather?q=${currentCity}&appid=${weatherKey}&units=metric&lang=kr`;
+        const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(currentCity)}&appid=${weatherKey}&units=metric&lang=kr`;
         const res = await fetch(url);
         if (!res.ok) throw new Error("날씨 API 호출 실패");
         const data = await res.json();
@@ -507,8 +507,8 @@
       <p><strong>캐릭터:</strong> 채팅창에 "안녕", "캐릭터 춤춰줘" 등 입력해 보세요.</p>
       <p>
         <strong>채팅창:</strong> 오른쪽에서 "날씨 알려줘", "파일 저장해줘" 등 명령할 수 있습니다.<br>
-        또한, "지역 [지역명]" (예: "지역 수도권" 또는 "지역 부산")이나 단순히 "인천", "수원", "고양", "성남", "용인", "부천", "안양", "의정부", "광명", "안산", "파주", "부산", "대구", "광주", "대전", "울산", "제주", "전주", "청주", "포항", "여수", "김해" 등 다양한 지역명을 입력하면<br>
-        해당 지역으로 변경되어 이후 "날씨 알려줘" 명령 시 업데이트된 지역의 날씨가 조회됩니다.
+        또한, "지역 [지역명]" (예: "지역 수도권" 또는 "지역 부산")이나 단순히 "인천", "수원", "고양", "성남", "용인", "부천", "안양", "의정부", "광명", "안산", "파주", "부산", "대구", "광주", "대전", "울산", "제주", "전주", "청주", "포항", "여수", "김해" 등의 명령어를 입력하면 해당 지역으로 변경되어<br>
+        이후 "날씨 알려줘" 명령 시 업데이트된 지역의 날씨가 조회됩니다.
       </p>
       <p><strong>캘린더:</strong> 왼쪽에서 날짜 클릭해 일정을 추가하거나, 버튼으로 저장/삭제하세요.</p>
     </div>
@@ -920,7 +920,7 @@
         }, 1000);
       }, 4000);
     }
-
+    
     function changeVersion(version) {
       if (version === "1.3") {
         window.location.href = window.location.href; 
