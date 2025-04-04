@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -175,7 +176,7 @@
     document.addEventListener("contextmenu", event => event.preventDefault());
     let blockUntil = 0;
     let danceInterval; // 춤 애니메이션 제어 변수
-    // currentCity는 날씨 API 호출 시 사용될 지역명 (초기값 "Seoul")
+    // currentCity: 날씨 API 호출 시 사용될 지역명 (초기값 "Seoul")
     let currentCity = "Seoul";
     
     document.addEventListener("copy", function(e) {
@@ -237,12 +238,32 @@
       let response = "";
       const lowerInput = input.toLowerCase();
       
-      // 예: "지역 서울", "지역 부산" 등 입력 시 현재 지역 변경
+      // 지역 변경 처리: "지역 [지역명]"
       if (lowerInput.startsWith("지역 ")) {
         const newCity = lowerInput.replace("지역", "").trim();
         if(newCity) {
-          currentCity = newCity;
-          response = `지역이 ${newCity}(으)로 변경되었습니다.`;
+          if(newCity === "수도권") {
+            const selectedCity = prompt("수도권 지역 중 선택하세요: 인천, 서울, 파주");
+            if(selectedCity) {
+              currentCity = selectedCity;
+              response = `지역이 ${selectedCity}(으)로 변경되었습니다.`;
+            } else {
+              response = "지역 변경이 취소되었습니다.";
+            }
+          }
+          else if(newCity === "지방") {
+            const selectedCity = prompt("지방 지역 중 선택하세요: 부산, 대구, 광주");
+            if(selectedCity) {
+              currentCity = selectedCity;
+              response = `지역이 ${selectedCity}(으)로 변경되었습니다.`;
+            } else {
+              response = "지역 변경이 취소되었습니다.";
+            }
+          }
+          else {
+            currentCity = newCity;
+            response = `지역이 ${newCity}(으)로 변경되었습니다.`;
+          }
         } else {
           response = "변경할 지역을 입력해주세요.";
         }
@@ -490,7 +511,7 @@
       <h2>사용법 안내</h2>
       <p><strong>캐릭터:</strong> 채팅창에 "안녕", "캐릭터 춤춰줘" 등 입력해 보세요.</p>
       <p><strong>채팅창:</strong> 오른쪽에서 "날씨 알려줘", "파일 저장해줘" 등 명령할 수 있습니다.<br>
-      또한, "지역 [지역명]" (예: "지역 부산")을 입력하면 해당 지역의 날씨로 변경됩니다.</p>
+      또한, "지역 [지역명]" (예: "지역 수도권" 또는 "지역 부산")을 입력하면 해당 지역의 날씨로 변경됩니다.</p>
       <p><strong>캘린더:</strong> 왼쪽에서 날짜 클릭해 일정을 추가하거나, 버튼으로 저장/삭제하세요.</p>
     </div>
   </div>
