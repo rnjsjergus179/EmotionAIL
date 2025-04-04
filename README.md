@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -176,7 +175,8 @@
     document.addEventListener("contextmenu", event => event.preventDefault());
     let blockUntil = 0;
     let danceInterval; // 춤 애니메이션 제어 변수
-    // currentCity: 날씨 API 호출 시 사용될 지역명 (초기값 "Seoul")
+    // 기본값은 "Seoul" (서울)로 설정되어 있지만, 아래 추가 분기를 통해
+    // 사용자가 "인천", "부산" 등 단순 지역명을 입력하면 currentCity가 업데이트됩니다.
     let currentCity = "Seoul";
     
     document.addEventListener("copy", function(e) {
@@ -238,7 +238,7 @@
       let response = "";
       const lowerInput = input.toLowerCase();
       
-      // 지역 변경 처리: "지역 [지역명]"
+      // [1] 기존 "지역 [지역명]" 명령 처리
       if (lowerInput.startsWith("지역 ")) {
         const newCity = lowerInput.replace("지역", "").trim();
         if(newCity) {
@@ -268,134 +268,144 @@
           response = "변경할 지역을 입력해주세요.";
         }
       }
-      else if (lowerInput.includes("시간") || lowerInput.includes("몇시") || lowerInput.includes("현재시간")) {
-        const now = new Date();
-        const hours = now.getHours();
-        const minutes = now.getMinutes();
-        response = `현재 시간은 ${hours}시 ${minutes}분입니다.`;
-      }
-      else if (lowerInput.includes("파일 저장해줘")) {
-        response = "네, 알겠습니다. 파일 저장하겠습니다.";
-        saveFile();
-      }
-      else if ((lowerInput.includes("캘린더") && lowerInput.includes("저장")) ||
-               lowerInput.includes("일정저장") ||
-               lowerInput.includes("하루일과저장")) {
-        response = "네, 알겠습니다. 캘린더 저장하겠습니다.";
-        saveCalendar();
-      }
-      else if (lowerInput.includes("날씨") &&
-         (lowerInput.includes("알려") || lowerInput.includes("어때") ||
-          lowerInput.includes("뭐야") || lowerInput.includes("어떻게") || lowerInput.includes("맑아"))) {
-        response = await getWeather();
-      }
-      else if (lowerInput.includes("기분") && lowerInput.includes("좋아")) {
-        response = "정말요!? 저도 정말 기분좋아요😁";
-        const originalEyeColor = leftEye.material.color.getHex();
-        leftEye.material.color.set(0xffff00);
-        rightEye.material.color.set(0xffff00);
-        setTimeout(() => {
-          leftEye.material.color.set(originalEyeColor);
-          rightEye.material.color.set(originalEyeColor);
-        }, 500);
-        const originalLeftBrowRotation = leftBrow.rotation.x;
-        const originalRightBrowRotation = rightBrow.rotation.x;
-        const eyebrowInterval = setInterval(() => {
-          const angle = Math.sin(Date.now() * 0.005) * 0.3;
-          leftBrow.rotation.x = originalLeftBrowRotation + angle;
-          rightBrow.rotation.x = originalRightBrowRotation + angle;
-        }, 50);
-        setTimeout(() => {
-          clearInterval(eyebrowInterval);
-          leftBrow.rotation.x = originalLeftBrowRotation;
-          rightBrow.rotation.x = originalRightBrowRotation;
-        }, 3000);
-      }
-      else if (lowerInput.includes("안녕")) {
-        response = "안녕하세요, 주인님! 오늘 기분은 어떠세요?";
-        characterGroup.children[7].rotation.z = Math.PI / 4;
-        setTimeout(() => { characterGroup.children[7].rotation.z = 0; }, 1000);
-      }
-      else if (lowerInput.includes("캐릭터 넌 누구야")) {
-        response = "저는 당신의 개인 비서에요.";
-      }
-      else if (lowerInput.includes("일정")) {
-        response = "캘린더는 왼쪽에서 확인하세요.";
-      }
-      else if (lowerInput.includes("캐릭터 춤춰줘")) {
-        response = "춤출게요!";
-        if (danceInterval) clearInterval(danceInterval);
-        danceInterval = setInterval(() => {
-          characterGroup.children[7].rotation.z = Math.sin(Date.now() * 0.01) * Math.PI / 4;
-          head.rotation.y = Math.sin(Date.now() * 0.01) * Math.PI / 8;
-        }, 50);
-        setTimeout(() => {
-          clearInterval(danceInterval);
-          characterGroup.children[7].rotation.z = 0;
-          head.rotation.y = 0;
-        }, 3000);
-      }
-      // 춤 관련 키워드 입력 시 캐릭터 춤추게 함
-      else if (
-        lowerInput.includes("춤") ||
-        lowerInput.includes("춤춰") ||
-        lowerInput.includes("춤춰줘") ||
-        lowerInput.includes("춤춰봐") ||
-        lowerInput.includes("춤사위")
-      ) {
-        response = "춤추겠습니다! 잠시만 기다려 주세요.";
-        if (danceInterval) clearInterval(danceInterval);
-        danceInterval = setInterval(() => {
-          characterGroup.children[7].rotation.z = Math.sin(Date.now() * 0.01) * Math.PI / 4;
-          head.rotation.y = Math.sin(Date.now() * 0.01) * Math.PI / 8;
-        }, 50);
-        setTimeout(() => {
-          clearInterval(danceInterval);
-          characterGroup.children[7].rotation.z = 0;
-          head.rotation.y = 0;
-        }, 3000);
-      }
-      else if (lowerInput.includes("하루일정 삭제해줘") || lowerInput.includes("일정 삭제")) {
-        const dayStr = prompt("삭제할 하루일정의 날짜(일)를 입력하세요 (예: 15):");
-        if (dayStr) {
-          const dayNum = parseInt(dayStr);
-          const eventDiv = document.getElementById(`event-${currentYear}-${currentMonth+1}-${dayNum}`);
-          if (eventDiv) {
-            eventDiv.textContent = "";
-            response = `${currentYear}-${currentMonth+1}-${dayNum} 일정이 삭제되었습니다.`;
-          } else {
-            response = "해당 날짜의 셀이 없습니다. 현재 달에 있는 날짜를 입력해주세요.";
-          }
-        } else {
-          response = "날짜를 입력하지 않았습니다.";
+      // [2] 추가: 사용자가 단순히 지역명(예: "인천", "부산", "파주" 등)을 입력하면 이를 인식하여 currentCity를 업데이트
+      else {
+        const regionList = ["서울", "인천", "파주", "부산", "대구", "광주", "대전", "울산", "단양"];
+        if (regionList.includes(input)) {
+          currentCity = input;
+          response = `지역이 ${input}(으)로 변경되었습니다.`;
         }
       }
-      else if (lowerInput.includes("입력하게 보여줘") || lowerInput.includes("일정 입력")) {
-        const dayStr = prompt("일정을 입력할 날짜(일)를 입력하세요 (예: 15):");
-        if (dayStr) {
-          const dayNum = parseInt(dayStr);
-          const eventDiv = document.getElementById(`event-${currentYear}-${currentMonth+1}-${dayNum}`);
-          if (eventDiv) {
-            const eventText = prompt(`${currentYear}-${currentMonth+1}-${dayNum} 일정 입력:`);
-            if (eventText) {
-              if (eventDiv.textContent) {
-                eventDiv.textContent += "; " + eventText;
-              } else {
-                eventDiv.textContent = eventText;
-              }
-              response = `${currentYear}-${currentMonth+1}-${dayNum}에 일정이 추가되었습니다.`;
+      
+      if (!response) {
+        if (lowerInput.includes("시간") || lowerInput.includes("몇시") || lowerInput.includes("현재시간")) {
+          const now = new Date();
+          const hours = now.getHours();
+          const minutes = now.getMinutes();
+          response = `현재 시간은 ${hours}시 ${minutes}분입니다.`;
+        }
+        else if (lowerInput.includes("파일 저장해줘")) {
+          response = "네, 알겠습니다. 파일 저장하겠습니다.";
+          saveFile();
+        }
+        else if ((lowerInput.includes("캘린더") && lowerInput.includes("저장")) ||
+                 lowerInput.includes("일정저장") ||
+                 lowerInput.includes("하루일과저장")) {
+          response = "네, 알겠습니다. 캘린더 저장하겠습니다.";
+          saveCalendar();
+        }
+        else if (lowerInput.includes("날씨") &&
+                 (lowerInput.includes("알려") || lowerInput.includes("어때") ||
+                  lowerInput.includes("뭐야") || lowerInput.includes("어떻게") || lowerInput.includes("맑아"))) {
+          response = await getWeather();
+        }
+        else if (lowerInput.includes("기분") && lowerInput.includes("좋아")) {
+          response = "정말요!? 저도 정말 기분좋아요😁";
+          const originalEyeColor = leftEye.material.color.getHex();
+          leftEye.material.color.set(0xffff00);
+          rightEye.material.color.set(0xffff00);
+          setTimeout(() => {
+            leftEye.material.color.set(originalEyeColor);
+            rightEye.material.color.set(originalEyeColor);
+          }, 500);
+          const originalLeftBrowRotation = leftBrow.rotation.x;
+          const originalRightBrowRotation = rightBrow.rotation.x;
+          const eyebrowInterval = setInterval(() => {
+            const angle = Math.sin(Date.now() * 0.005) * 0.3;
+            leftBrow.rotation.x = originalLeftBrowRotation + angle;
+            rightBrow.rotation.x = originalRightBrowRotation + angle;
+          }, 50);
+          setTimeout(() => {
+            clearInterval(eyebrowInterval);
+            leftBrow.rotation.x = originalLeftBrowRotation;
+            rightBrow.rotation.x = originalRightBrowRotation;
+          }, 3000);
+        }
+        else if (lowerInput.includes("안녕")) {
+          response = "안녕하세요, 주인님! 오늘 기분은 어떠세요?";
+          characterGroup.children[7].rotation.z = Math.PI / 4;
+          setTimeout(() => { characterGroup.children[7].rotation.z = 0; }, 1000);
+        }
+        else if (lowerInput.includes("캐릭터 넌 누구야")) {
+          response = "저는 당신의 개인 비서에요.";
+        }
+        else if (lowerInput.includes("일정")) {
+          response = "캘린더는 왼쪽에서 확인하세요.";
+        }
+        else if (lowerInput.includes("캐릭터 춤춰줘")) {
+          response = "춤출게요!";
+          if (danceInterval) clearInterval(danceInterval);
+          danceInterval = setInterval(() => {
+            characterGroup.children[7].rotation.z = Math.sin(Date.now() * 0.01) * Math.PI / 4;
+            head.rotation.y = Math.sin(Date.now() * 0.01) * Math.PI / 8;
+          }, 50);
+          setTimeout(() => {
+            clearInterval(danceInterval);
+            characterGroup.children[7].rotation.z = 0;
+            head.rotation.y = 0;
+          }, 3000);
+        }
+        else if (
+          lowerInput.includes("춤") ||
+          lowerInput.includes("춤춰") ||
+          lowerInput.includes("춤춰줘") ||
+          lowerInput.includes("춤춰봐") ||
+          lowerInput.includes("춤사위")
+        ) {
+          response = "춤추겠습니다! 잠시만 기다려 주세요.";
+          if (danceInterval) clearInterval(danceInterval);
+          danceInterval = setInterval(() => {
+            characterGroup.children[7].rotation.z = Math.sin(Date.now() * 0.01) * Math.PI / 4;
+            head.rotation.y = Math.sin(Date.now() * 0.01) * Math.PI / 8;
+          }, 50);
+          setTimeout(() => {
+            clearInterval(danceInterval);
+            characterGroup.children[7].rotation.z = 0;
+            head.rotation.y = 0;
+          }, 3000);
+        }
+        else if (lowerInput.includes("하루일정 삭제해줘") || lowerInput.includes("일정 삭제")) {
+          const dayStr = prompt("삭제할 하루일정의 날짜(일)를 입력하세요 (예: 15):");
+          if (dayStr) {
+            const dayNum = parseInt(dayStr);
+            const eventDiv = document.getElementById(`event-${currentYear}-${currentMonth+1}-${dayNum}`);
+            if (eventDiv) {
+              eventDiv.textContent = "";
+              response = `${currentYear}-${currentMonth+1}-${dayNum} 일정이 삭제되었습니다.`;
             } else {
-              response = "일정을 입력하지 않았습니다.";
+              response = "해당 날짜의 셀이 없습니다. 현재 달에 있는 날짜를 입력해주세요.";
             }
           } else {
-            response = "해당 날짜의 셀이 없습니다. 현재 달에 있는 날짜를 입력해주세요.";
+            response = "날짜를 입력하지 않았습니다.";
           }
-        } else {
-          response = "날짜를 입력하지 않았습니다.";
         }
-      }
-      else {
-        response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
+        else if (lowerInput.includes("입력하게 보여줘") || lowerInput.includes("일정 입력")) {
+          const dayStr = prompt("일정을 입력할 날짜(일)를 입력하세요 (예: 15):");
+          if (dayStr) {
+            const dayNum = parseInt(dayStr);
+            const eventDiv = document.getElementById(`event-${currentYear}-${currentMonth+1}-${dayNum}`);
+            if (eventDiv) {
+              const eventText = prompt(`${currentYear}-${currentMonth+1}-${dayNum} 일정 입력:`);
+              if (eventText) {
+                if (eventDiv.textContent) {
+                  eventDiv.textContent += "; " + eventText;
+                } else {
+                  eventDiv.textContent = eventText;
+                }
+                response = `${currentYear}-${currentMonth+1}-${dayNum}에 일정이 추가되었습니다.`;
+              } else {
+                response = "일정을 입력하지 않았습니다.";
+              }
+            } else {
+              response = "해당 날짜의 셀이 없습니다. 현재 달에 있는 날짜를 입력해주세요.";
+            }
+          } else {
+            response = "날짜를 입력하지 않았습니다.";
+          }
+        }
+        else {
+          response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
+        }
       }
       
       showSpeechBubbleInChunks(response);
@@ -510,8 +520,11 @@
     <div id="tutorial-content">
       <h2>사용법 안내</h2>
       <p><strong>캐릭터:</strong> 채팅창에 "안녕", "캐릭터 춤춰줘" 등 입력해 보세요.</p>
-      <p><strong>채팅창:</strong> 오른쪽에서 "날씨 알려줘", "파일 저장해줘" 등 명령할 수 있습니다.<br>
-      또한, "지역 [지역명]" (예: "지역 수도권" 또는 "지역 부산")을 입력하면 해당 지역의 날씨로 변경됩니다.</p>
+      <p>
+        <strong>채팅창:</strong> 오른쪽에서 "날씨 알려줘", "파일 저장해줘" 등 명령할 수 있습니다.<br>
+        또한, "지역 [지역명]" (예: "지역 수도권" 또는 "지역 부산")이나 단순히 "인천", "서울", "파주" 등<br>
+        지역명만 입력해도 해당 지역으로 변경되어 이후 "날씨 알려줘" 명령 시 업데이트된 지역의 날씨가 조회됩니다.
+      </p>
       <p><strong>캘린더:</strong> 왼쪽에서 날짜 클릭해 일정을 추가하거나, 버튼으로 저장/삭제하세요.</p>
     </div>
   </div>
