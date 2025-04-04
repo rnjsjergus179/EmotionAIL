@@ -175,7 +175,7 @@
   <script>
     document.addEventListener("contextmenu", event => event.preventDefault());
     let blockUntil = 0;
-    let danceInterval; // 전역에 춤 애니메이션 제어 변수 선언
+    let danceInterval; // 춤 애니메이션 제어 변수
     document.addEventListener("copy", function(e) {
       e.preventDefault();
       let selectedText = window.getSelection().toString();
@@ -302,7 +302,7 @@
           head.rotation.y = 0;
         }, 3000);
       }
-      // 춤 관련 키워드 ("춤", "춤춰", "춤춰줘", "춤춰봐", "춤사위") 입력 시 캐릭터가 춤추게 함
+      // 춤 관련 키워드 입력 시 캐릭터 춤추게 함
       else if (
         lowerInput.includes("춤") ||
         lowerInput.includes("춤춰") ||
@@ -369,6 +369,7 @@
       inputEl.value = "";
     }
     
+    // 날씨 API와 연동하여 날씨 정보를 가져오며, '흐림' 또는 '구름'이 포함된 경우 추가 표현을 붙임
     async function getWeather() {
       try {
         const city = "Seoul";
@@ -379,7 +380,11 @@
         const description = data.weather[0].description;
         const temp = data.main.temp;
         currentWeather = description;
-        return `오늘 ${city}의 날씨는 ${description}이며, 온도는 ${temp}°C입니다.`;
+        let extraComment = "";
+        if (description.indexOf("흐림") !== -1 || description.indexOf("구름") !== -1) {
+          extraComment = " 오늘은 약간 흐린 날씨네요.";
+        }
+        return `오늘 ${city}의 날씨는 ${description}이며, 온도는 ${temp}°C입니다.${extraComment}`;
       } catch (err) {
         currentWeather = "";
         return "날씨 정보를 가져오지 못했습니다.";
