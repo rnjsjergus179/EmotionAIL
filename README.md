@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -9,7 +10,6 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; font-family: Arial, sans-serif; overflow: hidden; }
     
-    /* 오른쪽 HUD: 채팅창 */
     #right-hud {
       position: fixed;
       top: 10%;
@@ -41,7 +41,6 @@
       font-size: 14px;
     }
     
-    /* 왼쪽 HUD: 캘린더 */
     #left-hud {
       position: fixed;
       top: 10%;
@@ -108,7 +107,6 @@
       white-space: nowrap;
     }
     
-    /* 캔버스: 3D 씬 */
     #canvas {
       position: fixed;
       top: 0;
@@ -118,8 +116,6 @@
       z-index: 1;
       display: block;
     }
-    
-    /* 말풍선 */
     #speech-bubble {
       position: fixed;
       background: white;
@@ -133,7 +129,6 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
     
-    /* HUD-3: 지도 영역 (채팅창 아래에 추가) */
     #hud-3 {
       position: fixed;
       top: 70%;
@@ -148,7 +143,6 @@
       overflow: hidden;
     }
     
-    /* 튜토리얼 오버레이 */
     #tutorial-overlay {
       position: fixed;
       top: 0;
@@ -175,7 +169,6 @@
     #tutorial-content h2 { margin-bottom: 15px; }
     #tutorial-content p { margin: 10px 0; font-size: 14px; }
     
-    /* 버전 선택 */
     #version-select {
       position: fixed;
       bottom: 10px;
@@ -186,40 +179,33 @@
       padding: 5px;
       font-size: 12px;
     }
-    
+
     @media (max-width: 480px) {
       #right-hud, #left-hud, #hud-3 { width: 90%; left: 5%; right: 5%; top: 5%; }
     }
   </style>
   
-  <!-- three.js 라이브러리 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   
   <script>
-    // 마우스 우클릭 방지 등 기본 설정
     document.addEventListener("contextmenu", event => event.preventDefault());
     let blockUntil = 0;
-    let danceInterval; // 춤 애니메이션 제어 변수
-
-    // 기본 currentCity는 "Seoul" (서울)로 설정
+    let danceInterval;
     let currentCity = "Seoul";
-
-    // 복사 이벤트 방지
+    
     document.addEventListener("copy", function(e) {
       e.preventDefault();
       let selectedText = window.getSelection().toString();
-      selectedText = selectedText.replace(/396bfaf4974ab9c336b3fb46e15242da/g, "HIDDEN");
+      selectedText = selectedText.replace(/2caa7fa4a66f2f8d150f1da93d306261/g, "HIDDEN");
       e.clipboardData.setData("text/plain", selectedText);
       if (Date.now() < blockUntil) return;
       blockUntil = Date.now() + 3600000;
       showSpeechBubbleInChunks("1시간동안 차단됩니다.");
     });
     
-    // OpenWeatherMap API 키 (현재 키: 2caa7fa4a66f2f8d150f1da93d306261)
     const weatherKey = "2caa7fa4a66f2f8d150f1da93d306261";
     let currentWeather = "";
     
-    // 파일 저장 및 캘린더 저장 기능 (기존 유지)
     function saveFile() {
       const content = "파일 저장 완료";
       const filename = "saved_file.txt";
@@ -251,12 +237,10 @@
       document.body.removeChild(dlAnchorElem);
     }
     
-    // 지도 업데이트 함수: currentCity 값에 따라 구글 지도 embed iframe의 src 업데이트
     function updateMap() {
-      document.getElementById("map-iframe").src = "https://www.google.com/maps?q=" + encodeURIComponent(currentCity) + "&output=embed";
+      document.getElementById("map-iframe").src = `https://www.google.com/maps?q=${encodeURIComponent(currentCity)}&output=embed`;
     }
     
-    // 채팅 명령어 처리 함수
     async function sendChat() {
       const inputEl = document.getElementById("chat-input");
       const input = inputEl.value.trim();
@@ -266,12 +250,12 @@
         inputEl.value = "";
         return;
       }
+      
       if (!input) return;
       
       let response = "";
       const lowerInput = input.toLowerCase();
       
-      // [1] "지역 [지역명]" 명령 처리
       if (lowerInput.startsWith("지역 ")) {
         const newCity = lowerInput.replace("지역", "").trim();
         if(newCity) {
@@ -281,9 +265,7 @@
         } else {
           response = "변경할 지역을 입력해주세요.";
         }
-      }
-      // [2] 단순 지역명 입력 처리 (미리 정의된 지역명 목록)
-      else {
+      } else {
         const regionList = [
           "서울", "인천", "수원", "고양", "성남", "용인", "부천", "안양", "의정부", "광명", "안산", "파주",
           "부산", "대구", "광주", "대전", "울산", "제주", "전주", "청주", "포항", "여수", "김해"
@@ -295,12 +277,12 @@
         }
       }
       
-      // 날씨 관련 명령어 처리 ("날씨 알려줘" 등)
       if (!response) {
         if (lowerInput.includes("날씨") &&
            (lowerInput.includes("알려") || lowerInput.includes("어때") ||
             lowerInput.includes("뭐야") || lowerInput.includes("어떻게") || lowerInput.includes("맑아"))) {
-          response = await getWeather();
+          const weatherData = await getWeather();
+          response = weatherData.message;
         }
         else if (lowerInput.includes("시간") || lowerInput.includes("몇시") || lowerInput.includes("현재시간")) {
           const now = new Date();
@@ -378,7 +360,6 @@
       inputEl.value = "";
     }
     
-    // getWeather 함수: currentCity 값을 encodeURIComponent() 처리하여 OpenWeatherMap API 호출
     async function getWeather() {
       try {
         const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(currentCity)}&appid=${weatherKey}&units=metric&lang=kr`;
@@ -392,14 +373,15 @@
         if (description.indexOf("흐림") !== -1 || description.indexOf("구름") !== -1) {
           extraComment = " 오늘은 약간 흐린 날씨네요 ☁️";
         }
-        return `오늘 ${currentCity}의 날씨는 ${description}이며, 온도는 ${temp}°C입니다.${extraComment}`;
+        return {
+          message: `오늘 ${currentCity}의 날씨는 ${description}이며, 온도는 ${temp}°C입니다.${extraComment}`
+        };
       } catch (err) {
         currentWeather = "";
-        return "날씨 정보를 가져오지 못했습니다.";
+        return { message: "날씨 정보를 가져오지 못했습니다." };
       }
     }
     
-    // 날씨 이펙트 업데이트 (비, 구름 등)
     function updateWeatherEffects() {
       if (currentWeather.indexOf("비") !== -1 || currentWeather.indexOf("소나기") !== -1) {
         rainGroup.visible = true;
@@ -422,7 +404,6 @@
       }
     }
     
-    // 말풍선에 텍스트를 조각으로 출력하는 함수
     function showSpeechBubbleInChunks(text, chunkSize = 15, delay = 3000) {
       const bubble = document.getElementById("speech-bubble");
       const chunks = [];
@@ -443,7 +424,6 @@
       showNextChunk();
     }
     
-    // 이벤트 리스너: 채팅 입력에서 Enter키 누르면 sendChat() 호출
     window.addEventListener("DOMContentLoaded", function() {
       document.getElementById("chat-input").addEventListener("keydown", function(e) {
         if (e.key === "Enter") sendChat();
@@ -456,127 +436,11 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
     
-    // 캘린더 초기화 및 관련 함수들
-    let currentYear, currentMonth;
-    function initCalendar() {
-      const now = new Date();
-      currentYear = now.getFullYear();
-      currentMonth = now.getMonth();
-      populateYearSelect();
-      renderCalendar(currentYear, currentMonth);
-      document.getElementById("prev-month").addEventListener("click", () => {
-        currentMonth--;
-        if (currentMonth < 0) { currentMonth = 11; currentYear--; }
-        renderCalendar(currentYear, currentMonth);
-      });
-      document.getElementById("next-month").addEventListener("click", () => {
-        currentMonth++;
-        if (currentMonth > 11) { currentMonth = 0; currentYear++; }
-        renderCalendar(currentYear, currentMonth);
-      });
-      document.getElementById("year-select").addEventListener("change", (e) => {
-        currentYear = parseInt(e.target.value);
-        renderCalendar(currentYear, currentMonth);
-      });
-      
-      document.getElementById("delete-day-event").addEventListener("click", () => {
-        const dayStr = prompt("삭제할 하루일정의 날짜(일)를 입력하세요 (예: 15):");
-        if(dayStr) {
-          const dayNum = parseInt(dayStr);
-          const eventDiv = document.getElementById(`event-${currentYear}-${currentMonth+1}-${dayNum}`);
-          if(eventDiv) {
-            eventDiv.textContent = "";
-            alert(`${currentYear}-${currentMonth+1}-${dayNum} 일정이 삭제되었습니다. 다시 입력할 수 있습니다.`);
-          }
-        }
-      });
-      
-      document.getElementById("save-calendar").addEventListener("click", () => {
-        saveCalendar();
-      });
-    }
-    function populateYearSelect() {
-      const yearSelect = document.getElementById("year-select");
-      yearSelect.innerHTML = "";
-      for(let y = 2020; y <= 2070; y++){
-        const option = document.createElement("option");
-        option.value = y;
-        option.textContent = y;
-        if(y === currentYear) option.selected = true;
-        yearSelect.appendChild(option);
-      }
-    }
-    function renderCalendar(year, month) {
-      const monthNames = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
-      document.getElementById("month-year-label").textContent = `${year}년 ${monthNames[month]}`;
-      const grid = document.getElementById("calendar-grid");
-      grid.innerHTML = "";
-      const daysOfWeek = ["일","월","화","수","목","금","토"];
-      daysOfWeek.forEach((day) => {
-        const th = document.createElement("div");
-        th.style.fontWeight = "bold";
-        th.style.textAlign = "center";
-        th.textContent = day;
-        grid.appendChild(th);
-      });
-      const firstDay = new Date(year, month, 1).getDay();
-      const daysInMonth = new Date(year, month+1, 0).getDate();
-      for(let i = 0; i < firstDay; i++){
-        grid.appendChild(document.createElement("div"));
-      }
-      for(let d = 1; d <= daysInMonth; d++){
-        const cell = document.createElement("div");
-        cell.innerHTML = `<div class="day-number">${d}</div>
-                          <div class="event" id="event-${year}-${month+1}-${d}"></div>`;
-        cell.addEventListener("click", () => {
-          const eventText = prompt(`${year}-${month+1}-${d} 일정 입력:`);
-          if(eventText) {
-            const eventDiv = document.getElementById(`event-${year}-${month+1}-${d}`);
-            if(eventDiv.textContent) {
-              eventDiv.textContent += "; " + eventText;
-            } else {
-              eventDiv.textContent = eventText;
-            }
-          }
-        });
-        grid.appendChild(cell);
-      }
-    }
     window.addEventListener("load", () => {
       initCalendar();
       showTutorial();
+      updateMap(); // 초기 지도 설정
     });
-    
-    function updateBubblePosition() {
-      const bubble = document.getElementById("speech-bubble");
-      const headWorldPos = new THREE.Vector3();
-      head.getWorldPosition(headWorldPos);
-      const screenPos = headWorldPos.project(camera);
-      bubble.style.left = ((screenPos.x * 0.5 + 0.5) * window.innerWidth) + "px";
-      bubble.style.top = ((1 - (screenPos.y * 0.5 + 0.5)) * window.innerHeight - 50) + "px";
-    }
-    
-    function showTutorial() {
-      const overlay = document.getElementById("tutorial-overlay");
-      overlay.style.display = "flex";
-      setTimeout(() => {
-        overlay.style.opacity = "1";
-      }, 10);
-      setTimeout(() => {
-        overlay.style.opacity = "0";
-        setTimeout(() => {
-          overlay.style.display = "none";
-        }, 1000);
-      }, 4000);
-    }
-    
-    function changeVersion(version) {
-      if (version === "1.3") {
-        window.location.href = window.location.href; 
-      } else if (version === "latest") {
-        alert("최신 버전으로 이동하려면 해당 URL을 입력하세요.");
-      }
-    }
   </script>
 </head>
 <body>
@@ -588,7 +452,6 @@
     </div>
   </div>
   
-  <!-- HUD-3: 지도 영역 -->
   <div id="hud-3">
     <iframe id="map-iframe" src="https://www.google.com/maps?q=Seoul&output=embed" frameborder="0" style="width:100%; height:100%; border:0;" allowfullscreen></iframe>
   </div>
@@ -618,10 +481,10 @@
       <p><strong>캐릭터:</strong> 채팅창에 "안녕", "캐릭터 춤춰줘" 등 입력해 보세요.</p>
       <p>
         <strong>채팅창:</strong> 오른쪽에서는 파일 저장, 캘린더 저장 등의 명령어를 사용할 수 있습니다.<br>
-        또한, "지역 [지역명]" (예: "지역 인천" 또는 단순히 "인천")을 입력하면 currentCity가 업데이트되어 지도와 날씨 조회에 반영됩니다.<br>
-        "날씨 알려줘" 명령을 입력하면 업데이트된 currentCity 기준 날씨 정보가 캐릭터 말풍선에 출력됩니다.
+        "지역 [지역명]" (예: "지역 인천" 또는 "인천") 입력 시 지도와 날씨가 해당 지역으로 업데이트됩니다.<br>
+        "날씨 알려줘" 입력 시 현재 설정된 지역의 날씨가 출력됩니다.
       </p>
-      <p><strong>캘린더:</strong> 왼쪽에서 날짜를 클릭해 일정을 추가하거나, 버튼으로 저장/삭제하세요.</p>
+      <p><strong>캘린더:</strong> 왼쪽에서 날짜 클릭해 일정을 추가하거나, 버튼으로 저장/삭제하세요.</p>
     </div>
   </div>
   
@@ -1004,10 +867,6 @@
         grid.appendChild(cell);
       }
     }
-    window.addEventListener("load", () => {
-      initCalendar();
-      showTutorial();
-    });
     
     function updateBubblePosition() {
       const bubble = document.getElementById("speech-bubble");
