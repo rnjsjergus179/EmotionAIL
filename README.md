@@ -40,6 +40,34 @@
       padding: 5px;
       font-size: 14px;
     }
+    /* 추가: 지역 선택 HUD (채팅창 아래) */
+    #region-hud {
+      margin-top: 10px;
+      max-height: 50px; /* 작게 설정 */
+      overflow-y: auto;
+      background: rgba(255,255,255,0.9);
+      border-radius: 5px;
+      padding: 5px;
+      font-size: 12px;
+    }
+    #region-hud ul {
+      list-style: none;
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 5px;
+      padding: 0;
+      margin: 0;
+    }
+    #region-hud li {
+      padding: 3px 6px;
+      background: #eee;
+      border-radius: 3px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    #region-hud li:hover {
+      background: #ddd;
+    }
     
     /* 왼쪽 캘린더 */
     #left-hud {
@@ -184,8 +212,8 @@
     // 기본 설정 및 변수들
     document.addEventListener("contextmenu", event => event.preventDefault());
     let blockUntil = 0;
-    let danceInterval; // 캐릭터 춤 애니메이션 제어
-    // currentCity: 날씨 API 호출 시 사용할 지역 (초기값 "Seoul")
+    let danceInterval; // 캐릭터 춤 애니메이션 제어 변수
+    // currentCity: 날씨 API 호출 시 사용될 지역 (초기값 "Seoul")
     let currentCity = "Seoul";
     let currentWeather = "";
     const weatherKey = "396bfaf4974ab9c336b3fb46e15242da";
@@ -223,7 +251,6 @@
       document.body.removeChild(dlAnchorElem);
     }
     
-    // 채팅 전송 함수
     async function sendChat() {
       const inputEl = document.getElementById("chat-input");
       const input = inputEl.value.trim();
@@ -253,7 +280,7 @@
             }
           }
           else if(newCity === "지방") {
-            const selectedCity = prompt("지방 지역 중 선택하세요: 부산, 대구, 광주");
+            const selectedCity = prompt("지방 지역 중 선택하세요: 부산, 대구, 광주, 대전, 울산");
             if(selectedCity) {
               currentCity = selectedCity;
               response = `지역이 ${selectedCity}(으)로 변경되었습니다.`;
@@ -269,13 +296,12 @@
           response = "변경할 지역을 입력해주세요.";
         }
       }
-      // "내 위치 알려줘" 명령이 들어오면 (날씨 명령으로만 처리)
+      // "내 위치 알려줘" 명령 처리
       else if(lowerInput === "내 위치 알려줘") {
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(function(position){
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
-            // 위도/경도 기반 날씨 조회 (말풍선으로 출력)
             getWeatherByCoords(lat, lng);
           }, function(error){
             response = "위치 정보를 가져오지 못했습니다.";
@@ -420,7 +446,7 @@
       inputEl.value = "";
     }
     
-    // getWeather(): currentCity 기반 날씨 조회 (날씨 설명에 '흐림' 또는 '구름'이 포함되면 이모티콘 추가)
+    // currentCity 전역변수를 이용한 텍스트 기반 날씨 조회 (날씨 설명에 '흐림' 또는 '구름' 포함 시 이모티콘 추가)
     async function getWeather() {
       try {
         const url = `https://api.openweathermap.org/data/2.5/weather?q=${currentCity}&appid=${weatherKey}&units=metric&lang=kr`;
@@ -441,7 +467,7 @@
       }
     }
     
-    // getWeatherByCoords(): 위도/경도 기반 날씨 조회 (말풍선으로 출력)
+    // getWeatherByCoords: 위도/경도 기반 날씨 조회 (말풍선 출력)
     async function getWeatherByCoords(lat, lng) {
       try {
         const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${weatherKey}&units=metric&lang=kr`;
@@ -503,6 +529,12 @@
       showNextChunk();
     }
     
+    // 추가: HUD 내에서 지역 버튼 클릭 시 호출되는 함수
+    function changeRegion(regionName) {
+      currentCity = regionName;
+      showSpeechBubbleInChunks(`지역이 ${regionName}(으)로 변경되었습니다.`);
+    }
+    
     window.addEventListener("DOMContentLoaded", function() {
       document.getElementById("chat-input").addEventListener("keydown", function(e) {
         if (e.key === "Enter") sendChat();
@@ -522,6 +554,19 @@
     <div id="chat-log"></div>
     <div id="chat-input-area">
       <input type="text" id="chat-input" placeholder="채팅 입력..." />
+    </div>
+    <!-- 추가: 지역 선택 HUD (채팅창 아래) -->
+    <div id="region-hud">
+      <ul>
+        <li onclick="changeRegion('인천')">인천</li>
+        <li onclick="changeRegion('서울')">서울</li>
+        <li onclick="changeRegion('파주')">파주</li>
+        <li onclick="changeRegion('부산')">부산</li>
+        <li onclick="changeRegion('대구')">대구</li>
+        <li onclick="changeRegion('광주')">광주</li>
+        <li onclick="changeRegion('대전')">대전</li>
+        <li onclick="changeRegion('울산')">울산</li>
+      </ul>
     </div>
   </div>
   
@@ -548,9 +593,11 @@
     <div id="tutorial-content">
       <h2>사용법 안내</h2>
       <p><strong>캐릭터:</strong> 채팅창에 "안녕", "캐릭터 춤춰줘" 등 입력해 보세요.</p>
-      <p><strong>채팅창:</strong> 오른쪽에서 "날씨 알려줘", "파일 저장해줘" 등 명령할 수 있습니다.<br>
-      또한, "지역 [지역명]" (예: "지역 수도권" 또는 "지역 부산")을 입력하면 해당 지역의 날씨로 변경됩니다.<br>
-      **"내 위치 알려줘"**라고 입력하면 브라우저의 현재 위치 기반 날씨가 확인됩니다.</p>
+      <p>
+        <strong>채팅창:</strong> 오른쪽에서 "날씨 알려줘", "파일 저장해줘" 등 명령할 수 있습니다.<br>
+        또한, "지역 [지역명]" (예: "지역 수도권" 또는 "지역 부산")을 입력하면 해당 지역의 날씨로 변경됩니다.<br>
+        **"내 위치 알려줘"**라고 입력하면 현재 위치 기반 날씨를 확인합니다.
+      </p>
       <p><strong>캘린더:</strong> 왼쪽에서 날짜 클릭해 일정을 추가하거나, 버튼으로 저장/삭제하세요.</p>
     </div>
   </div>
