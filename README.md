@@ -21,6 +21,12 @@
       box-shadow: 0 4px 8px rgba(0,0,0,0.2);
       z-index: 20;
     }
+    #region-select {
+      width: 100%;
+      padding: 5px;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
     #chat-log {
       display: none;
       height: 100px;
@@ -205,6 +211,10 @@
     });
     
     const weatherKey = "2caa7fa4a66f2f8d150f1da93d306261";
+    const regionList = [
+      "서울", "인천", "수원", "고양", "성남", "용인", "부천", "안양", "의정부", "광명", "안산", "파주",
+      "부산", "대구", "광주", "대전", "울산", "제주", "전주", "청주", "포항", "여수", "김해"
+    ];
     
     function saveFile() {
       const content = "파일 저장 완료";
@@ -241,12 +251,19 @@
       document.getElementById("map-iframe").src = `https://www.google.com/maps?q=${encodeURIComponent(currentCity)}&output=embed`;
     }
     
-    async function updateWeatherAndEffects(showMessage = true) {
+    async function updateWeatherAndEffects(sendMessage = true) {
       const weatherData = await getWeather();
       if (sendMessage) {
         showSpeechBubbleInChunks(weatherData.message);
       }
       updateWeatherEffects(); // 날씨 효과 즉시 반영
+    }
+    
+    function changeRegion(value) {
+      currentCity = value;
+      updateMap();
+      updateWeatherAndEffects();
+      showSpeechBubbleInChunks(`지역이 ${value}(으)로 변경되었습니다.`);
     }
     
     async function sendChat() {
@@ -267,23 +284,25 @@
       if (lowerInput.startsWith("지역 ")) {
         const newCity = lowerInput.replace("지역", "").trim();
         if(newCity) {
-          currentCity = newCity;
-          response = `지역이 ${newCity}(으)로 변경되었습니다.`;
-          updateMap();
-          await updateWeatherAndEffects(); // 지역 변경 시 날씨 즉시 업데이트
+          if (regionList.includes(newCity)) {
+            currentCity = newCity;
+            document.getElementById("region-select").value = newCity; // 드롭다운 동기화
+            response = `지역이 ${newCity}(으)로 변경되었습니다.`;
+            updateMap();
+            await updateWeatherAndEffects();
+          } else {
+            response = "지원하지 않는 지역입니다. 드롭다운 메뉴에서 선택해주세요.";
+          }
         } else {
           response = "변경할 지역을 입력해주세요.";
         }
       } else {
-        const regionList = [
-          "서울", "인천", "수원", "고양", "성남", "용인", "부천", "안양", "의정부", "광명", "안산", "파주",
-          "부산", "대구", "광주", "대전", "울산", "제주", "전주", "청주", "포항", "여수", "김해"
-        ];
         if (regionList.includes(input)) {
           currentCity = input;
+          document.getElementById("region-select").value = input; // 드롭다운 동기화
           response = `지역이 ${input}(으)로 변경되었습니다.`;
           updateMap();
-          await updateWeatherAndEffects(); // 지역 변경 시 날씨 즉시 업데이트
+          await updateWeatherAndEffects();
         }
       }
       
@@ -291,8 +310,8 @@
         if (lowerInput.includes("날씨") &&
            (lowerInput.includes("알려") || lowerInput.includes("어때") ||
             lowerInput.includes("뭐야") || lowerInput.includes("어떻게") || lowerInput.includes("맑아"))) {
-          await updateWeatherAndEffects(); // 날씨 요청 시 최신 지역으로 업데이트
-          return; // 이미 updateWeatherAndEffects에서 메시지 표시
+          await updateWeatherAndEffects();
+          return;
         }
         else if (lowerInput.includes("시간") || lowerInput.includes("몇시") || lowerInput.includes("현재시간")) {
           const now = new Date();
@@ -395,7 +414,7 @@
     }
     
     function updateWeatherEffects() {
-      if (!currentWeather) return; // currentWeather가 없으면 실행하지 않음
+      if (!currentWeather) return;
       if (currentWeather.indexOf("비") !== -1 || currentWeather.indexOf("소나기") !== -1) {
         rainGroup.visible = true;
       } else {
@@ -441,6 +460,16 @@
       document.getElementById("chat-input").addEventListener("keydown", function(e) {
         if (e.key === "Enter") sendChat();
       });
+      
+      // 드롭다운 메뉴 초기화
+      const regionSelect = document.getElementById("region-select");
+      regionList.forEach(region => {
+        const option = document.createElement("option");
+        option.value = region;
+        option.textContent = region;
+        if (region === currentCity) option.selected = true;
+        regionSelect.appendChild(option);
+      });
     });
     
     window.addEventListener("resize", function(){
@@ -453,13 +482,16 @@
       initCalendar();
       showTutorial();
       updateMap();
-      await updateWeatherAndEffects(); // 페이지 로드 시 초기 날씨 설정
+      await updateWeatherAndEffects();
     });
   </script>
 </head>
 <body>
   <div id="right-hud">
     <h3>채팅창</h3>
+    <select id="region-select" onchange="changeRegion(this.value)">
+      <option value="" disabled>지역 선택</option>
+    </select>
     <div id="chat-log"></div>
     <div id="chat-input-area">
       <input type="text" id="chat-input" placeholder="채팅 입력..." />
@@ -494,7 +526,8 @@
       <h2>사용법 안내</h2>
       <p><strong>캐릭터:</strong> 채팅창에 "안녕", "캐릭터 춤춰줘" 등 입력해 보세요.</p>
       <p>
-        <strong>채팅창:</strong> "지역 [지역명]" (예: "지역 인천" 또는 "인천") 입력 시 지도와 날씨가 즉시 업데이트됩니다.<br>
+        <strong>채팅창:</strong> 상단 드롭다운 메뉴에서 지역을 선택하면 지도와 날씨가 즉시 업데이트됩니다.<br>
+        또는 "지역 [지역명]" (예: "지역 인천" 또는 "인천") 입력으로도 변경 가능합니다.<br>
         "날씨 알려줘"로 현재 지역의 날씨를 다시 확인할 수 있습니다.
       </p>
       <p><strong>캘린더:</strong> 왼쪽에서 날짜 클릭해 일정을 추가하거나, 버튼으로 저장/삭제하세요.</p>
