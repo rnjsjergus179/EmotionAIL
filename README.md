@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>3D 캐릭터 HUD, 달력, 채팅 & Google Maps 연동</title>
+  <title>3D 캐릭터 HUD, 캘린더, 채팅 & 위치 기반 날씨 연동</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; font-family: Arial, sans-serif; overflow: hidden; }
@@ -133,17 +133,6 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
     
-    /* 지도 - 화면 오른쪽 하단에 위치 */
-    #map {
-      position: fixed;
-      bottom: 10px;
-      right: 10px;
-      width: 30%;
-      height: 30%;
-      border: 2px solid #ccc;
-      z-index: 40;
-    }
-    
     /* 튜토리얼 오버레이 */
     #tutorial-overlay {
       position: fixed;
@@ -185,7 +174,6 @@
 
     @media (max-width: 480px) {
       #right-hud, #left-hud { width: 90%; left: 5%; right: 5%; top: 5%; }
-      #map { width: 80%; height: 30%; bottom: 5px; right: 5px; }
     }
   </style>
   
@@ -193,15 +181,13 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   
   <script>
-    // 기본 변수들
+    // 기본 설정 및 변수들
     document.addEventListener("contextmenu", event => event.preventDefault());
     let blockUntil = 0;
     let danceInterval; // 캐릭터 춤 애니메이션 제어
-    // currentCity: 날씨 API 호출 시 사용될 지역 (초기값 "Seoul")
+    // currentCity: 날씨 API 호출 시 사용할 지역 (초기값 "Seoul")
     let currentCity = "Seoul";
     let currentWeather = "";
-    
-    // OpenWeatherMap API 키 (이미 사용 중)
     const weatherKey = "396bfaf4974ab9c336b3fb46e15242da";
     
     // 파일 저장 함수
@@ -281,6 +267,24 @@
           }
         } else {
           response = "변경할 지역을 입력해주세요.";
+        }
+      }
+      // "내 위치" 또는 "현재 위치" 명령: 브라우저 geolocation 사용
+      else if(lowerInput.includes("내 위치") || lowerInput.includes("현재 위치")) {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(function(position){
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            getWeatherByCoords(lat, lng);
+            response = "현재 위치 기반 날씨를 확인합니다.";
+            showSpeechBubbleInChunks(response);
+          }, function(error){
+            response = "위치 정보를 가져오지 못했습니다.";
+            showSpeechBubbleInChunks(response);
+          });
+        } else {
+          response = "이 브라우저는 위치 정보를 지원하지 않습니다.";
+          showSpeechBubbleInChunks(response);
         }
       }
       else if (lowerInput.includes("시간") || lowerInput.includes("몇시") || lowerInput.includes("현재시간")) {
@@ -438,7 +442,7 @@
       }
     }
     
-    // 새 함수: 지도 클릭 시 위도/경도로 날씨 조회 (OpenWeatherMap API의 lat/lon 파라미터 사용)
+    // getWeatherByCoords: 위도/경도 기반 날씨 조회
     async function getWeatherByCoords(lat, lng) {
       try {
         const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${weatherKey}&units=metric&lang=kr`;
@@ -777,7 +781,6 @@
       updateWeatherEffects();
       updateHouseClouds();
       updateLightning();
-      characterStreetlight.position.set(characterGroup.position.x + 1, -2, characterGroup.position.z);
       updateBubblePosition();
       
       renderer.render(scene, camera);
@@ -904,76 +907,6 @@
       } else if (version === "latest") {
         alert("최신 버전으로 이동하려면 해당 URL을 입력하세요.");
       }
-    }
-  </script>
-</head>
-<body>
-  <div id="right-hud">
-    <h3>채팅창</h3>
-    <div id="chat-log"></div>
-    <div id="chat-input-area">
-      <input type="text" id="chat-input" placeholder="채팅 입력..." />
-    </div>
-  </div>
-  
-  <div id="left-hud">
-    <h3>캘린더</h3>
-    <div id="calendar-container">
-      <div id="calendar-header">
-        <button id="prev-month">◀</button>
-        <span id="month-year-label"></span>
-        <button id="next-month">▶</button>
-        <select id="year-select"></select>
-      </div>
-      <div id="calendar-actions">
-        <button id="delete-day-event">하루일정 삭제</button>
-        <button id="save-calendar">바탕화면 저장</button>
-      </div>
-      <div id="calendar-grid"></div>
-    </div>
-  </div>
-  
-  <div id="speech-bubble"></div>
-  
-  <div id="tutorial-overlay">
-    <div id="tutorial-content">
-      <h2>사용법 안내</h2>
-      <p><strong>캐릭터:</strong> 채팅창에 "안녕", "캐릭터 춤춰줘" 등 입력해 보세요.</p>
-      <p><strong>채팅창:</strong> 오른쪽에서 "날씨 알려줘", "파일 저장해줘" 등 명령할 수 있습니다.<br>
-      또한, "지역 [지역명]" (예: "지역 수도권" 또는 "지역 부산")을 입력하면 해당 지역으로 변경됩니다.</p>
-      <p><strong>캘린더:</strong> 왼쪽에서 날짜 클릭해 일정을 추가하거나, 버튼으로 저장/삭제하세요.</p>
-      <p><strong>지도:</strong> 하단 오른쪽의 지도를 클릭하면 해당 위치의 날씨가 말풍선에 표시됩니다.</p>
-    </div>
-  </div>
-  
-  <div id="version-select">
-    <select onchange="changeVersion(this.value)">
-      <option value="latest">최신 버전</option>
-      <option value="1.3">구버전 1.3</option>
-    </select>
-  </div>
-  
-  <canvas id="canvas"></canvas>
-  <div id="map"></div>
-  
-  <!-- Google Maps API 스크립트 (제공된 API 키 사용) -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCI2i_sju-YieGbWgEi-mMG2ISF_HbL5wI&callback=initMap" async defer></script>
-  
-  <script>
-    // Google Maps 초기화 함수
-    function initMap() {
-      // 기본 센터를 서울로 설정
-      const seoul = { lat: 37.5665, lng: 126.9780 };
-      const map = new google.maps.Map(document.getElementById("map"), {
-        center: seoul,
-        zoom: 10
-      });
-      // 지도 클릭 시 위도/경도 가져와 날씨 조회
-      map.addListener("click", (e) => {
-        const lat = e.latLng.lat();
-        const lng = e.latLng.lng();
-        getWeatherByCoords(lat, lng);
-      });
     }
   </script>
 </body>
