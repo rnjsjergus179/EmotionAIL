@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -175,8 +176,7 @@
     document.addEventListener("contextmenu", event => event.preventDefault());
     let blockUntil = 0;
     let danceInterval; // 춤 애니메이션 제어 변수
-    // 기본값은 "Seoul" (서울)로 설정되어 있지만, 아래 추가 분기를 통해
-    // 사용자가 "인천", "부산" 등 단순 지역명을 입력하면 currentCity가 업데이트됩니다.
+    // 기본값은 "Seoul" (서울)로 설정되어 있지만, 사용자가 단순 지역명 입력 시 자동 업데이트됩니다.
     let currentCity = "Seoul";
     
     document.addEventListener("copy", function(e) {
@@ -242,35 +242,19 @@
       if (lowerInput.startsWith("지역 ")) {
         const newCity = lowerInput.replace("지역", "").trim();
         if(newCity) {
-          if(newCity === "수도권") {
-            const selectedCity = prompt("수도권 지역 중 선택하세요: 인천, 서울, 파주");
-            if(selectedCity) {
-              currentCity = selectedCity;
-              response = `지역이 ${selectedCity}(으)로 변경되었습니다.`;
-            } else {
-              response = "지역 변경이 취소되었습니다.";
-            }
-          }
-          else if(newCity === "지방") {
-            const selectedCity = prompt("지방 지역 중 선택하세요: 부산, 대구, 광주");
-            if(selectedCity) {
-              currentCity = selectedCity;
-              response = `지역이 ${selectedCity}(으)로 변경되었습니다.`;
-            } else {
-              response = "지역 변경이 취소되었습니다.";
-            }
-          }
-          else {
-            currentCity = newCity;
-            response = `지역이 ${newCity}(으)로 변경되었습니다.`;
-          }
+          // "수도권"이나 "지방"과 같이 입력 시 프롬프트 없이 처리하려면 여기서 분기 없이 바로 할당할 수도 있음.
+          currentCity = newCity;
+          response = `지역이 ${newCity}(으)로 변경되었습니다.`;
         } else {
           response = "변경할 지역을 입력해주세요.";
         }
       }
-      // [2] 추가: 사용자가 단순히 지역명(예: "인천", "부산", "파주" 등)을 입력하면 이를 인식하여 currentCity를 업데이트
+      // [2] 추가: 사용자가 단순 지역명(예: "인천", "수원", "부산", "대구", "광주", "대전", "울산", "파주", "고양", "성남", "용인", "부천", "안양", "의정부", "광명", "안산", "단양", "제주", "전주", "청주", "포항", "여수", "김해" 등)을 입력하면 바로 업데이트
       else {
-        const regionList = ["서울", "인천", "파주", "부산", "대구", "광주", "대전", "울산", "단양"];
+        const regionList = [
+          "서울", "인천", "수원", "고양", "성남", "용인", "부천", "안양", "의정부", "광명", "안산", "파주",
+          "부산", "대구", "광주", "대전", "울산", "제주", "전주", "청주", "포항", "여수", "김해"
+        ];
         if (regionList.includes(input)) {
           currentCity = input;
           response = `지역이 ${input}(으)로 변경되었습니다.`;
@@ -345,6 +329,7 @@
             head.rotation.y = 0;
           }, 3000);
         }
+        // 춤 관련 키워드 처리
         else if (
           lowerInput.includes("춤") ||
           lowerInput.includes("춤춰") ||
@@ -520,10 +505,8 @@
     <div id="tutorial-content">
       <h2>사용법 안내</h2>
       <p><strong>캐릭터:</strong> 채팅창에 "안녕", "캐릭터 춤춰줘" 등 입력해 보세요.</p>
-      <p>
-        <strong>채팅창:</strong> 오른쪽에서 "날씨 알려줘", "파일 저장해줘" 등 명령할 수 있습니다.<br>
-        또한, "지역 [지역명]" (예: "지역 수도권" 또는 "지역 부산")이나 단순히 "인천", "서울", "파주" 등<br>
-        지역명만 입력해도 해당 지역으로 변경되어 이후 "날씨 알려줘" 명령 시 업데이트된 지역의 날씨가 조회됩니다.
+      <p><strong>채팅창:</strong> 오른쪽에서 "날씨 알려줘", "파일 저장해줘" 등 명령할 수 있습니다.<br>
+      또한, "지역 [지역명]" (예: "지역 수도권" 또는 "지역 부산")이나 단순히 "인천", "수원", "고양", "성남", "용인", "부천", "안양", "의정부", "광명", "안산", "파주", "부산", "대구", "광주", "대전", "울산", "제주", "전주", "청주", "포항", "여수", "김해" 등의 명령어를 입력하면 해당 지역으로 변경되어 이후 "날씨 알려줘" 명령 시 업데이트된 지역의 날씨가 조회됩니다.
       </p>
       <p><strong>캘린더:</strong> 왼쪽에서 날짜 클릭해 일정을 추가하거나, 버튼으로 저장/삭제하세요.</p>
     </div>
