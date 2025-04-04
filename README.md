@@ -241,6 +241,12 @@
       document.getElementById("map-iframe").src = `https://www.google.com/maps?q=${encodeURIComponent(currentCity)}&output=embed`;
     }
     
+    async function updateWeatherAndEffects() {
+      const weatherData = await getWeather();
+      showSpeechBubbleInChunks(weatherData.message);
+      updateWeatherEffects(); // 날씨 효과 즉시 반영
+    }
+    
     async function sendChat() {
       const inputEl = document.getElementById("chat-input");
       const input = inputEl.value.trim();
@@ -262,6 +268,7 @@
           currentCity = newCity;
           response = `지역이 ${newCity}(으)로 변경되었습니다.`;
           updateMap();
+          await updateWeatherAndEffects(); // 지역 변경 시 날씨 즉시 업데이트
         } else {
           response = "변경할 지역을 입력해주세요.";
         }
@@ -274,6 +281,7 @@
           currentCity = input;
           response = `지역이 ${input}(으)로 변경되었습니다.`;
           updateMap();
+          await updateWeatherAndEffects(); // 지역 변경 시 날씨 즉시 업데이트
         }
       }
       
@@ -284,6 +292,7 @@
           const weatherData = await getWeather();
           response = weatherData.message;
           updateMap(); // 날씨 요청 시 지도도 동일 지역으로 업데이트
+          updateWeatherEffects(); // 날씨 효과 반영
         }
         else if (lowerInput.includes("시간") || lowerInput.includes("몇시") || lowerInput.includes("현재시간")) {
           const now = new Date();
@@ -373,6 +382,8 @@
         let extraComment = "";
         if (description.indexOf("흐림") !== -1 || description.indexOf("구름") !== -1) {
           extraComment = " 오늘은 약간 흐린 날씨네요 ☁️";
+        } else if (description.indexOf("맑음") !== -1) {
+          extraComment = " 오늘은 맑은 날씨네요 ☀️";
         }
         return {
           message: `오늘 ${currentCity}의 날씨는 ${description}이며, 온도는 ${temp}°C입니다.${extraComment}`
@@ -389,7 +400,7 @@
       } else {
         rainGroup.visible = false;
       }
-      if (currentWeather.indexOf("구름") !== -1) {
+      if (currentWeather.indexOf("구름") !== -1 || currentWeather.indexOf("흐림") !== -1) {
         houseCloudGroup.visible = true;
       } else {
         houseCloudGroup.visible = false;
@@ -437,10 +448,11 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
     
-    window.addEventListener("load", () => {
+    window.addEventListener("load", async () => {
       initCalendar();
       showTutorial();
-      updateMap(); // 페이지 로드 시 초기 지도 설정
+      updateMap();
+      await updateWeatherAndEffects(); // 페이지 로드 시 초기 날씨 설정
     });
   </script>
 </head>
@@ -481,9 +493,8 @@
       <h2>사용법 안내</h2>
       <p><strong>캐릭터:</strong> 채팅창에 "안녕", "캐릭터 춤춰줘" 등 입력해 보세요.</p>
       <p>
-        <strong>채팅창:</strong> 오른쪽에서는 파일 저장, 캘린더 저장 등의 명령어를 사용할 수 있습니다.<br>
-        "지역 [지역명]" (예: "지역 인천" 또는 "인천") 입력 시 지도와 날씨가 해당 지역으로 업데이트됩니다.<br>
-        "날씨 알려줘" 입력 시 지도에 표시된 지역의 날씨가 출력됩니다.
+        <strong>채팅창:</strong> "지역 [지역명]" (예: "지역 인천" 또는 "인천") 입력 시 지도와 날씨가 즉시 업데이트됩니다.<br>
+        "날씨 알려줘"로 현재 지역의 날씨를 다시 확인할 수 있습니다.
       </p>
       <p><strong>캘린더:</strong> 왼쪽에서 날짜 클릭해 일정을 추가하거나, 버튼으로 저장/삭제하세요.</p>
     </div>
