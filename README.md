@@ -175,6 +175,9 @@
     document.addEventListener("contextmenu", event => event.preventDefault());
     let blockUntil = 0;
     let danceInterval; // 춤 애니메이션 제어 변수
+    // currentCity는 날씨 API 호출 시 사용될 지역명 (초기값 "Seoul")
+    let currentCity = "Seoul";
+    
     document.addEventListener("copy", function(e) {
       e.preventDefault();
       let selectedText = window.getSelection().toString();
@@ -234,7 +237,17 @@
       let response = "";
       const lowerInput = input.toLowerCase();
       
-      if (lowerInput.includes("시간") || lowerInput.includes("몇시") || lowerInput.includes("현재시간")) {
+      // 예: "지역 서울", "지역 부산" 등 입력 시 현재 지역 변경
+      if (lowerInput.startsWith("지역 ")) {
+        const newCity = lowerInput.replace("지역", "").trim();
+        if(newCity) {
+          currentCity = newCity;
+          response = `지역이 ${newCity}(으)로 변경되었습니다.`;
+        } else {
+          response = "변경할 지역을 입력해주세요.";
+        }
+      }
+      else if (lowerInput.includes("시간") || lowerInput.includes("몇시") || lowerInput.includes("현재시간")) {
         const now = new Date();
         const hours = now.getHours();
         const minutes = now.getMinutes();
@@ -368,11 +381,10 @@
       inputEl.value = "";
     }
     
-    // 날씨 API와 연동하여 날씨 정보를 가져오며, '흐림' 또는 '구름'이 포함된 경우 추가 표현에 적절한 이모티콘을 붙임
+    // currentCity 전역변수를 이용하여 날씨 API와 연동 (날씨 설명에 '흐림' 또는 '구름'이 포함되면 구름 이모티콘 추가)
     async function getWeather() {
       try {
-        const city = "Seoul";
-        const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${weatherKey}&units=metric&lang=kr`;
+        const url = `https://api.openweathermap.org/data/2.5/weather?q=${currentCity}&appid=${weatherKey}&units=metric&lang=kr`;
         const res = await fetch(url);
         if (!res.ok) throw new Error("날씨 API 호출 실패");
         const data = await res.json();
@@ -383,7 +395,7 @@
         if (description.indexOf("흐림") !== -1 || description.indexOf("구름") !== -1) {
           extraComment = " 오늘은 약간 흐린 날씨네요 ☁️";
         }
-        return `오늘 ${city}의 날씨는 ${description}이며, 온도는 ${temp}°C입니다.${extraComment}`;
+        return `오늘 ${currentCity}의 날씨는 ${description}이며, 온도는 ${temp}°C입니다.${extraComment}`;
       } catch (err) {
         currentWeather = "";
         return "날씨 정보를 가져오지 못했습니다.";
@@ -477,7 +489,8 @@
     <div id="tutorial-content">
       <h2>사용법 안내</h2>
       <p><strong>캐릭터:</strong> 채팅창에 "안녕", "캐릭터 춤춰줘" 등 입력해 보세요.</p>
-      <p><strong>채팅창:</strong> 오른쪽에서 "날씨 알려줘", "파일 저장해줘" 등 명령할 수 있습니다.</p>
+      <p><strong>채팅창:</strong> 오른쪽에서 "날씨 알려줘", "파일 저장해줘" 등 명령할 수 있습니다.<br>
+      또한, "지역 [지역명]" (예: "지역 부산")을 입력하면 해당 지역의 날씨로 변경됩니다.</p>
       <p><strong>캘린더:</strong> 왼쪽에서 날짜 클릭해 일정을 추가하거나, 버튼으로 저장/삭제하세요.</p>
     </div>
   </div>
