@@ -175,6 +175,7 @@
   <script>
     document.addEventListener("contextmenu", event => event.preventDefault());
     let blockUntil = 0;
+    let danceInterval; // 전역에 춤 애니메이션 제어 변수 선언
     document.addEventListener("copy", function(e) {
       e.preventDefault();
       let selectedText = window.getSelection().toString();
@@ -301,20 +302,10 @@
           head.rotation.y = 0;
         }, 3000);
       }
-      // 추가: "뭐해", "뭐하니", "뭐하고있어", "뭐함", "뭐고" 관련 키워드
+      // 춤 관련 키워드 ("춤", "춤춰", "춤춰줘", "춤춰봐", "춤사위") 입력 시 캐릭터가 춤추게 함
       else if (
-        lowerInput.includes("뭐해") ||
-        lowerInput.includes("뭐하니") ||
-        lowerInput.includes("뭐하고있어") ||
-        lowerInput.includes("뭐함") ||
-        lowerInput.includes("뭐고")
-      ) {
-        response = "저는 지금 당신과 대화하면서 즐거운 시간을 보내고 있어요!";
-      }
-      // 추가: "춤춰", "춤", "춤춰줘", "춤춰봐", "춤사위" 관련 키워드
-      else if (
-        lowerInput.includes("춤춰") ||
         lowerInput.includes("춤") ||
+        lowerInput.includes("춤춰") ||
         lowerInput.includes("춤춰줘") ||
         lowerInput.includes("춤춰봐") ||
         lowerInput.includes("춤사위")
@@ -481,9 +472,9 @@
   <div id="tutorial-overlay">
     <div id="tutorial-content">
       <h2>사용법 안내</h2>
-      <p><strong>캐릭터:</strong> 채팅창에 "안녕", "캐릭터 춤춰줘" 등을 입력해 보세요.</p>
-      <p><strong>채팅창:</strong> 오른쪽에서 "날씨 알려줘", "파일 저장해줘" 등으로 명령할 수 있습니다.</p>
-      <p><strong>캘린더:</strong> 왼쪽에서 날짜를 클릭해 일정을 추가하거나, 버튼으로 저장/삭제하세요.</p>
+      <p><strong>캐릭터:</strong> 채팅창에 "안녕", "캐릭터 춤춰줘" 등 입력해 보세요.</p>
+      <p><strong>채팅창:</strong> 오른쪽에서 "날씨 알려줘", "파일 저장해줘" 등 명령할 수 있습니다.</p>
+      <p><strong>캘린더:</strong> 왼쪽에서 날짜 클릭해 일정을 추가하거나, 버튼으로 저장/삭제하세요.</p>
     </div>
   </div>
   
@@ -903,4 +894,4 @@
     }
   </script>
 </body>
-</html>.
+</html>
