@@ -40,34 +40,6 @@
       padding: 5px;
       font-size: 14px;
     }
-    /* 추가: 지역 선택 HUD (채팅창 아래) */
-    #region-hud {
-      margin-top: 10px;
-      max-height: 50px; /* 작게 설정 */
-      overflow-y: auto;
-      background: rgba(255,255,255,0.9);
-      border-radius: 5px;
-      padding: 5px;
-      font-size: 12px;
-    }
-    #region-hud ul {
-      list-style: none;
-      display: flex;
-      flex-wrap: nowrap;
-      gap: 5px;
-      padding: 0;
-      margin: 0;
-    }
-    #region-hud li {
-      padding: 3px 6px;
-      background: #eee;
-      border-radius: 3px;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    #region-hud li:hover {
-      background: #ddd;
-    }
     
     /* 왼쪽 캘린더 */
     #left-hud {
@@ -205,20 +177,28 @@
     }
   </style>
   
-  <!-- Three.js 라이브러리 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   
   <script>
-    // 기본 설정 및 변수들
     document.addEventListener("contextmenu", event => event.preventDefault());
     let blockUntil = 0;
     let danceInterval; // 캐릭터 춤 애니메이션 제어 변수
     // currentCity: 날씨 API 호출 시 사용될 지역 (초기값 "Seoul")
     let currentCity = "Seoul";
-    let currentWeather = "";
-    const weatherKey = "396bfaf4974ab9c336b3fb46e15242da";
     
-    // 파일 저장 함수
+    document.addEventListener("copy", function(e) {
+      e.preventDefault();
+      let selectedText = window.getSelection().toString();
+      selectedText = selectedText.replace(/396bfaf4974ab9c336b3fb46e15242da/g, "HIDDEN");
+      e.clipboardData.setData("text/plain", selectedText);
+      if (Date.now() < blockUntil) return;
+      blockUntil = Date.now() + 3600000;
+      showSpeechBubbleInChunks("1시간동안 차단됩니다.");
+    });
+    
+    const weatherKey = "396bfaf4974ab9c336b3fb46e15242da";
+    let currentWeather = "";
+    
     function saveFile() {
       const content = "파일 저장 완료";
       const filename = "saved_file.txt";
@@ -231,7 +211,6 @@
       document.body.removeChild(link);
     }
     
-    // 캘린더 저장 함수
     function saveCalendar() {
       const daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
       const calendarData = {};
@@ -266,7 +245,20 @@
       let response = "";
       const lowerInput = input.toLowerCase();
       
-      // 지역 변경 처리: "지역 [지역명]"
+      // 우선, "서울로 바꿔줘" 같은 명령을 정규표현식으로 인식
+      const regionPattern = /(서울|인천|파주|부산|대구|광주|대전|울산|단양)로\s*바꿔줘/;
+      if (regionPattern.test(lowerInput)) {
+        const match = lowerInput.match(regionPattern);
+        if(match && match[1]){
+          currentCity = match[1];
+          response = `지역이 ${match[1]}(으)로 변경되었습니다.`;
+          showSpeechBubbleInChunks(response);
+          inputEl.value = "";
+          return;
+        }
+      }
+      
+      // 기존 "지역 [지역명]" 명령 처리
       if (lowerInput.startsWith("지역 ")) {
         const newCity = lowerInput.replace("지역", "").trim();
         if(newCity) {
@@ -280,7 +272,7 @@
             }
           }
           else if(newCity === "지방") {
-            const selectedCity = prompt("지방 지역 중 선택하세요: 부산, 대구, 광주, 대전, 울산");
+            const selectedCity = prompt("지방 지역 중 선택하세요: 부산, 대구, 광주");
             if(selectedCity) {
               currentCity = selectedCity;
               response = `지역이 ${selectedCity}(으)로 변경되었습니다.`;
@@ -294,22 +286,6 @@
           }
         } else {
           response = "변경할 지역을 입력해주세요.";
-        }
-      }
-      // "내 위치 알려줘" 명령 처리
-      else if(lowerInput === "내 위치 알려줘") {
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(function(position){
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-            getWeatherByCoords(lat, lng);
-          }, function(error){
-            response = "위치 정보를 가져오지 못했습니다.";
-            showSpeechBubbleInChunks(response);
-          });
-          response = "현재 위치 기반 날씨를 확인합니다.";
-        } else {
-          response = "이 브라우저는 위치 정보를 지원하지 않습니다.";
         }
       }
       else if (lowerInput.includes("시간") || lowerInput.includes("몇시") || lowerInput.includes("현재시간")) {
@@ -446,7 +422,7 @@
       inputEl.value = "";
     }
     
-    // currentCity 전역변수를 이용한 텍스트 기반 날씨 조회 (날씨 설명에 '흐림' 또는 '구름' 포함 시 이모티콘 추가)
+    // currentCity 기반 날씨 조회 (텍스트 명령용)
     async function getWeather() {
       try {
         const url = `https://api.openweathermap.org/data/2.5/weather?q=${currentCity}&appid=${weatherKey}&units=metric&lang=kr`;
@@ -467,7 +443,7 @@
       }
     }
     
-    // getWeatherByCoords: 위도/경도 기반 날씨 조회 (말풍선 출력)
+    // 위도/경도 기반 날씨 조회 (말풍선 출력)
     async function getWeatherByCoords(lat, lng) {
       try {
         const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${weatherKey}&units=metric&lang=kr`;
@@ -529,12 +505,6 @@
       showNextChunk();
     }
     
-    // 추가: HUD 내에서 지역 버튼 클릭 시 호출되는 함수
-    function changeRegion(regionName) {
-      currentCity = regionName;
-      showSpeechBubbleInChunks(`지역이 ${regionName}(으)로 변경되었습니다.`);
-    }
-    
     window.addEventListener("DOMContentLoaded", function() {
       document.getElementById("chat-input").addEventListener("keydown", function(e) {
         if (e.key === "Enter") sendChat();
@@ -554,19 +524,6 @@
     <div id="chat-log"></div>
     <div id="chat-input-area">
       <input type="text" id="chat-input" placeholder="채팅 입력..." />
-    </div>
-    <!-- 추가: 지역 선택 HUD (채팅창 아래) -->
-    <div id="region-hud">
-      <ul>
-        <li onclick="changeRegion('인천')">인천</li>
-        <li onclick="changeRegion('서울')">서울</li>
-        <li onclick="changeRegion('파주')">파주</li>
-        <li onclick="changeRegion('부산')">부산</li>
-        <li onclick="changeRegion('대구')">대구</li>
-        <li onclick="changeRegion('광주')">광주</li>
-        <li onclick="changeRegion('대전')">대전</li>
-        <li onclick="changeRegion('울산')">울산</li>
-      </ul>
     </div>
   </div>
   
@@ -595,8 +552,9 @@
       <p><strong>캐릭터:</strong> 채팅창에 "안녕", "캐릭터 춤춰줘" 등 입력해 보세요.</p>
       <p>
         <strong>채팅창:</strong> 오른쪽에서 "날씨 알려줘", "파일 저장해줘" 등 명령할 수 있습니다.<br>
-        또한, "지역 [지역명]" (예: "지역 수도권" 또는 "지역 부산")을 입력하면 해당 지역의 날씨로 변경됩니다.<br>
-        **"내 위치 알려줘"**라고 입력하면 현재 위치 기반 날씨를 확인합니다.
+        또한, "지역 [지역명]" (예: "지역 수도권" 또는 "지역 부산")이나<br>
+        "서울로 바꿔줘", "인천로 바꿔줘" 등 명령어를 입력하면 해당 지역으로 변경되어<br>
+        이후 "날씨 알려줘" 명령 시 해당 지역의 날씨가 조회됩니다.
       </p>
       <p><strong>캘린더:</strong> 왼쪽에서 날짜 클릭해 일정을 추가하거나, 버튼으로 저장/삭제하세요.</p>
     </div>
