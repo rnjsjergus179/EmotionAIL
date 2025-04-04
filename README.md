@@ -197,7 +197,7 @@
     document.addEventListener("contextmenu", event => event.preventDefault());
     let blockUntil = 0;
     let danceInterval;
-    let currentCity = "Seoul";
+    let currentCity = "서울"; // 한국어 지역명
     let currentWeather = "";
     
     document.addEventListener("copy", function(e) {
@@ -211,10 +211,32 @@
     });
     
     const weatherKey = "2caa7fa4a66f2f8d150f1da93d306261";
-    const regionList = [
-      "서울", "인천", "수원", "고양", "성남", "용인", "부천", "안양", "의정부", "광명", "안산", "파주",
-      "부산", "대구", "광주", "대전", "울산", "제주", "전주", "청주", "포항", "여수", "김해"
-    ];
+    const regionMap = {
+      "서울": "Seoul",
+      "인천": "Incheon",
+      "수원": "Suwon",
+      "고양": "Goyang",
+      "성남": "Seongnam",
+      "용인": "Yongin",
+      "부천": "Bucheon",
+      "안양": "Anyang",
+      "의정부": "Uijeongbu",
+      "광명": "Gwangmyeong",
+      "안산": "Ansan",
+      "파주": "Paju",
+      "부산": "Busan",
+      "대구": "Daegu",
+      "광주": "Gwangju",
+      "대전": "Daejeon",
+      "울산": "Ulsan",
+      "제주": "Jeju",
+      "전주": "Jeonju",
+      "청주": "Cheongju",
+      "포항": "Pohang",
+      "여수": "Yeosu",
+      "김해": "Gimhae"
+    };
+    const regionList = Object.keys(regionMap);
     
     function saveFile() {
       const content = "파일 저장 완료";
@@ -248,7 +270,8 @@
     }
     
     function updateMap() {
-      document.getElementById("map-iframe").src = `https://www.google.com/maps?q=${encodeURIComponent(currentCity)}&output=embed`;
+      const englishCity = regionMap[currentCity] || "Seoul";
+      document.getElementById("map-iframe").src = `https://www.google.com/maps?q=${encodeURIComponent(englishCity)}&output=embed`;
     }
     
     async function updateWeatherAndEffects(sendMessage = true) {
@@ -256,7 +279,7 @@
       if (sendMessage) {
         showSpeechBubbleInChunks(weatherData.message);
       }
-      updateWeatherEffects(); // 날씨 효과 즉시 반영
+      updateWeatherEffects();
     }
     
     function changeRegion(value) {
@@ -286,7 +309,7 @@
         if(newCity) {
           if (regionList.includes(newCity)) {
             currentCity = newCity;
-            document.getElementById("region-select").value = newCity; // 드롭다운 동기화
+            document.getElementById("region-select").value = newCity;
             response = `지역이 ${newCity}(으)로 변경되었습니다.`;
             updateMap();
             await updateWeatherAndEffects();
@@ -299,7 +322,7 @@
       } else {
         if (regionList.includes(input)) {
           currentCity = input;
-          document.getElementById("region-select").value = input; // 드롭다운 동기화
+          document.getElementById("region-select").value = input;
           response = `지역이 ${input}(으)로 변경되었습니다.`;
           updateMap();
           await updateWeatherAndEffects();
@@ -391,7 +414,8 @@
     
     async function getWeather() {
       try {
-        const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(currentCity)}&appid=${weatherKey}&units=metric&lang=kr`;
+        const englishCity = regionMap[currentCity] || "Seoul";
+        const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(englishCity)}&appid=${weatherKey}&units=metric&lang=kr`;
         const res = await fetch(url);
         if (!res.ok) throw new Error("날씨 API 호출 실패");
         const data = await res.json();
@@ -466,7 +490,7 @@
       regionList.forEach(region => {
         const option = document.createElement("option");
         option.value = region;
-        option.textContent = region;
+        option.textContent = `${region} (${regionMap[region]})`;
         if (region === currentCity) option.selected = true;
         regionSelect.appendChild(option);
       });
