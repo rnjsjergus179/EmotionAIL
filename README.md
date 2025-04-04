@@ -245,11 +245,12 @@
       let response = "";
       const lowerInput = input.toLowerCase();
       
-      // 우선, "서울로 바꿔줘" 같은 명령을 정규표현식으로 인식
-      const regionPattern = /(서울|인천|파주|부산|대구|광주|대전|울산|단양)로\s*바꿔줘/;
+      // 지역 변경 명령: 예) "인천 바꿔줘" 또는 "서울로 바꿔줘"
+      // 정규표현식에서 (?:로)?는 "로"가 있어도 되고 없어도 됨을 의미
+      const regionPattern = /(서울|인천|파주|부산|대구|광주|대전|울산|단양)(?:로)?\s*바꿔줘/;
       if (regionPattern.test(lowerInput)) {
         const match = lowerInput.match(regionPattern);
-        if(match && match[1]){
+        if (match && match[1]) {
           currentCity = match[1];
           response = `지역이 ${match[1]}(으)로 변경되었습니다.`;
           showSpeechBubbleInChunks(response);
@@ -552,9 +553,8 @@
       <p><strong>캐릭터:</strong> 채팅창에 "안녕", "캐릭터 춤춰줘" 등 입력해 보세요.</p>
       <p>
         <strong>채팅창:</strong> 오른쪽에서 "날씨 알려줘", "파일 저장해줘" 등 명령할 수 있습니다.<br>
-        또한, "지역 [지역명]" (예: "지역 수도권" 또는 "지역 부산")이나<br>
-        "서울로 바꿔줘", "인천로 바꿔줘" 등 명령어를 입력하면 해당 지역으로 변경되어<br>
-        이후 "날씨 알려줘" 명령 시 해당 지역의 날씨가 조회됩니다.
+        또한, "지역 [지역명]" (예: "지역 수도권" 또는 "지역 부산") 또는 "인천 바꿔줘", "서울로 바꿔줘" 등<br>
+        명령어를 입력하면 해당 지역으로 변경되어, 이후 "날씨 알려줘" 명령 시 업데이트된 지역의 날씨가 조회됩니다.
       </p>
       <p><strong>캘린더:</strong> 왼쪽에서 날짜 클릭해 일정을 추가하거나, 버튼으로 저장/삭제하세요.</p>
     </div>
