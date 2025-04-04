@@ -192,6 +192,7 @@
     let blockUntil = 0;
     let danceInterval;
     let currentCity = "Seoul";
+    let currentWeather = "";
     
     document.addEventListener("copy", function(e) {
       e.preventDefault();
@@ -204,7 +205,6 @@
     });
     
     const weatherKey = "2caa7fa4a66f2f8d150f1da93d306261";
-    let currentWeather = "";
     
     function saveFile() {
       const content = "파일 저장 완료";
@@ -241,9 +241,11 @@
       document.getElementById("map-iframe").src = `https://www.google.com/maps?q=${encodeURIComponent(currentCity)}&output=embed`;
     }
     
-    async function updateWeatherAndEffects() {
+    async function updateWeatherAndEffects(showMessage = true) {
       const weatherData = await getWeather();
-      showSpeechBubbleInChunks(weatherData.message);
+      if (sendMessage) {
+        showSpeechBubbleInChunks(weatherData.message);
+      }
       updateWeatherEffects(); // 날씨 효과 즉시 반영
     }
     
@@ -289,10 +291,8 @@
         if (lowerInput.includes("날씨") &&
            (lowerInput.includes("알려") || lowerInput.includes("어때") ||
             lowerInput.includes("뭐야") || lowerInput.includes("어떻게") || lowerInput.includes("맑아"))) {
-          const weatherData = await getWeather();
-          response = weatherData.message;
-          updateMap(); // 날씨 요청 시 지도도 동일 지역으로 업데이트
-          updateWeatherEffects(); // 날씨 효과 반영
+          await updateWeatherAndEffects(); // 날씨 요청 시 최신 지역으로 업데이트
+          return; // 이미 updateWeatherAndEffects에서 메시지 표시
         }
         else if (lowerInput.includes("시간") || lowerInput.includes("몇시") || lowerInput.includes("현재시간")) {
           const now = new Date();
@@ -390,11 +390,12 @@
         };
       } catch (err) {
         currentWeather = "";
-        return { message: "날씨 정보를 가져오지 못했습니다." };
+        return { message: `날씨 정보를 가져오지 못했습니다: ${currentCity}` };
       }
     }
     
     function updateWeatherEffects() {
+      if (!currentWeather) return; // currentWeather가 없으면 실행하지 않음
       if (currentWeather.indexOf("비") !== -1 || currentWeather.indexOf("소나기") !== -1) {
         rainGroup.visible = true;
       } else {
