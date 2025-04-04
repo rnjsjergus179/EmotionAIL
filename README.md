@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -508,6 +507,16 @@
       updateMap();
       await updateWeatherAndEffects();
     });
+    
+    function changeVersion(version) {
+      if (version === "1.3") {
+        // 1.3 버전으로 이동
+        window.location.href = "https://aipersonalassistant.neocities.org/%EC%95%A0%EB%8B%88";
+      } else if (version === "latest") {
+        // 현재 페이지가 1.7 버전이므로 새로고침 또는 유지
+        window.location.reload(); // 새로고침
+      }
+    }
   </script>
 </head>
 <body>
@@ -555,6 +564,7 @@
         "날씨 알려줘"로 현재 지역의 날씨를 다시 확인할 수 있습니다.
       </p>
       <p><strong>캘린더:</strong> 왼쪽에서 날짜 클릭해 일정을 추가하거나, 버튼으로 저장/삭제하세요.</p>
+      <p><strong>버전 선택:</strong> 하단 드롭다운에서 "구버전 1.3"을 선택하면 1.3 버전 페이지로 이동합니다.</p>
     </div>
   </div>
   
@@ -959,14 +969,6 @@
           overlay.style.display = "none";
         }, 1000);
       }, 4000);
-    }
-    
-    function changeVersion(version) {
-      if (version === "1.3") {
-        window.location.href = window.location.href; 
-      } else if (version === "latest") {
-        alert("최신 버전으로 이동하려면 해당 URL을 입력하세요.");
-      }
     }
   </script>
 </body>
