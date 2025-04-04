@@ -4,12 +4,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>3D 캐릭터 HUD, 캘린더, 채팅 & 위치 기반 날씨 연동</title>
+  <title>3D 캐릭터 HUD, 달력 & 말풍선 채팅</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; font-family: Arial, sans-serif; overflow: hidden; }
     
-    /* 오른쪽 채팅창 */
     #right-hud {
       position: fixed;
       top: 10%;
@@ -41,7 +40,6 @@
       font-size: 14px;
     }
     
-    /* 왼쪽 캘린더 */
     #left-hud {
       position: fixed;
       top: 10%;
@@ -108,7 +106,6 @@
       white-space: nowrap;
     }
     
-    /* Three.js 캔버스 */
     #canvas {
       position: fixed;
       top: 0;
@@ -118,8 +115,6 @@
       z-index: 1;
       display: block;
     }
-    
-    /* 말풍선 */
     #speech-bubble {
       position: fixed;
       background: white;
@@ -133,7 +128,6 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
     
-    /* 튜토리얼 오버레이 */
     #tutorial-overlay {
       position: fixed;
       top: 0;
@@ -160,7 +154,6 @@
     #tutorial-content h2 { margin-bottom: 15px; }
     #tutorial-content p { margin: 10px 0; font-size: 14px; }
     
-    /* 버전 선택 */
     #version-select {
       position: fixed;
       bottom: 10px;
@@ -177,20 +170,28 @@
     }
   </style>
   
-  <!-- Three.js 라이브러리 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   
   <script>
-    // 기본 설정 및 변수들
     document.addEventListener("contextmenu", event => event.preventDefault());
     let blockUntil = 0;
-    let danceInterval; // 캐릭터 춤 애니메이션 제어
-    // currentCity: 날씨 API 호출 시 사용할 지역 (초기값 "Seoul")
+    let danceInterval; // 춤 애니메이션 제어 변수
+    // currentCity: 날씨 API 호출 시 사용될 지역명 (초기값 "Seoul")
     let currentCity = "Seoul";
-    let currentWeather = "";
-    const weatherKey = "396bfaf4974ab9c336b3fb46e15242da";
     
-    // 파일 저장 함수
+    document.addEventListener("copy", function(e) {
+      e.preventDefault();
+      let selectedText = window.getSelection().toString();
+      selectedText = selectedText.replace(/396bfaf4974ab9c336b3fb46e15242da/g, "HIDDEN");
+      e.clipboardData.setData("text/plain", selectedText);
+      if (Date.now() < blockUntil) return;
+      blockUntil = Date.now() + 3600000;
+      showSpeechBubbleInChunks("1시간동안 차단됩니다.");
+    });
+    
+    const weatherKey = "396bfaf4974ab9c336b3fb46e15242da";
+    let currentWeather = "";
+    
     function saveFile() {
       const content = "파일 저장 완료";
       const filename = "saved_file.txt";
@@ -203,7 +204,6 @@
       document.body.removeChild(link);
     }
     
-    // 캘린더 저장 함수
     function saveCalendar() {
       const daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
       const calendarData = {};
@@ -223,7 +223,6 @@
       document.body.removeChild(dlAnchorElem);
     }
     
-    // 채팅 전송 함수
     async function sendChat() {
       const inputEl = document.getElementById("chat-input");
       const input = inputEl.value.trim();
@@ -267,24 +266,6 @@
           }
         } else {
           response = "변경할 지역을 입력해주세요.";
-        }
-      }
-      // "내 위치" 또는 "현재 위치" 명령: 브라우저 geolocation 사용
-      else if(lowerInput.includes("내 위치") || lowerInput.includes("현재 위치")) {
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(function(position){
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-            getWeatherByCoords(lat, lng);
-            response = "현재 위치 기반 날씨를 확인합니다.";
-            showSpeechBubbleInChunks(response);
-          }, function(error){
-            response = "위치 정보를 가져오지 못했습니다.";
-            showSpeechBubbleInChunks(response);
-          });
-        } else {
-          response = "이 브라우저는 위치 정보를 지원하지 않습니다.";
-          showSpeechBubbleInChunks(response);
         }
       }
       else if (lowerInput.includes("시간") || lowerInput.includes("몇시") || lowerInput.includes("현재시간")) {
@@ -354,7 +335,7 @@
           head.rotation.y = 0;
         }, 3000);
       }
-      // 춤 관련 키워드 처리
+      // 춤 관련 키워드 입력 시 캐릭터 춤추게 함
       else if (
         lowerInput.includes("춤") ||
         lowerInput.includes("춤춰") ||
@@ -421,7 +402,7 @@
       inputEl.value = "";
     }
     
-    // 기존 getWeather(): currentCity 기반 날씨 조회
+    // currentCity 전역변수를 이용하여 날씨 API와 연동 (날씨 설명에 '흐림' 또는 '구름'이 포함되면 구름 이모티콘 추가)
     async function getWeather() {
       try {
         const url = `https://api.openweathermap.org/data/2.5/weather?q=${currentCity}&appid=${weatherKey}&units=metric&lang=kr`;
@@ -439,26 +420,6 @@
       } catch (err) {
         currentWeather = "";
         return "날씨 정보를 가져오지 못했습니다.";
-      }
-    }
-    
-    // getWeatherByCoords: 위도/경도 기반 날씨 조회
-    async function getWeatherByCoords(lat, lng) {
-      try {
-        const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${weatherKey}&units=metric&lang=kr`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("날씨 API 호출 실패");
-        const data = await res.json();
-        const description = data.weather[0].description;
-        const temp = data.main.temp;
-        let extraComment = "";
-        if (description.indexOf("흐림") !== -1 || description.indexOf("구름") !== -1) {
-          extraComment = " 오늘은 약간 흐린 날씨네요 ☁️";
-        }
-        const msg = `해당 위치의 날씨는 ${description}, 온도는 ${temp}°C입니다.${extraComment}`;
-        showSpeechBubbleInChunks(msg);
-      } catch (err) {
-        showSpeechBubbleInChunks("날씨 정보를 가져오지 못했습니다.");
       }
     }
     
@@ -504,7 +465,67 @@
       showNextChunk();
     }
     
-    // Three.js 씬, 카메라, 렌더러, 애니메이션 등
+    window.addEventListener("DOMContentLoaded", function() {
+      document.getElementById("chat-input").addEventListener("keydown", function(e) {
+        if (e.key === "Enter") sendChat();
+      });
+    });
+    
+    window.addEventListener("resize", function(){
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</head>
+<body>
+  <div id="right-hud">
+    <h3>채팅창</h3>
+    <div id="chat-log"></div>
+    <div id="chat-input-area">
+      <input type="text" id="chat-input" placeholder="채팅 입력..." />
+    </div>
+  </div>
+  
+  <div id="left-hud">
+    <h3>캘린더</h3>
+    <div id="calendar-container">
+      <div id="calendar-header">
+        <button id="prev-month">◀</button>
+        <span id="month-year-label"></span>
+        <button id="next-month">▶</button>
+        <select id="year-select"></select>
+      </div>
+      <div id="calendar-actions">
+        <button id="delete-day-event">하루일정 삭제</button>
+        <button id="save-calendar">바탕화면 저장</button>
+      </div>
+      <div id="calendar-grid"></div>
+    </div>
+  </div>
+  
+  <div id="speech-bubble"></div>
+  
+  <div id="tutorial-overlay">
+    <div id="tutorial-content">
+      <h2>사용법 안내</h2>
+      <p><strong>캐릭터:</strong> 채팅창에 "안녕", "캐릭터 춤춰줘" 등 입력해 보세요.</p>
+      <p><strong>채팅창:</strong> 오른쪽에서 "날씨 알려줘", "파일 저장해줘" 등 명령할 수 있습니다.<br>
+      또한, "지역 [지역명]" (예: "지역 수도권" 또는 "지역 부산")을 입력하면 해당 지역의 날씨로 변경됩니다.</p>
+      <p><strong>캘린더:</strong> 왼쪽에서 날짜 클릭해 일정을 추가하거나, 버튼으로 저장/삭제하세요.</p>
+    </div>
+  </div>
+  
+  <div id="version-select">
+    <select onchange="changeVersion(this.value)">
+      <option value="latest">최신 버전</option>
+      <option value="1.3">구버전 1.3</option>
+    </select>
+  </div>
+  
+  <canvas id="canvas"></canvas>
+  
+  <script>
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("canvas"), alpha: true });
@@ -725,12 +746,13 @@
       treeGroup.add(trunk, foliage);
       return treeGroup;
     }
+
     for (let i = 0; i < 10; i++) {
       const tree = createTree();
       tree.position.set(-50 + i * 10, -2, -15);
       scene.add(tree);
     }
-    
+
     function animate() {
       requestAnimationFrame(animate);
       
@@ -781,13 +803,13 @@
       updateWeatherEffects();
       updateHouseClouds();
       updateLightning();
+      characterStreetlight.position.set(characterGroup.position.x + 1, -2, characterGroup.position.z);
       updateBubblePosition();
       
       renderer.render(scene, camera);
     }
     animate();
     
-    // 캘린더 관련 변수 및 함수
     let currentYear, currentMonth;
     function initCalendar() {
       const now = new Date();
@@ -900,7 +922,7 @@
         }, 1000);
       }, 4000);
     }
-    
+
     function changeVersion(version) {
       if (version === "1.3") {
         window.location.href = window.location.href; 
