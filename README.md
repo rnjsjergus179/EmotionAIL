@@ -1,15 +1,15 @@
-
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>3D 캐릭터 HUD, 달력 & 말풍선 채팅</title>
+  <title>3D 캐릭터 HUD, 캘린더, 음성 채팅 & 말풍선</title>
   <style>
+    /* 기본 스타일 */
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { height: 100%; font-family: Arial, sans-serif; overflow: hidden; }
+    html, body { height: 100%; font-family: 'Courier New', monospace; overflow: hidden; }
     
+    /* 오른쪽 채팅창 HUD */
     #right-hud {
       position: fixed;
       top: 10%;
@@ -27,6 +27,7 @@
       font-size: 14px;
       margin-bottom: 10px;
     }
+    /* 채팅 로그 (필요시 보이도록 설정) */
     #chat-log {
       display: none;
       height: 100px;
@@ -47,20 +48,53 @@
       font-size: 14px;
     }
     
+    /* HUD-6: 음성 입력 영역 */
+    #hud-6 {
+      position: fixed;
+      top: 45%;
+      right: 1%;
+      width: 20%;
+      padding: 5px;
+      background: rgba(255,255,255,0.95);
+      border-radius: 5px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      z-index: 25;
+      text-align: center;
+    }
+    #hud-6 button {
+      padding: 8px 12px;
+      font-size: 14px;
+      border: none;
+      border-radius: 4px;
+      background: #00ffcc;
+      color: #000;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    #hud-6 button:hover {
+      background: #00cc99;
+    }
+    
+    /* 왼쪽 캘린더 HUD */
     #left-hud {
       position: fixed;
       top: 10%;
       left: 1%;
       width: 20%;
       padding: 1%;
-      background: rgba(255,255,255,0.9);
-      border-radius: 5px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      background: rgba(0, 0, 0, 0.7);
+      border: 2px solid #00ffcc;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,255,204,0.5);
       z-index: 20;
       max-height: 80vh;
       overflow-y: auto;
+      color: #00ffcc;
     }
-    #left-hud h3 { margin-bottom: 5px; }
+    #left-hud h3 { 
+      margin-bottom: 5px; 
+      text-shadow: 0 0 5px #00ffcc;
+    }
     #calendar-container { margin-top: 10px; }
     #calendar-header {
       display: flex;
@@ -68,9 +102,35 @@
       justify-content: space-between;
       margin-bottom: 5px;
     }
-    #calendar-header button { padding: 2px 6px; font-size: 12px; cursor: pointer; }
-    #month-year-label { font-weight: bold; font-size: 14px; }
-    #year-select { font-size: 12px; padding: 2px; margin-left: 5px; }
+    #calendar-header button { 
+      padding: 2px 6px; 
+      font-size: 12px; 
+      cursor: pointer; 
+      background: #00ffcc; 
+      color: #000; 
+      border: none; 
+      border-radius: 3px; 
+      box-shadow: 0 0 5px #00ffcc; 
+      transition: all 0.3s; 
+    }
+    #calendar-header button:hover { 
+      background: #00cc99; 
+      box-shadow: 0 0 10px #00ffcc; 
+    }
+    #month-year-label { 
+      font-weight: bold; 
+      font-size: 14px; 
+      text-shadow: 0 0 5px #00ffcc;
+    }
+    #year-select { 
+      font-size: 12px; 
+      padding: 2px; 
+      margin-left: 5px; 
+      background: #333; 
+      color: #00ffcc; 
+      border: 1px solid #00ffcc; 
+      border-radius: 3px; 
+    }
     #calendar-actions {
       margin-top: 5px;
       text-align: center;
@@ -80,6 +140,16 @@
       padding: 5px 8px;
       font-size: 12px;
       cursor: pointer;
+      background: #00ffcc;
+      color: #000;
+      border: none;
+      border-radius: 3px;
+      box-shadow: 0 0 5px #00ffcc;
+      transition: all 0.3s;
+    }
+    #calendar-actions button:hover {
+      background: #00cc99;
+      box-shadow: 0 0 10px #00ffcc;
     }
     #calendar-grid {
       display: grid;
@@ -87,32 +157,40 @@
       gap: 2px;
     }
     #calendar-grid div {
-      background: #fff;
-      border: 1px solid #ccc;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid #00ffcc;
       border-radius: 4px;
       min-height: 25px;
       font-size: 10px;
       padding: 2px;
       position: relative;
       cursor: pointer;
+      transition: all 0.3s;
     }
-    #calendar-grid div:hover { background: #e9e9e9; }
+    #calendar-grid div:hover { 
+      background: rgba(0,255,204,0.3);
+      box-shadow: 0 0 5px #00ffcc;
+    }
     .day-number {
       position: absolute;
       top: 2px;
       left: 2px;
       font-weight: bold;
       font-size: 10px;
+      color: #00ffcc;
+      text-shadow: 0 0 3px #00ffcc;
     }
     .event {
       margin-top: 14px;
       font-size: 8px;
-      color: #333;
+      color: #00ffcc;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      text-shadow: 0 0 3px #00ffcc;
     }
     
+    /* 메인 캔버스와 말풍선 */
     #canvas {
       position: fixed;
       top: 0;
@@ -135,6 +213,7 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
     
+    /* 지도 또는 유튜브가 표시되는 영역 */
     #hud-3 {
       position: fixed;
       top: 70%;
@@ -149,32 +228,7 @@
       overflow: hidden;
     }
     
-    #tutorial-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.7);
-      color: white;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 100;
-      opacity: 0;
-      transition: opacity 1s ease-in-out;
-      pointer-events: none;
-    }
-    #tutorial-content {
-      text-align: center;
-      padding: 20px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 10px;
-      max-width: 600px;
-    }
-    #tutorial-content h2 { margin-bottom: 15px; }
-    #tutorial-content p { margin: 10px 0; font-size: 14px; }
-    
+    /* 버전 선택 메뉴 */
     #version-select {
       position: fixed;
       bottom: 10px;
@@ -185,31 +239,33 @@
       padding: 5px;
       font-size: 12px;
     }
-
+    
     @media (max-width: 480px) {
-      #right-hud, #left-hud, #hud-3 { width: 90%; left: 5%; right: 5%; top: 5%; }
+      #right-hud, #left-hud, #hud-3, #hud-6 { width: 90%; left: 5%; right: 5%; top: 5%; }
     }
   </style>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   
   <script>
+    // 전역 키워드 객체 (자동완성 및 채팅 처리에서 사용)
+    const KEYWORDS = {
+      greetings: ["안녕", "안녕하세요", "안녕 하세", "안녕하시오", "안녕한갑네"],
+      sleep: ["잘자", "좋은꿈", "좋은 꿈", "잘자요", "잘자시게", "잘자리요", "잘자라니께"],
+      youtube: ["유튜브", "유트브", "유튜브알려줘", "유튭", "유튜브랑", "유튜브나와줘"],
+      twitter: ["트위터", "트위터 보여주게", "트위터 틔위터검색", "트위터보여", "트위터보여줘봐"],
+      naver: ["네이버", "네이버 보여줘", "네이버 보여주게", "네이버 검색"],
+      weather: ["날씨알려줘", "날씨알려주게", "날씨좀알려줘", "날씨 알려줘", "날씨 좀 알려줘", "날씨 어때", "날씨 맑아"],
+      calendar: ["일정 알려줘"],
+      time: ["시간 알려줘"],
+      map: ["지도 보여줘", "교통정보"]
+    };
+
+    // 전역 변수
     document.addEventListener("contextmenu", event => event.preventDefault());
     let blockUntil = 0;
-    let danceInterval;
-    let currentCity = "서울"; // 한국어 지역명
+    let currentCity = "서울";
     let currentWeather = "";
-    
-    document.addEventListener("copy", function(e) {
-      e.preventDefault();
-      let selectedText = window.getSelection().toString();
-      selectedText = selectedText.replace(/2caa7fa4a66f2f8d150f1da93d306261/g, "HIDDEN");
-      e.clipboardData.setData("text/plain", selectedText);
-      if (Date.now() < blockUntil) return;
-      blockUntil = Date.now() + 3600000;
-      showSpeechBubbleInChunks("1시간동안 차단됩니다.");
-    });
-    
     const weatherKey = "2caa7fa4a66f2f8d150f1da93d306261";
     const regionMap = {
       "서울": "Seoul",
@@ -238,6 +294,16 @@
     };
     const regionList = Object.keys(regionMap);
     
+    document.addEventListener("copy", function(e) {
+      e.preventDefault();
+      let selectedText = window.getSelection().toString();
+      selectedText = selectedText.replace(/2caa7fa4a66f2f8d150f1da93d306261/g, "HIDDEN");
+      e.clipboardData.setData("text/plain", selectedText);
+      if (Date.now() < blockUntil) return;
+      blockUntil = Date.now() + 3600000;
+      showSpeechBubbleInChunks("1시간동안 차단됩니다.");
+    });
+    
     function saveFile() {
       const content = "파일 저장 완료";
       const filename = "saved_file.txt";
@@ -253,12 +319,13 @@
     function saveCalendar() {
       const daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
       const calendarData = {};
-      for (let d = 1; d <= daysInMonth; d++){
+      for (let d = 1; d <= daysInMonth; d++) {
         const eventDiv = document.getElementById(`event-${currentYear}-${currentMonth+1}-${d}`);
         if (eventDiv && eventDiv.textContent.trim() !== "") {
           calendarData[`${currentYear}-${currentMonth+1}-${d}`] = eventDiv.textContent;
         }
       }
+      localStorage.setItem("calendarEvents", JSON.stringify(calendarData));
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(calendarData, null, 2));
       const dlAnchorElem = document.createElement("a");
       dlAnchorElem.setAttribute("href", dataStr);
@@ -269,9 +336,66 @@
       document.body.removeChild(dlAnchorElem);
     }
     
+    function deleteCalendarEvent(day) {
+      const eventDiv = document.getElementById(`event-${currentYear}-${currentMonth+1}-${day}`);
+      if (eventDiv) {
+        eventDiv.textContent = "";
+        const calendarData = JSON.parse(localStorage.getItem("calendarEvents") || "{}");
+        delete calendarData[`${currentYear}-${currentMonth+1}-${day}`];
+        localStorage.setItem("calendarEvents", JSON.stringify(calendarData));
+        return `${currentYear}-${currentMonth+1}-${day} 일정이 삭제되었습니다.`;
+      } else {
+        return "해당 날짜에 일정이 없습니다.";
+      }
+    }
+    
+    function getCalendarEvents(dateStr = null) {
+      const calendarData = JSON.parse(localStorage.getItem("calendarEvents") || "{}");
+      if (!Object.keys(calendarData).length) {
+        return "저장된 일정이 없습니다. 먼저 캘린더를 저장해주세요.";
+      }
+      
+      if (dateStr) {
+        if (calendarData[dateStr]) {
+          return `${dateStr}의 일정: ${calendarData[dateStr]}`;
+        } else {
+          return `${dateStr}에는 일정이 없습니다.`;
+        }
+      } else {
+        const currentMonthStr = `${currentYear}-${currentMonth+1}`;
+        let events = [];
+        for (let key in calendarData) {
+          if (key.startsWith(currentMonthStr)) {
+            events.push(`${key}: ${calendarData[key]}`);
+          }
+        }
+        if (events.length) {
+          return `현재 월(${currentMonthStr})의 일정:\n${events.join("\n")}`;
+        } else {
+          return `현재 월(${currentMonthStr})에는 일정이 없습니다.`;
+        }
+      }
+    }
+    
     function updateMap() {
       const englishCity = regionMap[currentCity] || "Seoul";
       document.getElementById("map-iframe").src = `https://www.google.com/maps?q=${encodeURIComponent(englishCity)}&output=embed`;
+    }
+    
+    // 날씨 API를 통해 현재 날씨 정보를 가져오는 함수 (OpenWeatherMap API 사용)
+    async function getWeather() {
+      try {
+        const response = await fetch(
+          `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(currentCity)}&appid=${weatherKey}&lang=kr&units=metric`
+        );
+        const data = await response.json();
+        currentWeather = data.weather[0].description;
+        const message = `현재 ${currentCity}의 날씨는 ${data.weather[0].description}이고, 기온은 ${data.main.temp}°C 입니다.`;
+        return { message };
+      } catch (error) {
+        console.error(error);
+        return { message: "날씨 정보를 가져오는데 실패했습니다." };
+      }
     }
     
     async function updateWeatherAndEffects(sendMessage = true) {
@@ -289,6 +413,27 @@
       showSpeechBubbleInChunks(`지역이 ${value}(으)로 변경되었습니다.`);
     }
     
+    function startSpeechRecognition() {
+      if (!('webkitSpeechRecognition' in window)) {
+        alert("이 브라우저는 음성 인식을 지원하지 않습니다.");
+        return;
+      }
+      const recognition = new webkitSpeechRecognition();
+      recognition.lang = "ko-KR";
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+      recognition.start();
+      
+      recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript.trim();
+        document.getElementById("chat-input").value = transcript;
+      };
+      
+      recognition.onerror = function(event) {
+        console.error("음성 인식 오류:", event.error);
+      };
+    }
+    
     async function sendChat() {
       const inputEl = document.getElementById("chat-input");
       const input = inputEl.value.trim();
@@ -304,160 +449,137 @@
       let response = "";
       const lowerInput = input.toLowerCase();
       
+      // 지역 변경 처리 (별도)
       if (lowerInput.startsWith("지역 ")) {
         const newCity = lowerInput.replace("지역", "").trim();
         if(newCity) {
           if (regionList.includes(newCity)) {
             currentCity = newCity;
             document.getElementById("region-select").value = newCity;
-            response = `지역이 ${newCity}(으)로 변경되었습니다.`;
+            response = `좋아요, 지역을 ${newCity}(으)로 변경할게요!`;
             updateMap();
             await updateWeatherAndEffects();
           } else {
-            response = "지원하지 않는 지역입니다. 드롭다운 메뉴에서 선택해주세요.";
+            response = "죄송해요, 그 지역은 지원하지 않아요. 드롭다운 메뉴에서 선택해주세요.";
           }
         } else {
-          response = "변경할 지역을 입력해주세요.";
+          response = "변경할 지역을 입력해 주세요.";
         }
-      } else {
-        if (regionList.includes(input)) {
-          currentCity = input;
-          document.getElementById("region-select").value = input;
-          response = `지역이 ${input}(으)로 변경되었습니다.`;
-          updateMap();
-          await updateWeatherAndEffects();
+      } else if (regionList.includes(input)) {
+        currentCity = input;
+        document.getElementById("region-select").value = input;
+        response = `좋아요, 지역을 ${input}(으)로 변경할게요!`;
+        updateMap();
+        await updateWeatherAndEffects();
+      }
+      
+      // 각 키워드 그룹을 KEYWORDS 객체를 통해 처리
+      
+      // 유튜브 관련
+      if (!response && KEYWORDS.youtube.some(keyword => lowerInput.includes(keyword))) {
+        response = "유튜브를 보여드릴게요! 잠시만 기다려 주세요.";
+        showSpeechBubbleInChunks(response);
+        setTimeout(() => {
+          window.location.href = "https://www.youtube.com/";
+        }, 2000);
+        inputEl.value = "";
+        return;
+      }
+      
+      // 트위터 관련
+      if (!response && KEYWORDS.twitter.some(keyword => lowerInput.includes(keyword))) {
+        response = "트위터(현재 X)를 보여드릴게요! 잠시만 기다려 주세요.";
+        showSpeechBubbleInChunks(response);
+        setTimeout(() => {
+          window.location.href = "https://x.com/login?lang=ko";
+        }, 2000);
+        inputEl.value = "";
+        return;
+      }
+      
+      // 네이버 관련
+      if (!response && KEYWORDS.naver.some(keyword => lowerInput.includes(keyword))) {
+        response = "네이버를 보여드릴게요! 잠시만 기다려 주세요.";
+        showSpeechBubbleInChunks(response);
+        setTimeout(() => {
+          window.location.href = "https://m.naver.com/";
+        }, 2000);
+        inputEl.value = "";
+        return;
+      }
+      
+      // 인삿말 관련
+      if (!response && KEYWORDS.greetings.some(keyword => lowerInput.includes(keyword))) {
+        response = "안녕하세요! 만나서 반갑습니다. 오늘 하루 어떠셨나요?";
+      }
+      
+      // 잘자 관련
+      if (!response && KEYWORDS.sleep.some(keyword => lowerInput.includes(keyword))) {
+        response = "편안한 밤 되세요, 좋은 꿈 꾸세요~";
+      }
+      
+      // 날씨 관련 (KEYWORDS.weather 사용)
+      if (!response && KEYWORDS.weather.some(keyword => lowerInput.includes(keyword))) {
+        await updateWeatherAndEffects();
+        inputEl.value = "";
+        return;
+      }
+      
+      // 일정 관련 (별도 처리)
+      if (!response && lowerInput.includes("일정") && lowerInput.includes("알려줘")) {
+        const dateMatch = input.match(/\d{4}-\d{1,2}-\d{1,2}/);
+        if (dateMatch) {
+          const dateStr = dateMatch[0];
+          response = getCalendarEvents(dateStr);
+        } else {
+          response = getCalendarEvents();
         }
       }
       
+      // 시간 관련 (KEYWORDS.time)
+      if (!response && KEYWORDS.time.some(keyword => lowerInput.includes(keyword))) {
+        const now = new Date();
+        const hours = now.getHours();
+        const minutes = now.getMinutes();
+        response = `현재 시간은 ${hours}시 ${minutes}분입니다.`;
+      }
+      
+      // 지도 관련 (KEYWORDS.map)
+      if (!response && KEYWORDS.map.some(keyword => lowerInput.includes(keyword))) {
+        response = "지도를 보여드릴게요!";
+        showSpeechBubbleInChunks(response);
+        setTimeout(() => {
+          window.location.href = "https://www.google.com/maps";
+        }, 2000);
+        inputEl.value = "";
+        return;
+      }
+      
+      // 감정 및 일반 대화 응답 처리
       if (!response) {
-        if (lowerInput.includes("날씨") &&
-           (lowerInput.includes("알려") || lowerInput.includes("어때") ||
-            lowerInput.includes("뭐야") || lowerInput.includes("어떻게") || lowerInput.includes("맑아"))) {
-          await updateWeatherAndEffects();
-          return;
-        }
-        else if (lowerInput.includes("시간") || lowerInput.includes("몇시") || lowerInput.includes("현재시간")) {
-          const now = new Date();
-          const hours = now.getHours();
-          const minutes = now.getMinutes();
-          response = `현재 시간은 ${hours}시 ${minutes}분입니다.`;
-        }
-        else if (lowerInput.includes("파일 저장해줘")) {
-          response = "네, 알겠습니다. 파일 저장하겠습니다.";
-          saveFile();
-        }
-        else if ((lowerInput.includes("캘린더") && lowerInput.includes("저장")) ||
-                 lowerInput.includes("일정저장") ||
-                 lowerInput.includes("하루일과저장")) {
-          response = "네, 알겠습니다. 캘린더 저장하겠습니다.";
-          saveCalendar();
-        }
-        else if (lowerInput.includes("기분") && lowerInput.includes("좋아")) {
-          response = "정말요!? 저도 정말 기분좋아요😁";
-          const originalEyeColor = leftEye.material.color.getHex();
-          leftEye.material.color.set(0xffff00);
-          rightEye.material.color.set(0xffff00);
-          setTimeout(() => {
-            leftEye.material.color.set(originalEyeColor);
-            rightEye.material.color.set(originalEyeColor);
-          }, 500);
-          const originalLeftBrowRotation = leftBrow.rotation.x;
-          const originalRightBrowRotation = rightBrow.rotation.x;
-          const eyebrowInterval = setInterval(() => {
-            const angle = Math.sin(Date.now() * 0.005) * 0.3;
-            leftBrow.rotation.x = originalLeftBrowRotation + angle;
-            rightBrow.rotation.x = originalRightBrowRotation + angle;
-          }, 50);
-          setTimeout(() => {
-            clearInterval(eyebrowInterval);
-            leftBrow.rotation.x = originalLeftBrowRotation;
-            rightBrow.rotation.x = originalRightBrowRotation;
-          }, 3000);
-        }
-        else if (lowerInput.includes("안녕")) {
-          response = "안녕하세요, 주인님! 오늘 기분은 어떠세요?";
-          characterGroup.children[7].rotation.z = Math.PI / 4;
-          setTimeout(() => { characterGroup.children[7].rotation.z = 0; }, 1000);
-        }
-        else if (lowerInput.includes("캐릭터 넌 누구야")) {
-          response = "저는 당신의 개인 비서에요.";
-        }
-        else if (lowerInput.includes("일정")) {
-          response = "캘린더는 왼쪽에서 확인하세요.";
-        }
-        else if (lowerInput.includes("캐릭터 춤춰줘") ||
-                 lowerInput.includes("춤") ||
-                 lowerInput.includes("춤춰") ||
-                 lowerInput.includes("춤춰줘") ||
-                 lowerInput.includes("춤춰봐") ||
-                 lowerInput.includes("춤사위")) {
-          response = "춤추겠습니다! 잠시만 기다려 주세요.";
-          if (danceInterval) clearInterval(danceInterval);
-          danceInterval = setInterval(() => {
-            characterGroup.children[7].rotation.z = Math.sin(Date.now() * 0.01) * Math.PI / 4;
-            head.rotation.y = Math.sin(Date.now() * 0.01) * Math.PI / 8;
-          }, 50);
-          setTimeout(() => {
-            clearInterval(danceInterval);
-            characterGroup.children[7].rotation.z = 0;
-            head.rotation.y = 0;
-          }, 3000);
-        }
-        else {
-          response = "죄송해요, 잘 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?";
+        if (lowerInput.includes("기분") || lowerInput.includes("슬프") || lowerInput.includes("우울") ||
+            lowerInput.includes("짜증") || lowerInput.includes("화난") || lowerInput.includes("분노") ||
+            lowerInput.includes("놀람") || lowerInput.includes("피곤")) {
+          // 단순히 임의로 응답 선택 (예시)
+          const responses = [
+            "정말 마음이 아프시네요. 제가 도와드릴 수 있다면 좋겠어요.",
+            "그런 날도 있죠. 힘내시고 천천히 쉬어가세요.",
+            "오늘 정말 즐거워 보이세요! 기분 좋은 일이 가득하길 바랍니다."
+          ];
+          response = responses[Math.floor(Math.random() * responses.length)];
+        } else {
+          const generalResponses = [
+            "정말 흥미로운 이야기네요. 더 들려주세요!",
+            "알겠습니다. 혹시 다른 궁금한 점은 없으신가요?",
+            "그렇군요. 당신의 의견을 듣고 있으니 저도 많이 배워요.",
+            "그렇게 느끼실 수 있겠네요. 함께 이야기 나눠봐요!"
+          ];
+          response = generalResponses[Math.floor(Math.random() * generalResponses.length)];
         }
       }
       
       showSpeechBubbleInChunks(response);
       inputEl.value = "";
-    }
-    
-    async function getWeather() {
-      try {
-        const englishCity = regionMap[currentCity] || "Seoul";
-        const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(englishCity)}&appid=${weatherKey}&units=metric&lang=kr`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("날씨 API 호출 실패");
-        const data = await res.json();
-        const description = data.weather[0].description;
-        const temp = data.main.temp;
-        currentWeather = description;
-        let extraComment = "";
-        if (description.indexOf("흐림") !== -1 || description.indexOf("구름") !== -1) {
-          extraComment = " 오늘은 약간 흐린 날씨네요 ☁️";
-        } else if (description.indexOf("맑음") !== -1) {
-          extraComment = " 오늘은 맑은 날씨네요 ☀️";
-        }
-        return {
-          message: `오늘 ${currentCity}의 날씨는 ${description}이며, 온도는 ${temp}°C입니다.${extraComment}`
-        };
-      } catch (err) {
-        currentWeather = "";
-        return { message: `날씨 정보를 가져오지 못했습니다: ${currentCity}` };
-      }
-    }
-    
-    function updateWeatherEffects() {
-      if (!currentWeather) return;
-      if (currentWeather.indexOf("비") !== -1 || currentWeather.indexOf("소나기") !== -1) {
-        rainGroup.visible = true;
-      } else {
-        rainGroup.visible = false;
-      }
-      if (currentWeather.indexOf("구름") !== -1 || currentWeather.indexOf("흐림") !== -1) {
-        houseCloudGroup.visible = true;
-      } else {
-        houseCloudGroup.visible = false;
-      }
-    }
-    
-    function updateLightning() {
-      if (currentWeather.indexOf("번개") !== -1 || currentWeather.indexOf("뇌우") !== -1) {
-        if (Math.random() < 0.001) {
-          lightningLight.intensity = 5;
-          setTimeout(() => { lightningLight.intensity = 0; }, 100);
-        }
-      }
     }
     
     function showSpeechBubbleInChunks(text, chunkSize = 15, delay = 3000) {
@@ -481,11 +603,23 @@
     }
     
     window.addEventListener("DOMContentLoaded", function() {
+      // 자동 완성을 위한 datalist 생성: KEYWORDS의 모든 값을 결합
+      const chatInput = document.getElementById("chat-input");
+      chatInput.setAttribute("list", "chat-keywords");
+      const autoCompleteList = document.createElement("datalist");
+      autoCompleteList.id = "chat-keywords";
+      const allKeywords = Object.values(KEYWORDS).flat();
+      allKeywords.forEach(kw => {
+        const option = document.createElement("option");
+        option.value = kw;
+        autoCompleteList.appendChild(option);
+      });
+      document.body.appendChild(autoCompleteList);
+      
       document.getElementById("chat-input").addEventListener("keydown", function(e) {
         if (e.key === "Enter") sendChat();
       });
       
-      // 드롭다운 메뉴 초기화
       const regionSelect = document.getElementById("region-select");
       regionList.forEach(region => {
         const option = document.createElement("option");
@@ -504,17 +638,14 @@
     
     window.addEventListener("load", async () => {
       initCalendar();
-      showTutorial();
       updateMap();
       await updateWeatherAndEffects();
     });
     
     function changeVersion(version) {
       if (version === "1.3") {
-        // 1.3 버전으로 이동 (URL 변경)
         window.location.href = "https://aipersonalassistant.neocities.org/";
       } else if (version === "latest") {
-        // 현재 페이지가 1.7 버전이므로 새로고침
         window.location.reload();
       }
     }
@@ -530,6 +661,11 @@
     <div id="chat-input-area">
       <input type="text" id="chat-input" placeholder="채팅 입력..." />
     </div>
+  </div>
+  
+  <!-- HUD-6: 음성 입력 영역 -->
+  <div id="hud-6">
+    <button onclick="startSpeechRecognition()">🎤 음성 입력</button>
   </div>
   
   <div id="hud-3">
@@ -555,23 +691,9 @@
   
   <div id="speech-bubble"></div>
   
-  <div id="tutorial-overlay">
-    <div id="tutorial-content">
-      <h2>사용법 안내</h2>
-      <p><strong>캐릭터:</strong> 채팅창에 "안녕", "캐릭터 춤춰줘" 등 입력해 보세요.</p>
-      <p>
-        <strong>채팅창:</strong> 상단 드롭다운 메뉴에서 지역을 선택하면 지도와 날씨가 즉시 업데이트됩니다.<br>
-        또는 "지역 [지역명]" (예: "지역 인천" 또는 "인천") 입력으로도 변경 가능합니다.<br>
-        "날씨 알려줘"로 현재 지역의 날씨를 다시 확인할 수 있습니다.
-      </p>
-      <p><strong>캘린더:</strong> 왼쪽에서 날짜 클릭해 일정을 추가하거나, 버튼으로 저장/삭제하세요.</p>
-      <p><strong>버전 선택:</strong> 하단 드롭다운에서 "구버전 1.3"을 선택하면 1.3 버전 페이지로 이동합니다.</p>
-    </div>
-  </div>
-  
   <div id="version-select">
     <select onchange="changeVersion(this.value)">
-      <option value="latest">최신 버전</option>
+      <option value="latest">최신 버전 (1.7)</option>
       <option value="1.3">구버전 1.3</option>
     </select>
   </div>
@@ -579,6 +701,7 @@
   <canvas id="canvas"></canvas>
   
   <script>
+    // Three.js Scene, 카메라, 렌더러 설정 및 애니메이션
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("canvas"), alpha: true });
@@ -731,26 +854,50 @@
     rainGroup.visible = false;
     
     let houseCloudGroup = new THREE.Group();
+    scene.add(houseCloudGroup);
     function createHouseCloud() {
       const cloud = new THREE.Group();
       const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 });
-      const sphere1 = new THREE.Mesh(new THREE.SphereGeometry(2, 32, 32), cloudMat);
+      const sphere1 = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), cloudMat);
       sphere1.position.set(0, 0, 0);
-      const sphere2 = new THREE.Mesh(new THREE.SphereGeometry(1.8, 32, 32), cloudMat);
-      sphere2.position.set(2.2, 0.7, 0);
-      const sphere3 = new THREE.Mesh(new THREE.SphereGeometry(2.1, 32, 32), cloudMat);
-      sphere3.position.set(-2.2, 0.5, 0);
+      const sphere2 = new THREE.Mesh(new THREE.SphereGeometry(0.4, 32, 32), cloudMat);
+      sphere2.position.set(0.6, 0.2, 0);
+      const sphere3 = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), cloudMat);
+      sphere3.position.set(-0.6, 0.1, 0);
       cloud.add(sphere1, sphere2, sphere3);
+      cloud.scale.set(2, 2, 2);
       cloud.userData.initialPos = cloud.position.clone();
       return cloud;
     }
     const singleCloud = createHouseCloud();
     houseCloudGroup.add(singleCloud);
-    houseCloudGroup.position.set(0, 10, -20);
-    scene.add(houseCloudGroup);
+    houseCloudGroup.position.set(0, 2, 0);
+    
+    let cloudRainGroup = new THREE.Group();
+    function initCloudRain() {
+      const cloudRainCount = 100;
+      const geometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(cloudRainCount * 3);
+      for (let i = 0; i < cloudRainCount; i++) {
+        positions[i * 3] = (Math.random()-0.5) * 1.5;
+        positions[i * 3 + 1] = Math.random() * 0.2;
+        positions[i * 3 + 2] = (Math.random()-0.5) * 1.5;
+      }
+      geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+      const material = new THREE.PointsMaterial({ color: 0xaaaaee, size: 0.05, transparent: true, opacity: 0.8 });
+      const particles = new THREE.Points(geometry, material);
+      cloudRainGroup.add(particles);
+    }
+    initCloudRain();
+    cloudRainGroup.visible = false;
+    houseCloudGroup.add(cloudRainGroup);
+    
     function updateHouseClouds() {
-      singleCloud.position.x += 0.02;
-      if (singleCloud.position.x > 10) { singleCloud.position.x = -10; }
+      const headWorldPos = new THREE.Vector3();
+      head.getWorldPosition(headWorldPos);
+      houseCloudGroup.position.x = headWorldPos.x + Math.sin(Date.now() * 0.001) * 1;
+      houseCloudGroup.position.y = headWorldPos.y + 2.5;
+      houseCloudGroup.position.z = headWorldPos.z;
     }
     
     let lightningLight = new THREE.PointLight(0xffffff, 0, 500);
@@ -855,6 +1002,19 @@
       
       updateWeatherEffects();
       updateHouseClouds();
+      
+      if (cloudRainGroup.visible) {
+        const particles = cloudRainGroup.children[0];
+        let positions = particles.geometry.attributes.position.array;
+        for (let i = 0; i < positions.length; i += 3) {
+          positions[i+1] -= 0.02;
+          if (positions[i+1] < -0.3) {
+            positions[i+1] = Math.random() * 0.2;
+          }
+        }
+        particles.geometry.attributes.position.needsUpdate = true;
+      }
+      
       updateLightning();
       characterStreetlight.position.set(characterGroup.position.x + 1, -2, characterGroup.position.z);
       updateBubblePosition();
@@ -901,6 +1061,7 @@
         saveCalendar();
       });
     }
+    
     function populateYearSelect() {
       const yearSelect = document.getElementById("year-select");
       yearSelect.innerHTML = "";
@@ -912,6 +1073,7 @@
         yearSelect.appendChild(option);
       }
     }
+    
     function renderCalendar(year, month) {
       const monthNames = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
       document.getElementById("month-year-label").textContent = `${year}년 ${monthNames[month]}`;
@@ -923,6 +1085,8 @@
         th.style.fontWeight = "bold";
         th.style.textAlign = "center";
         th.textContent = day;
+        th.style.color = "#00ffcc";
+        th.style.textShadow = "0 0 3px #00ffcc";
         grid.appendChild(th);
       });
       const firstDay = new Date(year, month, 1).getDay();
@@ -958,18 +1122,30 @@
       bubble.style.top = ((1 - (screenPos.y * 0.5 + 0.5)) * window.innerHeight - 50) + "px";
     }
     
-    function showTutorial() {
-      const overlay = document.getElementById("tutorial-overlay");
-      overlay.style.display = "flex";
-      setTimeout(() => {
-        overlay.style.opacity = "1";
-      }, 10);
-      setTimeout(() => {
-        overlay.style.opacity = "0";
-        setTimeout(() => {
-          overlay.style.display = "none";
-        }, 1000);
-      }, 4000);
+    function updateWeatherEffects() {
+      if (!currentWeather) return;
+      if (currentWeather.indexOf("비") !== -1 || currentWeather.indexOf("소나기") !== -1) {
+        rainGroup.visible = true;
+        houseCloudGroup.visible = true;
+        cloudRainGroup.visible = true;
+      } else if (currentWeather.indexOf("구름") !== -1 || currentWeather.indexOf("흐림") !== -1) {
+        rainGroup.visible = false;
+        houseCloudGroup.visible = true;
+        cloudRainGroup.visible = false;
+      } else {
+        rainGroup.visible = false;
+        houseCloudGroup.visible = false;
+        cloudRainGroup.visible = false;
+      }
+    }
+    
+    function updateLightning() {
+      if (currentWeather.indexOf("번개") !== -1 || currentWeather.indexOf("뇌우") !== -1) {
+        if (Math.random() < 0.001) {
+          lightningLight.intensity = 5;
+          setTimeout(() => { lightningLight.intensity = 0; }, 100);
+        }
+      }
     }
   </script>
 </body>
